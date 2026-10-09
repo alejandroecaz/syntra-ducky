@@ -1,0 +1,29 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Vista previa de la orden{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
+
+{% block contenido %}
+<div class="no-print">
+  {% call ui.page_header("Vista previa de la orden",
+        "Revisa la información. Puedes modificar los libros y cantidades o confirmar para registrar la orden.",
+        hus=["HU-01-18 Orden de compra"]) %}
+    {{ ui.btn("Imprimir vista previa", "ghost", "printer", data_print="1") }}
+  {% endcall %}
+  {{ ui.alert("info", "La orden aún no está registrada", "El folio se asigna al confirmar.") }}
+  <div style="height: 20px"></div>
+</div>
+
+{% set folio = "Pendiente de asignar" %}
+{% set fecha_doc = hoy.strftime("%d/%m/%Y") %}
+{% set solicitante = usuario_actual().nombre %}
+{% include "compras/_documento.html" %}
+
+<div class="form-actions no-print">
+  {{ ui.btn("Modificar orden", "secondary", "edit", href=url_for("compras.nueva", modificar=1)) }}
+  <form method="post" action="{{ url_for('compras.confirmar') }}" style="display:inline">
+    {{ ui.btn("Confirmar y registrar orden", "primary", "check", type="submit") }}
+  </form>
+</div>
+{% endblock %}

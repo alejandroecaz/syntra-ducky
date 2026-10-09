@@ -1,0 +1,21 @@
+# Entorno virtual
+venv/
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Base de datos local
+syntra.db
+*.db-journal
+
+# Sistema y editor
+.DS_Store
+.vscode/

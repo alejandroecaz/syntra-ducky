@@ -1,0 +1,20 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}{{ orden.folio }}{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
+
+{% block contenido %}
+<div class="no-print">
+  {% call ui.page_header("Orden " ~ orden.folio, "Registrada el " ~ (orden.fecha_registro | fecha("%d/%m/%Y %H:%M")) ~ ".",
+        hus=["HU-01-18 Orden de compra"], back=url_for("compras.lista"), back_label="Órdenes de compra") %}
+    {{ ui.badge(orden.estado, "info", dot=True) }}
+    {{ ui.btn("Imprimir", "secondary", "printer", data_print="1") }}
+  {% endcall %}
+</div>
+
+{% set folio = orden.folio %}
+{% set fecha_doc = orden.fecha_registro | fecha %}
+{% set solicitante = orden.solicitante ~ " (" ~ orden.solicitante_id ~ ")" %}
+{% include "compras/_documento.html" %}
+{% endblock %}

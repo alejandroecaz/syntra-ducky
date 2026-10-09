@@ -1,0 +1,80 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}{{ usuario.nombre }}{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>{% endblock %}
+
+{% block contenido %}
+{% call ui.page_header(usuario.nombre, "Identificador " ~ usuario.identificador ~ " · Cuenta " ~ usuario.cuenta,
+      hus=["HU-01-05 Consulta"], back=url_for("usuarios.lista"), back_label="Usuarios") %}
+  {% if tiene_permiso("usuarios.editar") %}
+    {{ ui.btn("Editar datos", "secondary", "edit", href=url_for("usuarios.editar", usuario_id=usuario.id)) }}
+  {% endif %}
+  {% if tiene_permiso("perfiles.asignar") %}
+    {{ ui.btn("Asignar perfil", "secondary", "shield", href=url_for("usuarios.asignar_perfil", usuario_id=usuario.id)) }}
+  {% endif %}
+  {% if tiene_permiso("usuarios.baja") %}
+    {% if usuario.estado == "Habilitada" %}
+      {{ ui.btn("Deshabilitar cuenta", "danger", "user-x",
+                data_confirm="1",
+                data_confirm_title="¿Deshabilitar la cuenta de " ~ usuario.nombre ~ "?",
+                data_confirm_text="La cuenta " ~ usuario.cuenta ~ " ya no podrá iniciar sesión. Sus datos y registros asociados se conservan.",
+                data_confirm_label="Deshabilitar",
+                data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=usuario.id),
+                data_confirm_fields='{"accion": "deshabilitar"}',
+                data_confirm_cancel="La cuenta conserva su estado original.") }}
+    {% else %}
+      {{ ui.btn("Habilitar cuenta", "primary", "user-check",
+                data_confirm="1", data_confirm_tone="primary",
+                data_confirm_title="¿Habilitar la cuenta de " ~ usuario.nombre ~ "?",
+                data_confirm_text="La cuenta podrá volver a iniciar sesión con su perfil actual.",
+                data_confirm_label="Habilitar",
+                data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=usuario.id),
+                data_confirm_fields='{"accion": "habilitar"}',
+                data_confirm_cancel="La cuenta conserva su estado original.") }}
+    {% endif %}
+  {% endif %}
+{% endcall %}
+
+{% if usuario.estado != "Habilitada" %}
+  {{ ui.alert("warning", "Cuenta deshabilitada", "Esta cuenta no puede iniciar sesión. Su información e historial se conservan.") }}
+  <div style="height: 20px"></div>
+{% endif %}
+
+<div class="grid grid-2">
+  <section class="card">
+    <div class="card__header"><h2 class="card__title">{{ icon("user", 18) }}Datos de la cuenta</h2></div>
+    <div class="card__body">
+      <dl class="kv">
+        <dt>Identificador</dt><dd class="mono">{{ usuario.identificador }}</dd>
+        <dt>Nombre</dt><dd>{{ usuario.nombre }}</dd>
+        <dt>Cuenta</dt><dd class="mono">{{ usuario.cuenta }}</dd>
+        <dt>Contraseña</dt><dd><span class="muted" style="font-weight:500">No visible por seguridad</span></dd>
+        <dt>Estado</dt><dd>{{ ui.estado_cuenta(usuario.estado) }}</dd>
+        <dt>Registrado</dt><dd>{{ usuario.fecha_registro | fecha }}</dd>
+        <dt>Última actualización</dt><dd>{{ usuario.fecha_actualizacion | fecha("%d/%m/%Y %H:%M") }}</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__header">
+      <h2 class="card__title">{{ icon("shield", 18) }}Perfil de usuario</h2>
+      {{ ui.badge(usuario.perfil_nombre or "Sin perfil", "navy" if usuario.perfil_nombre else "warning") }}
+    </div>
+    <div class="card__body stack">
+      {% if permisos %}
+        <p class="small muted">Permisos que otorga este perfil:</p>
+        <div class="perm-list">
+          {% for permiso in permisos %}{{ ui.badge(cfg.PERMISOS_DESCRIPCION.get(permiso, permiso), "neutral") }}{% endfor %}
+        </div>
+        {% if "sistema.acceder" not in permisos %}
+          {{ ui.alert("warning", text="Este perfil no incluye “Acceder al sistema”: la cuenta no podrá iniciar sesión.") }}
+        {% endif %}
+      {% else %}
+        {{ ui.alert("warning", text="La cuenta no tiene un perfil asignado y no podrá iniciar sesión.") }}
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

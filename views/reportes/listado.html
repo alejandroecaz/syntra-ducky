@@ -1,0 +1,75 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Listado de libros{% endblock %}
+
+{% block contenido %}
+{% set es_personal = tiene_permiso("libros.alta", "libros.editar", "libros.baja") %}
+{% call ui.page_header("Listado de libros",
+      "Aplica filtros y genera el listado en PDF o envíalo a impresión. Ambos documentos incluyen solo los registros filtrados.",
+      hus=["HU-01-16 PDF", "HU-01-17 Impresión"]) %}
+  {% if tiene_permiso("reportes.imprimir") %}
+    {{ ui.btn("Imprimir", "secondary", "printer", href=url_for("reportes.imprimir", **filtros)) }}
+  {% endif %}
+  {% if tiene_permiso("reportes.pdf") %}
+    {{ ui.btn("Generar PDF", "primary", "download", data_pdf_url=url_for("reportes.pdf", **filtros),
+              data_pdf_result="#resultado-pdf") }}
+  {% endif %}
+{% endcall %}
+
+<div id="resultado-pdf" class="mb-4" aria-live="polite"></div>
+
+<div class="card">
+  <form class="card__body" method="get" action="{{ url_for('reportes.listado') }}" novalidate>
+    <div class="form-grid" style="grid-template-columns: repeat({{ 5 if es_personal else 4 }}, minmax(0, 1fr))">
+      {{ ui.select_field("campo", "Buscar en", cfg.CAMPOS_BUSQUEDA, filtros.campo) }}
+      {{ ui.field("q", "Texto", filtros.q, placeholder="Opcional", icon_name="search") }}
+      {% set opciones_tema = [] %}{% for t in temas %}{% set _ = opciones_tema.append((t, t)) %}{% endfor %}
+      {{ ui.select_field("tema", "Tema", opciones_tema, filtros.tema, placeholder="Todos los temas") }}
+      {% set opciones_editorial = [] %}{% for e in editoriales %}{% set _ = opciones_editorial.append((e, e)) %}{% endfor %}
+      {{ ui.select_field("editorial", "Editorial", opciones_editorial, filtros.editorial, placeholder="Todas las editoriales") }}
+      {% if es_personal %}
+        {{ ui.select_field("estado", "Estado", [("activos", "Activos"), ("baja", "Dados de baja"), ("todos", "Todos")], filtros.estado) }}
+      {% endif %}
+    </div>
+    <div class="row mt-4">
+      {{ ui.btn("Aplicar filtros", "primary", "filter", type="submit") }}
+      {{ ui.btn("Limpiar", "ghost", href=url_for("reportes.listado")) }}
+    </div>
+  </form>
+
+  <div class="table-meta">
+    <span><strong class="strong">{{ libros | length }}</strong> registro{{ 's' if libros | length != 1 }} · {{ filtros_texto }}</span>
+  </div>
+
+  {% if libros %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Clave</th><th scope="col">Título</th><th scope="col">Autor</th>
+          <th scope="col">Tema</th><th scope="col">Editorial</th><th scope="col">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for libro in libros %}
+        <tr class="{{ 'is-muted' if not libro.activo }}">
+          <td class="mono strong nowrap">{{ libro.clave }}</td>
+          <td class="cell-title">{{ libro.titulo }}</td>
+          <td>{{ libro.autor }}</td>
+          <td>{{ libro.tema }}</td>
+          <td>{{ libro.editorial }}</td>
+          <td>{{ ui.estado_libro_badge(libro) }} <span class="xsmall muted nowrap">{{ libro.disponibles }}/{{ libro.total_ejemplares }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% call ui.empty_state("inbox", "No hay libros con estos filtros",
+          "No existen registros disponibles para el listado. Si intentas generar el PDF, el sistema lo indicará y no creará un documento vacío.") %}
+      {{ ui.btn("Quitar filtros", "secondary", href=url_for("reportes.listado")) }}
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "layouts/app.html" if usuario_actual() else "layouts/publico.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}No encontrado{% endblock %}
+
+{% block contenido %}
+<div class="card">
+  {% call ui.empty_state("search", "No encontramos lo que buscas",
+        "La página o el registro no existe, o ya no está disponible para tu perfil.") %}
+    {{ ui.btn("Ir al inicio", "primary", "home", href=url_for("auth.raiz")) }}
+  {% endcall %}
+</div>
+{% endblock %}

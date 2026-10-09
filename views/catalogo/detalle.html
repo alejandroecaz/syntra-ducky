@@ -1,0 +1,201 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}{{ libro.titulo }}{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('catalogo.lista') }}">Catálogo</a>{% endblock %}
+
+{% block contenido %}
+{% set hus = ["HU-01-12 Detalle", "HU-01-14 Ubicación", "HU-01-15 Disponibilidad"] %}
+{% if es_personal %}{% set hus = hus + ["HU-01-10 Baja", "HU-01-11 Actualización"] %}{% endif %}
+
+{% call ui.page_header("Ficha del libro", hus=hus, back=url_for("catalogo.lista"), back_label="Catálogo") %}
+  {% if tiene_permiso("compras.orden") and libro.activo %}
+    {{ ui.btn("Solicitar compra", "secondary", "cart", href=url_for("compras.nueva", libro=libro.id)) }}
+  {% endif %}
+  {% if tiene_permiso("libros.editar") %}
+    {{ ui.btn("Editar libro", "secondary", "edit", href=url_for("catalogo.editar", libro_id=libro.id)) }}
+  {% endif %}
+  {% if tiene_permiso("libros.baja") and libro.activo %}
+    {{ ui.btn("Dar de baja", "danger-soft", "archive",
+              data_confirm="1",
+              data_confirm_title="¿Dar de baja “" ~ libro.titulo ~ "”?",
+              data_confirm_text="El libro se marcará como inactivo y ya no aparecerá en el catálogo de usuarios. Sus datos e historial se conservan para consulta administrativa.",
+              data_confirm_label="Dar de baja",
+              data_confirm_action=url_for("catalogo.baja", libro_id=libro.id),
+              data_confirm_cancel="El libro sigue activo y sin cambios.") }}
+  {% endif %}
+{% endcall %}
+
+{% if not libro.activo %}
+  {{ ui.alert("warning", "Libro dado de baja", "Se dio de baja el " ~ (libro.fecha_baja | fecha) ~ ". No aparece en el catálogo de alumnos y profesores; se conserva para consulta administrativa.") }}
+  <div style="height: 20px"></div>
+{% elif es_personal and operaciones %}
+  {{ ui.alert("info", "Operaciones vigentes", "Este libro tiene " ~ operaciones | length ~ " ejemplar(es) prestado(s) o reservado(s); no se puede dar de baja hasta que concluyan.") }}
+  <div style="height: 20px"></div>
+{% endif %}
+
+<section class="card">
+  <div class="card__body">
+    <div class="book-hero">
+      {{ ui.cover(libro.titulo, gray=not libro.activo) }}
+      <div class="book-hero__info">
+        <div class="row">{{ ui.badge(libro.clave, "gold") }}{{ ui.estado_libro_badge(libro) }}</div>
+        <h1>{{ libro.titulo }}</h1>
+        <p class="book-hero__author">{{ libro.autor }}</p>
+        <dl class="kv mt-4">
+          <dt>Clave</dt><dd class="mono">{{ libro.clave }}</dd>
+          <dt>Tema</dt><dd>{{ libro.tema }}</dd>
+          <dt>Editorial</dt><dd>{{ libro.editorial }}</dd>
+          <dt>Año de publicación</dt><dd>{{ libro.anio or "—" }}</dd>
+        </dl>
+      </div>
+      <div class="card" style="padding: 18px 20px; min-width: 200px; box-shadow: none; background: var(--slate-25)">
+        <span class="stat__label">Ejemplares disponibles</span>
+        <div class="stat__value" style="margin: 4px 0 10px">{{ libro.disponibles }} <span class="muted" style="font-size: 1rem; font-weight: 600">de {{ libro.total_ejemplares }}</span></div>
+        {{ ui.disponibilidad(libro) if libro.total_ejemplares else ui.badge("Sin ejemplares", "warning", dot=True) }}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card mt-6">
+  <div class="card__header">
+    <h2 class="card__title">{{ icon("layers", 18) }}Ejemplares y ubicación</h2>
+    {% if tiene_permiso("libros.editar") and libro.activo %}
+      {{ ui.btn("Agregar ejemplar", "secondary", "plus", size="sm", data_modal_open="modal-agregar") }}
+    {% endif %}
+  </div>
+
+  {% if ejemplares %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Ejemplar</th>
+          <th scope="col">Ubicación física</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Actualizado</th>
+          <th scope="col" class="t-right"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ej in ejemplares %}
+        <tr>
+          <td class="mono strong">{{ ej.codigo }}</td>
+          <td>{{ ui.ubicacion(ej) }}</td>
+          <td>{{ ui.estado_ejemplar(ej.estado) }}</td>
+          <td class="small muted">{{ ej.fecha_actualizacion | fecha("%d/%m/%Y %H:%M") }}</td>
+          <td>
+            <div class="table-actions">
+              {{ ui.btn("Ver ubicación", "ghost", "map-pin", size="sm", data_modal_open="modal-ubicacion-" ~ ej.id) }}
+              {% if tiene_permiso("libros.editar") %}
+                {{ ui.btn("Actualizar ejemplar " ~ ej.codigo, "ghost", "edit", size="sm", icon_only=True,
+                          data_ejemplar={"accion": url_for("catalogo.actualizar_ejemplar", ejemplar_id=ej.id), "codigo": ej.codigo,
+                                         "estancia": ej.estancia or "", "estante": ej.estante or "", "posicion": ej.posicion or "",
+                                         "estado": ej.estado} | tojson | forceescape) }}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% call ui.empty_state("package", "Este libro no tiene ejemplares registrados",
+          "Existe la ficha bibliográfica, pero aún no hay copias físicas. Por eso no se muestra disponibilidad.", tone="warning") %}
+      {% if tiene_permiso("libros.editar") and libro.activo %}
+        {{ ui.btn("Agregar ejemplar", "primary", "plus", data_modal_open="modal-agregar") }}
+      {% endif %}
+    {% endcall %}
+  {% endif %}
+</section>
+
+{# Modal: ubicacion de cada ejemplar #}
+{% for ej in ejemplares %}
+<div class="modal" id="modal-ubicacion-{{ ej.id }}" role="dialog" aria-modal="true" aria-labelledby="ubicacion-titulo-{{ ej.id }}">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog">
+    <div class="modal__header">
+      <span class="modal__icon">{{ icon("map-pin", 22) }}</span>
+      <div>
+        <h2 class="modal__title" id="ubicacion-titulo-{{ ej.id }}">Ejemplar {{ ej.codigo }}</h2>
+        <p class="modal__text">{{ libro.titulo }} · {{ libro.clave }}</p>
+      </div>
+    </div>
+    <div class="modal__body stack">
+      {% if ej.estancia %}
+        <div class="shelf">
+          <div class="shelf__item"><span class="shelf__label">Estancia</span><div class="shelf__value">{{ ej.estancia }}</div></div>
+          <div class="shelf__item"><span class="shelf__label">Estante</span><div class="shelf__value">{{ ej.estante }}</div></div>
+          <div class="shelf__item"><span class="shelf__label">Posición</span><div class="shelf__value">{{ ej.posicion }}</div></div>
+        </div>
+      {% else %}
+        {{ ui.alert("warning", "Ubicación no registrada", "Este ejemplar todavía no tiene estancia, estante y posición asignados. Consulta en el mostrador.") }}
+      {% endif %}
+      <div class="row-between"><span class="muted small">Estado actual</span>{{ ui.estado_ejemplar(ej.estado) }}</div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--primary" data-modal-close data-autofocus>Entendido</button>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% if tiene_permiso("libros.editar") %}
+{% set opciones_estancia = [] %}{% for e in estancias %}{% set _ = opciones_estancia.append((e, e)) %}{% endfor %}
+{% set opciones_estado = [] %}{% for e in estados %}{% set _ = opciones_estado.append((e, e)) %}{% endfor %}
+
+{# Modal: editar ejemplar #}
+<div class="modal" id="modal-ejemplar" role="dialog" aria-modal="true" aria-labelledby="ejemplar-titulo">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog modal__dialog--wide">
+    <form method="post" novalidate>
+      <div class="modal__header">
+        <span class="modal__icon">{{ icon("edit", 22) }}</span>
+        <div>
+          <h2 class="modal__title" id="ejemplar-titulo">Actualizar ejemplar <span data-ejemplar-codigo></span></h2>
+          <p class="modal__text">El estado y la ubicación guardados son los que verán los usuarios en su siguiente consulta.</p>
+        </div>
+      </div>
+      <div class="modal__body form-grid">
+        {{ ui.select_field("estado", "Estado", opciones_estado, required=True, span=True, id="ej-estado") }}
+        {{ ui.select_field("estancia", "Estancia", opciones_estancia, placeholder="Sin ubicación", span=True, id="ej-estancia") }}
+        {{ ui.field("estante", "Estante", placeholder="Ej. A-1", id="ej-estante") }}
+        {{ ui.field("posicion", "Posición", placeholder="Ej. 3", id="ej-posicion") }}
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary">Guardar ejemplar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Modal: agregar ejemplar #}
+<div class="modal" id="modal-agregar" role="dialog" aria-modal="true" aria-labelledby="agregar-titulo">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog modal__dialog--wide">
+    <form method="post" action="{{ url_for('catalogo.agregar_ejemplar', libro_id=libro.id) }}" novalidate>
+      <div class="modal__header">
+        <span class="modal__icon">{{ icon("plus", 22) }}</span>
+        <div>
+          <h2 class="modal__title" id="agregar-titulo">Agregar ejemplar</h2>
+          <p class="modal__text">Registra una copia física de “{{ libro.titulo }}”. Puedes dejar la ubicación pendiente.</p>
+        </div>
+      </div>
+      <div class="modal__body form-grid">
+        {{ ui.select_field("estado", "Estado", opciones_estado, "Disponible", required=True, span=True, id="nuevo-estado") }}
+        {{ ui.select_field("estancia", "Estancia", opciones_estancia, placeholder="Ubicación pendiente", span=True, id="nuevo-estancia") }}
+        {{ ui.field("estante", "Estante", placeholder="Ej. A-1", id="nuevo-estante") }}
+        {{ ui.field("posicion", "Posición", placeholder="Ej. 3", id="nuevo-posicion") }}
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary">Agregar ejemplar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

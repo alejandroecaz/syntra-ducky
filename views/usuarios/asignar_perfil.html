@@ -1,0 +1,48 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Asignar perfil{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>
+  {{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.detalle', usuario_id=usuario.id) }}">{{ usuario.nombre }}</a>{% endblock %}
+
+{% block contenido %}
+{{ ui.page_header("Asignar perfil a " ~ usuario.nombre,
+      "Perfil actual: " ~ (usuario.perfil_nombre or "sin perfil") ~ ". El nuevo perfil sustituye al anterior y sus permisos se aplican en el siguiente inicio de sesión.",
+      hus=["HU-01-08 Asignación de perfiles"], back=url_for("usuarios.detalle", usuario_id=usuario.id), back_label="Detalle del usuario") }}
+
+<form class="card" method="post" novalidate>
+  <div class="card__body stack-lg">
+    {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+
+    <fieldset class="check-group{{ ' is-invalid' if errores.get('perfil_id') }}">
+      <legend>Perfiles registrados</legend>
+      <div class="check-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
+        {% for p in perfiles %}
+          <label class="check">
+            <input type="radio" name="perfil_id" value="{{ p.id }}" {% if p.id | string == seleccionado | string %}checked{% endif %}>
+            <span style="flex:1; min-width:0">
+              <span class="row-between" style="gap:6px">
+                <span class="check__title">{{ p.nombre }}</span>
+                {% if p.id == usuario.perfil_id %}{{ ui.badge("Actual", "navy") }}
+                {% elif not p.disponible %}{{ ui.badge("No disponible", "error") }}{% endif %}
+              </span>
+              <span class="check__desc">{{ p.descripcion or "" }}</span><br>
+              <span class="check__desc">{% set n = permisos.get(p.id, []) | length %}{{ n }} permiso{{ 's' if n != 1 }}{% if "sistema.acceder" not in permisos.get(p.id, []) %} · sin acceso al sistema{% endif %}</span>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+      {% if errores.get("perfil_id") %}
+        <span class="error-text mt-2">{{ icon("alert-circle", 14) }}{{ errores.get("perfil_id") }}</span>
+      {% endif %}
+    </fieldset>
+
+    <p class="small muted">Elige el perfil que tendrá la cuenta. Si guardas sin elegir uno, o eliges un perfil no disponible como “Auditoría externa”, se conserva el perfil actual.</p>
+
+    <div class="form-actions" style="margin-top: 0">
+      {{ ui.btn("Cancelar", "secondary", href=url_for("usuarios.detalle", usuario_id=usuario.id)) }}
+      {{ ui.btn("Guardar asignación", "primary", "check", type="submit") }}
+    </div>
+  </div>
+</form>
+{% endblock %}

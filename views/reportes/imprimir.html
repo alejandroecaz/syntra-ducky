@@ -1,0 +1,84 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Vista previa de impresión{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('reportes.listado', **filtros) }}">Listado de libros</a>{% endblock %}
+
+{% block contenido %}
+<div class="no-print">
+  {{ ui.page_header("Vista previa de impresión",
+        "Revisa el documento, elige una impresora y confirma. Solo se imprimen los registros que cumplen los filtros.",
+        hus=["HU-01-17 Impresión del listado"], back=url_for("reportes.listado", **filtros), back_label="Listado de libros") }}
+</div>
+
+<div class="layout-aside">
+  <article class="doc" {% if imprimir_ahora %}data-auto-print{% endif %}>
+    <header class="doc__header">
+      <div class="doc__brand">
+        {{ ui.logo(56) }}
+        <span><span class="brand__name">Syntra</span><br><span class="brand__sub">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+      </div>
+      <div class="doc__meta">
+        <div class="doc__title">Listado de libros</div>
+        {{ ahora.strftime("%d/%m/%Y %H:%M") }} · {{ libros | length }} registros
+      </div>
+    </header>
+    <p class="small muted mb-4">Filtros: {{ filtros_texto }}</p>
+    {% if libros %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Clave</th><th>Título</th><th>Autor</th><th>Tema</th><th>Editorial</th><th>Estado</th></tr></thead>
+        <tbody>
+          {% for libro in libros %}
+          <tr>
+            <td class="mono nowrap">{{ libro.clave }}</td>
+            <td class="strong">{{ libro.titulo }}</td>
+            <td>{{ libro.autor }}</td>
+            <td>{{ libro.tema }}</td>
+            <td>{{ libro.editorial }}</td>
+            <td>{{ estado_libro(libro) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      {{ ui.empty_state("inbox", "Sin registros", "No hay libros que cumplan los filtros seleccionados.") }}
+    {% endif %}
+    <footer class="doc__footer">
+      <span>Generado por {{ usuario_actual().nombre }} ({{ usuario_actual().perfil }})</span>
+      <span>Sistema Ducky de Gestión Bibliotecaria</span>
+    </footer>
+  </article>
+
+  <aside class="card no-print" style="position: sticky; top: 88px">
+    <div class="card__header"><h2 class="card__title">{{ icon("printer", 18) }}Enviar a impresión</h2></div>
+    <form class="card__body stack" method="post" action="{{ url_for('reportes.imprimir') }}" novalidate>
+      {% for clave, valor in filtros.items() %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+
+      {% if resultado %}{{ ui.alert(resultado[0], text=resultado[1]) }}{% endif %}
+
+      <fieldset class="check-group">
+        <legend>Impresora</legend>
+        <div class="stack" style="gap: 8px">
+          {% for imp in impresoras %}
+            <label class="check">
+              <input type="radio" name="impresora" value="{{ imp.id }}" {% if imp.id == seleccionada %}checked{% endif %}>
+              <span style="flex:1">
+                <span class="check__title">{{ imp.nombre }}</span><br>
+                {{ ui.badge("En línea", "success", dot=True) if imp.disponible else ui.badge("Fuera de línea", "error", dot=True) }}
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      {{ ui.btn("Confirmar impresión", "primary", "printer", type="submit", block=True, disabled=not libros) }}
+      {{ ui.btn("Cancelar", "secondary", href=url_for("reportes.listado", **filtros), block=True) }}
+      {% if resultado and resultado[0] == "success" %}
+        {{ ui.btn("Abrir diálogo de impresión otra vez", "ghost", "refresh", block=True, data_print="1") }}
+      {% endif %}
+    </form>
+  </aside>
+</div>
+{% endblock %}

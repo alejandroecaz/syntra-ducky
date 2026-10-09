@@ -1,0 +1,47 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Inicio{% endblock %}
+
+{% block contenido %}
+{% set usuario = usuario_actual() %}
+<section class="welcome">
+  <div>
+    <h1>Hola, {{ usuario.nombre.split()[0] }}</h1>
+    <p>Iniciaste sesión como <strong style="color:#fff">{{ usuario.perfil }}</strong>. Aquí tienes únicamente las funciones autorizadas para tu perfil.</p>
+  </div>
+  {% if tiene_permiso("catalogo.consultar") %}
+    <form action="{{ url_for('catalogo.lista') }}" method="get" class="row" role="search" style="min-width: min(420px, 100%); flex: 1; max-width: 520px">
+      <input type="hidden" name="campo" value="titulo">
+      <input type="hidden" name="buscar" value="1">
+      <div class="input-icon" style="flex:1; min-width: 0">
+        {{ icon("search", 17) }}
+        <input class="input" name="q" placeholder="Buscar un libro por título…" aria-label="Buscar un libro por título">
+      </div>
+      {{ ui.btn("Buscar", "accent", type="submit") }}
+    </form>
+  {% endif %}
+</section>
+
+{% if indicadores %}
+<div class="grid grid-4 mb-4" style="margin-bottom: 24px">
+  {% for icono, etiqueta, valor, destino in indicadores %}
+    {{ ui.stat(icono, etiqueta, valor, href=url_for(destino)) }}
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row-between" style="margin-bottom: 14px">
+  <h2>Tus funciones</h2>
+  <span class="muted small">{{ acciones | length }} disponibles para el perfil {{ usuario.perfil }}</span>
+</div>
+<div class="grid grid-auto">
+  {% for _, icono, titulo, descripcion, destino in acciones %}
+    <a class="action-card" href="{{ url_for(destino) }}">
+      <span class="action-card__icon">{{ icon(icono, 20) }}</span>
+      <span class="action-card__title">{{ titulo }}{{ icon("chevron-right", 18) }}</span>
+      <span class="action-card__text">{{ descripcion }}</span>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

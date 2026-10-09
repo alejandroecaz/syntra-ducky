@@ -1,0 +1,77 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Nueva orden de compra{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
+
+{% macro renglon(item={}) -%}
+<div class="order-row">
+  <select class="select" name="libro_id" aria-label="Libro">
+    <option value="">Selecciona un libro…</option>
+    {% for libro in libros %}
+      <option value="{{ libro.id }}" {% if item.get("libro_id") | string == libro.id | string %}selected{% endif %}>{{ libro.clave }} · {{ libro.titulo }}</option>
+    {% endfor %}
+  </select>
+  <input class="input" type="number" name="cantidad" min="1" max="500" value="{{ item.get('cantidad', '1') }}" aria-label="Cantidad">
+  <button type="button" class="btn btn--ghost btn--icon" data-remove-row aria-label="Quitar renglón" title="Quitar renglón">{{ icon("trash", 17) }}</button>
+</div>
+{%- endmacro %}
+
+{% block contenido %}
+{{ ui.page_header("Nueva orden de compra",
+      "Selecciona los libros, indica cuántos ejemplares necesitas y completa los datos de la solicitud. Antes de registrarla verás una vista previa.",
+      hus=["HU-01-18 Orden de compra"], back=url_for("compras.lista"), back_label="Órdenes de compra") }}
+
+<form method="post" novalidate>
+  <div class="layout-aside">
+    <div class="stack-lg">
+      {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+
+      <section class="card">
+        <div class="card__header"><h2 class="card__title">{{ icon("clipboard", 18) }}Datos de la solicitud</h2></div>
+        <div class="card__body form-grid">
+          {{ ui.field("proveedor", "Proveedor", valores.get("proveedor"), errores.get("proveedor"), required=True,
+                      placeholder="Ej. Librería Universitaria del Norte") }}
+          {{ ui.field("fecha_requerida", "Fecha requerida", valores.get("fecha_requerida"), errores.get("fecha_requerida"),
+                      type="date", required=True, min=hoy) }}
+          {{ ui.textarea_field("justificacion", "Justificación", valores.get("justificacion"),
+                               placeholder="Ej. Alta demanda en el curso de Ingeniería de Software", span=True) }}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__header">
+          <h2 class="card__title">{{ icon("library", 18) }}Libros a adquirir</h2>
+          {{ ui.btn("Agregar libro", "secondary", "plus", size="sm", data_add_row="1") }}
+        </div>
+        <div class="card__body stack">
+          <div class="order-head"><span>Libro</span><span>Cantidad</span><span></span></div>
+          <div class="order-rows" data-order-rows>
+            {% for item in items %}{{ renglon(item) }}{% endfor %}
+          </div>
+          {% if errores.get("items") %}
+            <span class="error-text">{{ icon("alert-circle", 14) }}{{ errores.get("items") }}</span>
+          {% endif %}
+          <template id="plantilla-renglon">{{ renglon() }}</template>
+        </div>
+      </section>
+    </div>
+
+    <aside class="card" style="position: sticky; top: 88px">
+      <div class="card__header"><h2 class="card__title">{{ icon("cart", 18) }}Resumen de la orden</h2></div>
+      <div class="card__body summary">
+        <div class="summary__row"><span class="muted">Renglones</span><strong data-sum-renglones>0</strong></div>
+        <div class="summary__row"><span class="muted">Títulos distintos</span><strong data-sum-titulos>0</strong></div>
+        <hr class="divider" style="margin: 4px 0">
+        <span class="muted small">Total de ejemplares</span>
+        <span class="summary__total" data-sum-ejemplares>0</span>
+        <p class="xsmall muted">El resumen se actualiza al modificar libros o cantidades. Si repites un libro, sus cantidades se suman.</p>
+      </div>
+      <div class="card__footer stack" style="gap: 8px">
+        {{ ui.btn("Generar orden de compra", "primary", "file", type="submit", block=True) }}
+        {{ ui.btn("Cancelar", "secondary", href=url_for("compras.lista"), block=True) }}
+      </div>
+    </aside>
+  </div>
+</form>
+{% endblock %}

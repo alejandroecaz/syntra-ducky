@@ -1,0 +1,48 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Órdenes de compra{% endblock %}
+
+{% block contenido %}
+{% call ui.page_header("Órdenes de compra",
+      "Solicita los títulos que la biblioteca necesita adquirir y consulta las órdenes registradas.",
+      hus=["HU-01-18 Orden de compra"]) %}
+  {{ ui.btn("Nueva orden de compra", "primary", "plus", href=url_for("compras.nueva")) }}
+{% endcall %}
+
+<div class="card">
+  {% if ordenes %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Folio</th><th scope="col">Registrada</th><th scope="col">Proveedor</th>
+          <th scope="col">Requerida para</th><th scope="col" class="t-center">Títulos</th>
+          <th scope="col" class="t-center">Ejemplares</th><th scope="col">Estado</th>
+          <th scope="col" class="t-right"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in ordenes %}
+        <tr data-href="{{ url_for('compras.detalle', orden_id=o.id) }}">
+          <td class="mono strong">{{ o.folio }}</td>
+          <td>{{ o.fecha_registro | fecha }}<br><span class="cell-sub">{{ o.solicitante }}</span></td>
+          <td>{{ o.proveedor }}</td>
+          <td>{{ o.fecha_requerida | fecha }}</td>
+          <td class="t-center">{{ o.total_titulos }}</td>
+          <td class="t-center strong">{{ o.total_ejemplares }}</td>
+          <td>{{ ui.badge(o.estado, "info", dot=True) }}</td>
+          <td class="t-right">{{ ui.btn("Ver orden", "secondary", "eye", href=url_for("compras.detalle", orden_id=o.id), size="sm") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% call ui.empty_state("clipboard", "Aún no hay órdenes de compra",
+          "Cuando registres una orden aparecerá aquí con su folio para consultarla después.") %}
+      {{ ui.btn("Crear la primera orden", "primary", "plus", href=url_for("compras.nueva")) }}
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

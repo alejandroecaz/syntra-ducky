@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Cambiar contraseña{% endblock %}
+
+{% block contenido %}
+{{ ui.page_header("Cambiar contraseña",
+      "Para proteger tu cuenta, confirma tu contraseña actual antes de establecer una nueva.",
+      hus=["HU-01-06 Cambio de contraseña"]) }}
+
+<div class="layout-aside">
+  <form class="card" method="post" novalidate>
+    <div class="card__body stack-lg">
+      {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+      <div class="stack">
+        {{ ui.password_field("actual", "Contraseña actual", errores.get("actual")) }}
+        {{ ui.password_field("nueva", "Nueva contraseña", errores.get("nueva"), autocomplete="new-password",
+                             help="Mínimo 6 caracteres y distinta a la actual.") }}
+        {{ ui.password_field("confirmacion", "Confirmar nueva contraseña", errores.get("confirmacion"), autocomplete="new-password") }}
+      </div>
+      <div class="form-actions" style="margin-top: 0">
+        {{ ui.btn("Cancelar", "secondary", href=url_for("inicio.panel")) }}
+        {{ ui.btn("Guardar", "primary", "check", type="submit") }}
+      </div>
+    </div>
+  </form>
+
+  <aside class="card">
+    <div class="card__header"><h2 class="card__title">{{ icon("shield", 18) }}Tu cuenta</h2></div>
+    <div class="card__body stack small">
+      <dl class="kv" style="grid-template-columns: 80px 1fr">
+        <dt>Cuenta</dt><dd class="mono">{{ usuario_actual().cuenta }}</dd>
+        <dt>Perfil</dt><dd>{{ usuario_actual().perfil }}</dd>
+      </dl>
+      <p class="muted">Después del cambio, tu siguiente inicio de sesión aceptará solo la nueva contraseña y rechazará la anterior.</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

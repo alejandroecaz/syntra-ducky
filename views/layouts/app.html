@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="app">
+  {% include "components/sidebar.html" %}
+  <div class="overlay" aria-hidden="true"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="btn btn--ghost btn--icon topbar__menu" data-sidebar-toggle aria-controls="sidebar" aria-label="Abrir menú">
+        {{ icon("menu", 20) }}
+      </button>
+      <nav class="breadcrumb" aria-label="Ruta">
+        <a href="{{ url_for('inicio.panel') }}">Inicio</a>
+        {% block migas %}{% endblock %}
+        {% if self.titulo() != "Inicio" %}{{ icon("chevron-right", 14) }}<strong>{{ self.titulo() }}</strong>{% endif %}
+      </nav>
+      {% include "components/topbar.html" %}
+    </header>
+    <main class="content" id="contenido" tabindex="-1">
+      {% block contenido %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

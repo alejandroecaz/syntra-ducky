@@ -1,0 +1,55 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Crear perfil{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('perfiles.lista') }}">Perfiles y permisos</a>{% endblock %}
+
+{% block contenido %}
+{{ ui.page_header("Crear perfil de usuario",
+      "Captura el nombre del perfil y elige al menos un permiso. El perfil quedará disponible para asignarse a las cuentas.",
+      hus=["HU-01-07 Creación de perfiles"], back=url_for("perfiles.lista"), back_label="Perfiles y permisos") }}
+
+<form class="card" method="post" novalidate>
+  <div class="card__body stack-lg">
+    {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+
+    <div class="form-grid">
+      {{ ui.field("nombre", "Nombre del perfil", valores.get("nombre"), errores.get("nombre"), required=True,
+                  placeholder="Ej. Servicio social", help="Debe ser único. Prueba “Alumno” para ver el aviso de duplicado.") }}
+      {{ ui.field("descripcion", "Descripción", valores.get("descripcion"), optional=True,
+                  placeholder="¿Para quién es este perfil?") }}
+    </div>
+
+    <div class="stack">
+      <div class="row-between">
+        <span class="label">Permisos<span class="req" aria-hidden="true">*</span></span>
+        <span class="xsmall muted">Incluye “Acceder al sistema” para que la cuenta pueda iniciar sesión.</span>
+      </div>
+      {% for grupo, opciones in grupos.items() %}
+        <fieldset class="check-group{{ ' is-invalid' if errores.get('permisos') }}">
+          <legend>{{ grupo }}</legend>
+          <div class="check-grid">
+            {% for codigo, descripcion in opciones %}
+              <label class="check">
+                <input type="checkbox" name="permisos" value="{{ codigo }}" {% if codigo in seleccionados %}checked{% endif %}>
+                <span>
+                  <span class="check__title">{{ descripcion }}</span><br>
+                  <span class="check__desc mono">{{ codigo }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% endfor %}
+      {% if errores.get("permisos") %}
+        <span class="error-text">{{ icon("alert-circle", 14) }}{{ errores.get("permisos") }}</span>
+      {% endif %}
+    </div>
+
+    <div class="form-actions" style="margin-top: 0">
+      {{ ui.btn("Cancelar", "secondary", href=url_for("perfiles.lista")) }}
+      {{ ui.btn("Guardar", "primary", "check", type="submit") }}
+    </div>
+  </div>
+</form>
+{% endblock %}

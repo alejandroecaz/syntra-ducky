@@ -1,0 +1,48 @@
+{% import "components/ui.html" as ui %}
+{% set seccion = request.endpoint.split('.')[0] if request.endpoint else '' %}
+
+{% macro enlace(endpoint, icono, texto, activo) -%}
+<a class="nav__link{{ ' is-active' if activo }}" href="{{ url_for(endpoint) }}"{% if activo %} aria-current="page"{% endif %}>
+  {{ icon(icono, 18) }}<span>{{ texto }}</span>
+</a>
+{%- endmacro %}
+
+<aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+  {{ ui.brand(href=url_for("inicio.panel"), size=52) }}
+
+  <nav class="nav">
+    {{ enlace("inicio.panel", "home", "Inicio", seccion == "inicio") }}
+
+    {% if tiene_permiso("catalogo.consultar", "libros.alta", "reportes.pdf", "reportes.imprimir", "compras.orden") %}
+      <div class="nav__section">Biblioteca</div>
+      {% if tiene_permiso("catalogo.consultar") %}
+        {{ enlace("catalogo.lista", "library", "Catálogo", seccion == "catalogo") }}
+      {% endif %}
+      {% if tiene_permiso("reportes.pdf", "reportes.imprimir") %}
+        {{ enlace("reportes.listado", "file", "Listado de libros", seccion == "reportes") }}
+      {% endif %}
+      {% if tiene_permiso("compras.orden") %}
+        {{ enlace("compras.lista", "cart", "Órdenes de compra", seccion == "compras") }}
+      {% endif %}
+    {% endif %}
+
+    {% if tiene_permiso("usuarios.consultar", "perfiles.crear", "perfiles.asignar") %}
+      <div class="nav__section">Administración</div>
+      {% if tiene_permiso("usuarios.consultar") %}
+        {{ enlace("usuarios.lista", "users", "Usuarios", seccion == "usuarios") }}
+      {% endif %}
+      {% if tiene_permiso("perfiles.crear", "perfiles.asignar") %}
+        {{ enlace("perfiles.lista", "shield", "Perfiles y permisos", seccion == "perfiles") }}
+      {% endif %}
+    {% endif %}
+
+    {% if tiene_permiso("cuenta.contrasena") %}
+      <div class="nav__section">Mi cuenta</div>
+      {{ enlace("cuenta.contrasena", "key", "Cambiar contraseña", seccion == "cuenta") }}
+    {% endif %}
+  </nav>
+
+  <div class="sidebar__footer">
+    <a class="nav__link" href="{{ url_for('auth.logout') }}">{{ icon("logout", 18) }}<span>Cerrar sesión</span></a>
+  </div>
+</aside>

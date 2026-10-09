@@ -1,0 +1,37 @@
+<div class="modal" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-titulo">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog">
+    <form method="post">
+      <div class="modal__header">
+        <span class="modal__icon" data-confirm-icon></span>
+        <div>
+          <h2 class="modal__title" id="modal-confirm-titulo" data-confirm-title></h2>
+          <p class="modal__text" data-confirm-text></p>
+        </div>
+      </div>
+      <div class="confirm-fields"></div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" data-modal-close data-autofocus>Cancelar</button>
+        <button type="submit" class="btn btn--danger" data-confirm-accept>Confirmar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="modal-descartar" role="dialog" aria-modal="true" aria-labelledby="modal-descartar-titulo"
+     data-cancel-message="Puedes seguir editando; tus cambios siguen en el formulario.">
+  <div class="modal__backdrop" data-modal-close></div>
+  <div class="modal__dialog">
+    <div class="modal__header">
+      <span class="modal__icon modal__icon--warning">{{ icon("alert-triangle", 22) }}</span>
+      <div>
+        <h2 class="modal__title" id="modal-descartar-titulo">¿Descartar los cambios?</h2>
+        <p class="modal__text">Hay cambios sin guardar. Si continúas, se mostrarán los datos que el registro tenía antes de editarlo.</p>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" data-modal-close data-autofocus>Seguir editando</button>
+      <a class="btn btn--danger" href="#" data-discard-accept>Descartar cambios</a>
+    </div>
+  </div>
+</div>

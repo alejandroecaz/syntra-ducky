@@ -1,0 +1,15 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Acceso no autorizado{% endblock %}
+
+{% block contenido %}
+<div class="card">
+  {% call ui.empty_state("lock", "Acceso no autorizado",
+        "Tu perfil de usuario (" ~ usuario_actual().perfil ~ ") no tiene permiso para usar esta función. "
+        ~ "No se mostró información protegida ni se realizaron cambios.", tone="warning") %}
+    {{ ui.btn("Ir al inicio", "primary", "home", href=url_for("inicio.panel")) }}
+    {{ ui.btn("Regresar", "secondary", "arrow-left", href="javascript:history.back()") }}
+  {% endcall %}
+</div>
+{% endblock %}

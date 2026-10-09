@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Iniciar sesión{% endblock %}
+
+{% block body %}
+<div class="auth">
+  <section class="auth__brand">
+    <div class="auth__system">
+      <span class="auth__dev-tile">{{ ui.logo_syntra(64) }}</span>
+      <span class="auth__system-name">Sistema Ducky de Gestión Bibliotecaria</span>
+    </div>
+    <div class="auth__pitch">
+      <h2 class="auth__headline">La biblioteca de la Universidad Ducky, <span>en un solo lugar.</span></h2>
+      <p class="auth__lead">Consulta el catálogo, conoce la ubicación y disponibilidad de cada ejemplar y administra usuarios y libros con la seguridad de tu perfil.</p>
+      <ul class="auth__features">
+        <li>{{ icon("search", 20) }}Búsqueda por título, autor, tema, clave o editorial</li>
+        <li>{{ icon("map-pin", 20) }}Ubicación física y estado de cada ejemplar</li>
+        <li>{{ icon("shield", 20) }}Acceso según tu perfil de usuario</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="auth__form-wrap" id="contenido">
+    <div class="auth__card stack-lg">
+      <div class="stack" style="gap: 6px">
+        <div class="auth__crest">{{ ui.logo(150) }}</div>
+        <h1>Iniciar sesión</h1>
+        <p class="muted">Ingresa con la cuenta y contraseña que te asignó la biblioteca.</p>
+      </div>
+
+      {% if error_general %}
+        {{ ui.alert("error", text=error_general) }}
+      {% endif %}
+
+      <form class="card" method="post" action="{{ url_for('auth.login') }}" novalidate>
+        <div class="card__body stack">
+          <input type="hidden" name="siguiente" value="{{ siguiente or request.args.get('siguiente', '') }}">
+          {{ ui.field("cuenta", "Cuenta", valores.get("cuenta", ""), errores.get("cuenta"), required=True,
+                      placeholder="Ej. alumno", autocomplete="username", icon_name="user", autofocus="autofocus") }}
+          {{ ui.password_field("contrasena", "Contraseña", errores.get("contrasena")) }}
+          {{ ui.btn("Iniciar sesión", "primary", type="submit", size="lg", block=True) }}
+        </div>
+      </form>
+
+      <details class="demo-accounts card" open>
+        <summary class="card__body" style="padding: 14px 18px">{{ icon("users", 18) }}Cuentas de demostración {{ icon("chevron-down", 16) }}</summary>
+        <div class="card__body" style="padding: 0 18px 18px">
+          <p class="xsmall muted">Haz clic en una cuenta para llenar el formulario.</p>
+          <div class="demo-list">
+            {% for cuenta, contrasena, perfil, nota in cuentas_demo %}
+              <button type="button" class="demo-item" data-demo-cuenta="{{ cuenta }}" data-demo-contrasena="{{ contrasena }}">
+                <span>
+                  <span class="demo-item__user">{{ cuenta }}</span>
+                  <span class="demo-item__meta"> · {{ contrasena }}</span><br>
+                  <span class="demo-item__meta">{{ nota }}</span>
+                </span>
+                {{ ui.badge(perfil, "error" if nota in ("Cuenta deshabilitada", "Perfil sin acceso") else "navy") }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+{# Logos: en logo() se da la altura y en logo_syntra() el ancho #}
+{% macro logo(size=44) -%}
+<img class="brand__mark" src="{{ url_for('static', filename='img/ducky-libreria.png') }}"
+     width="{{ (size * 440 / 510) | round | int }}" height="{{ size }}"
+     alt="Escudo de Ducky Librería, Universidad Ducky">
+{%- endmacro %}
+
+{% macro logo_syntra(width=120) -%}
+<img class="logo-syntra" src="{{ url_for('static', filename='img/syntra-technologies.png') }}"
+     width="{{ width }}" height="{{ (width * 578 / 560) | round | int }}"
+     alt="Syntra Technologies">
+{%- endmacro %}
+
+{% macro brand(href=None, name="Biblioteca Universidad Ducky", size=44) -%}
+{%- set contenido -%}
+  {{ logo(size) }}
+  <span class="brand__name">{{ name }}</span>
+{%- endset -%}
+{% if href %}<a href="{{ href }}" class="brand" aria-label="{{ name }}, ir al inicio">{{ contenido }}</a>
+{% else %}<div class="brand">{{ contenido }}</div>{% endif %}
+{%- endmacro %}
+
+{# Atributos extra: data_x="1" -> data-x="1" #}
+{% macro _attrs(extra) -%}
+{% for clave, valor in extra.items() %} {{ clave | replace('_', '-') }}="{{ valor }}"{% endfor %}
+{%- endmacro %}
+
+{% macro btn(label, variant="primary", icon_name=None, href=None, type="button", size=None, block=False,
+             disabled=False, icon_only=False) -%}
+{%- set clases = "btn btn--" ~ variant ~ (" btn--" ~ size if size else "") ~ (" btn--block" if block else "")
+                 ~ (" btn--icon" if icon_only else "") ~ (" is-disabled" if disabled and href else "") -%}
+{%- if href -%}
+<a href="{{ href }}" class="{{ clases }}"{% if icon_only %} aria-label="{{ label }}" title="{{ label }}"{% endif %}{% if disabled %} aria-disabled="true" tabindex="-1"{% endif %}{{ _attrs(kwargs) }}>
+  {%- if icon_name %}{{ icon(icon_name, 16 if size == "sm" else 18) }}{% endif %}{% if not icon_only %}<span>{{ label }}</span>{% endif -%}
+</a>
+{%- else -%}
+<button type="{{ type }}" class="{{ clases }}"{% if icon_only %} aria-label="{{ label }}" title="{{ label }}"{% endif %}{% if disabled %} disabled{% endif %}{{ _attrs(kwargs) }}>
+  {%- if icon_name %}{{ icon(icon_name, 16 if size == "sm" else 18) }}{% endif %}{% if not icon_only %}<span>{{ label }}</span>{% endif -%}
+</button>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro badge(text, tone="neutral", dot=False) -%}
+<span class="badge badge--{{ tone }}{{ ' badge--dot' if dot }}">{{ text }}</span>
+{%- endmacro %}
+
+{% macro estado_ejemplar(estado) -%}
+{%- set tonos = {"Disponible": "success", "Prestado": "info", "Reservado": "warning",
+                 "Perdido": "error", "Dañado": "error", "Fuera de servicio": "neutral"} -%}
+{{ badge(estado, tonos.get(estado, "neutral"), dot=True) }}
+{%- endmacro %}
+
+{% macro estado_cuenta(estado) -%}
+{{ badge(estado, "success" if estado == "Habilitada" else "error", dot=True) }}
+{%- endmacro %}
+
+{% macro estado_libro_badge(libro) -%}
+{%- if not libro.activo -%}{{ badge("Dado de baja", "neutral", dot=True) }}
+{%- elif libro.total_ejemplares == 0 -%}{{ badge("Sin ejemplares", "warning", dot=True) }}
+{%- elif libro.disponibles == 0 -%}{{ badge("No disponible", "error", dot=True) }}
+{%- else -%}{{ badge("Disponible", "success", dot=True) }}{%- endif -%}
+{%- endmacro %}
+
+{% macro disponibilidad(libro) -%}
+{% if libro.total_ejemplares == 0 or libro.disponibles == 0 or not libro.activo %}
+  {{ estado_libro_badge(libro) }}
+{% else %}
+  <div class="avail" title="{{ libro.disponibles }} de {{ libro.total_ejemplares }} ejemplares disponibles">
+    <span class="xsmall"><strong class="strong">{{ libro.disponibles }}</strong> de {{ libro.total_ejemplares }} disponibles</span>
+    <div class="avail__bar"><div class="avail__fill" style="width: {{ (100 * libro.disponibles / libro.total_ejemplares) | round }}%"></div></div>
+  </div>
+{% endif %}
+{%- endmacro %}
+
+{% macro ubicacion(ej) -%}
+{% if ej.estancia %}
+  <span class="loc">{{ icon("map-pin", 15) }}{{ ej.estancia }} · Estante {{ ej.estante }} · Posición {{ ej.posicion }}</span>
+{% else %}
+  <span class="loc loc--missing">{{ icon("map-pin", 15) }}Ubicación no registrada</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro cover(titulo, size=None, gray=False) -%}
+<div class="cover{{ ' cover--' ~ size if size }}{{ ' cover--gray' if gray }}" aria-hidden="true">
+  {%- if size == "sm" -%}{{ titulo[:2] | upper }}{%- else -%}{{ titulo | truncate(48) }}{%- endif -%}
+</div>
+{%- endmacro %}
+
+{% macro alert(tone, title=None, text=None) -%}
+{%- set iconos = {"success": "check-circle", "error": "alert-circle", "warning": "alert-triangle", "info": "info"} -%}
+<div class="alert alert--{{ tone }}" role="{{ 'alert' if tone in ('error', 'warning') else 'status' }}">
+  {{ icon(iconos[tone], 20) }}
+  <div class="alert__body">
+    {% if title %}<strong class="alert__title">{{ title }}</strong>{% endif %}
+    {% if text %}{{ text }}{% endif %}
+    {% if caller is defined %}{{ caller() }}{% endif %}
+  </div>
+</div>
+{%- endmacro %}
+
+{# "hus" solo sirve para documentar las HU de cada pantalla, no se muestra #}
+{% macro page_header(title, subtitle=None, hus=[], back=None, back_label="Regresar") -%}
+<header class="page-header">
+  <div class="page-header__text">
+    {% if back %}<a class="back-link" href="{{ back }}">{{ icon("arrow-left", 16) }}{{ back_label }}</a>{% endif %}
+    <h1>{{ title }}</h1>
+    {% if subtitle %}<p class="page-header__sub">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if caller is defined %}<div class="page-header__actions">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro empty_state(icon_name, title, text, tone=None) -%}
+<div class="empty" role="status">
+  <span class="empty__icon{{ ' empty__icon--' ~ tone if tone }}">{{ icon(icon_name, 28) }}</span>
+  <p class="empty__title">{{ title }}</p>
+  <p class="empty__text">{{ text }}</p>
+  {% if caller is defined %}<div class="row">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro stat(icon_name, label, value, href=None) -%}
+{%- set contenido -%}
+  <span class="stat__icon">{{ icon(icon_name, 22) }}</span>
+  <span>
+    <span class="stat__value">{{ value }}</span><br>
+    <span class="stat__label">{{ label }}</span>
+  </span>
+{%- endset -%}
+{% if href %}<a href="{{ href }}" class="card stat">{{ contenido }}</a>
+{% else %}<div class="card stat">{{ contenido }}</div>{% endif %}
+{%- endmacro %}
+
+{% macro _label(name, label, required, optional=False) -%}
+<label class="label" for="{{ name }}">{{ label }}{% if required %}<span class="req" aria-hidden="true">*</span>{% elif optional %}<span class="opt">(opcional)</span>{% endif %}</label>
+{%- endmacro %}
+
+{% macro _feedback(name, error, help) -%}
+{% if error %}
+  <span class="error-text" id="{{ name }}-error">{{ icon("alert-circle", 14) }}{{ error }}</span>
+{% elif help %}
+  <span class="help" id="{{ name }}-help">{{ help }}</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro field(name, label, value="", error=None, type="text", required=False, optional=False, placeholder="",
+               help=None, readonly=False, disabled=False, autocomplete="off", icon_name=None, span=False, id=None) -%}
+{%- set fid = id or name -%}
+<div class="field{{ ' span-2' if span }}">
+  {{ _label(fid, label, required, optional) }}
+  {% if icon_name %}<div class="input-icon">{{ icon(icon_name, 17) }}{% endif %}
+  <input class="input{{ ' is-invalid' if error }}" id="{{ fid }}" name="{{ name }}" type="{{ type }}"
+         value="{{ value if value is not none }}" placeholder="{{ placeholder }}" autocomplete="{{ autocomplete }}"
+         {% if required %}aria-required="true"{% endif %} {% if error %}aria-invalid="true" aria-describedby="{{ fid }}-error"{% elif help %}aria-describedby="{{ fid }}-help"{% endif %}
+         {% if readonly %}readonly{% endif %} {% if disabled %}disabled{% endif %}{{ _attrs(kwargs) }}>
+  {% if icon_name %}</div>{% endif %}
+  {{ _feedback(fid, error, help) }}
+</div>
+{%- endmacro %}
+
+{% macro password_field(name, label, error=None, required=True, autocomplete="current-password", help=None, placeholder="••••••••") -%}
+<div class="field">
+  {{ _label(name, label, required) }}
+  <div class="input-icon">
+    {{ icon("lock", 17) }}
+    <input class="input{{ ' is-invalid' if error }}" id="{{ name }}" name="{{ name }}" type="password"
+           autocomplete="{{ autocomplete }}" placeholder="{{ placeholder }}"
+           {% if error %}aria-invalid="true" aria-describedby="{{ name }}-error"{% elif help %}aria-describedby="{{ name }}-help"{% endif %}>
+    <button type="button" class="input-action" data-toggle-password="{{ name }}" aria-label="Mostrar contraseña" aria-pressed="false">{{ icon("eye", 17) }}</button>
+  </div>
+  {{ _feedback(name, error, help) }}
+</div>
+{%- endmacro %}
+
+{# options: (valor, etiqueta) o (valor, etiqueta, deshabilitado) #}
+{% macro select_field(name, label, options, selected="", error=None, required=False, placeholder=None, help=None,
+                      span=False, disabled=False, id=None) -%}
+{%- set fid = id or name -%}
+<div class="field{{ ' span-2' if span }}">
+  {{ _label(fid, label, required) }}
+  <select class="select{{ ' is-invalid' if error }}" id="{{ fid }}" name="{{ name }}"
+          {% if error %}aria-invalid="true" aria-describedby="{{ fid }}-error"{% elif help %}aria-describedby="{{ fid }}-help"{% endif %}
+          {% if disabled %}disabled{% endif %}{{ _attrs(kwargs) }}>
+    {% if placeholder %}<option value="">{{ placeholder }}</option>{% endif %}
+    {% for opcion in options %}
+      <option value="{{ opcion[0] }}" {% if opcion[0] | string == selected | string %}selected{% endif %}
+              {% if opcion | length > 2 and opcion[2] %}disabled{% endif %}>{{ opcion[1] }}</option>
+    {% endfor %}
+  </select>
+  {{ _feedback(fid, error, help) }}
+</div>
+{%- endmacro %}
+
+{% macro textarea_field(name, label, value="", error=None, placeholder="", help=None, optional=True, span=False, rows=3) -%}
+<div class="field{{ ' span-2' if span }}">
+  {{ _label(name, label, False, optional) }}
+  <textarea class="textarea{{ ' is-invalid' if error }}" id="{{ name }}" name="{{ name }}" rows="{{ rows }}"
+            placeholder="{{ placeholder }}">{{ value or "" }}</textarea>
+  {{ _feedback(name, error, help) }}
+</div>
+{%- endmacro %}

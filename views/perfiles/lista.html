@@ -1,0 +1,52 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Perfiles y permisos{% endblock %}
+
+{% block contenido %}
+{% call ui.page_header("Perfiles y permisos",
+      "Cada perfil agrupa los permisos que definen a qué funciones del sistema accede una cuenta.",
+      hus=["HU-01-07 Creación de perfiles", "HU-01-08 Asignación"]) %}
+  {% if tiene_permiso("usuarios.consultar") and tiene_permiso("perfiles.asignar") %}
+    {{ ui.btn("Asignar a un usuario", "secondary", "users", href=url_for("usuarios.lista")) }}
+  {% endif %}
+  {% if tiene_permiso("perfiles.crear") %}
+    {{ ui.btn("Crear perfil", "primary", "plus", href=url_for("perfiles.nuevo")) }}
+  {% endif %}
+{% endcall %}
+
+<div class="card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Perfil</th>
+          <th scope="col">Permisos</th>
+          <th scope="col" class="t-center">Cuentas</th>
+          <th scope="col">Disponibilidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in perfiles %}
+        {% set lista_permisos = permisos.get(p.id, []) %}
+        <tr class="{{ 'is-highlight' if p.id == resaltar }}{{ ' is-muted' if not p.disponible }}">
+          <td style="min-width: 220px">
+            <span class="cell-title">{{ p.nombre }}</span><br>
+            <span class="cell-sub">{{ p.descripcion or "Sin descripción" }}</span>
+          </td>
+          <td>
+            <div class="perm-list">
+              {% for permiso in lista_permisos[:4] %}{{ ui.badge(cfg.PERMISOS_DESCRIPCION.get(permiso, permiso), "neutral") }}{% endfor %}
+              {% if lista_permisos | length > 4 %}{{ ui.badge("+" ~ (lista_permisos | length - 4) ~ " más", "navy") }}{% endif %}
+              {% if "sistema.acceder" not in lista_permisos %}{{ ui.badge("Sin acceso al sistema", "warning") }}{% endif %}
+            </div>
+          </td>
+          <td class="t-center strong">{{ p.total_usuarios }}</td>
+          <td>{{ ui.badge("Disponible", "success", dot=True) if p.disponible else ui.badge("No disponible", "error", dot=True) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Usuarios{% endblock %}
+
+{% block contenido %}
+{% call ui.page_header("Usuarios",
+      "Consulta las cuentas por identificador institucional o por nombre para verificar su perfil y estado antes de cualquier operación.",
+      hus=["HU-01-05 Consulta", "HU-01-03 Baja", "HU-01-02 Registro"]) %}
+  {% if tiene_permiso("usuarios.registrar") %}
+    {{ ui.btn("Registrar usuario", "primary", "user-plus", href=url_for("usuarios.nuevo")) }}
+  {% endif %}
+{% endcall %}
+
+<div class="card">
+  <form class="card__body" method="get" action="{{ url_for('usuarios.lista') }}" role="search" novalidate>
+    <input type="hidden" name="buscar" value="1">
+    <div class="searchbar">
+      {{ ui.select_field("criterio", "Buscar por", [("nombre", "Nombre"), ("identificador", "Identificador")], criterio) }}
+      {{ ui.field("q", "Texto de búsqueda", texto, error_busqueda,
+                  placeholder="Ej. López o 600101", icon_name="search",
+                  help="Identificador: coincidencia exacta. Nombre: contiene el texto.") }}
+      <div class="field"><span class="label" aria-hidden="true">&nbsp;</span>{{ ui.btn("Buscar", "primary", "search", type="submit") }}</div>
+      <div class="field"><span class="label" aria-hidden="true">&nbsp;</span>{{ ui.btn("Ver todos", "secondary", href=url_for("usuarios.lista"), disabled=not buscando) }}</div>
+    </div>
+  </form>
+
+  <div class="table-meta">
+    {% if buscando and not error_busqueda %}
+      <span>{{ usuarios | length }} resultado{{ 's' if usuarios | length != 1 }} para <strong class="strong">“{{ texto }}”</strong> por {{ "identificador" if criterio == "identificador" else "nombre" }}</span>
+    {% elif not buscando %}
+      <span>{{ usuarios | length }} cuentas registradas</span>
+    {% else %}
+      <span>Captura un criterio para buscar</span>
+    {% endif %}
+    <span class="xsmall">La contraseña nunca se muestra en la consulta.</span>
+  </div>
+
+  {% if usuarios %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Identificador</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Cuenta</th>
+          <th scope="col">Perfil</th>
+          <th scope="col">Estado</th>
+          <th scope="col" class="t-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr class="{{ 'is-highlight' if u.id == resaltar }}" data-href="{{ url_for('usuarios.detalle', usuario_id=u.id) }}">
+          <td class="mono strong">{{ u.identificador }}</td>
+          <td>
+            <div class="row" style="gap: 10px; flex-wrap: nowrap">
+              <span class="avatar">{{ u.nombre[0] }}{{ u.nombre.split()[1][0] if u.nombre.split() | length > 1 }}</span>
+              <a class="cell-title" href="{{ url_for('usuarios.detalle', usuario_id=u.id) }}">{{ u.nombre }}</a>
+            </div>
+          </td>
+          <td class="mono">{{ u.cuenta }}</td>
+          <td>{{ ui.badge(u.perfil_nombre or "Sin perfil", "navy" if u.perfil_nombre else "warning") }}</td>
+          <td>{{ ui.estado_cuenta(u.estado) }}</td>
+          <td>
+            <div class="table-actions">
+              {% if tiene_permiso("usuarios.editar") %}
+                {{ ui.btn("Editar datos", "ghost", "edit", href=url_for("usuarios.editar", usuario_id=u.id), size="sm", icon_only=True) }}
+              {% endif %}
+              {% if tiene_permiso("perfiles.asignar") %}
+                {{ ui.btn("Asignar perfil", "ghost", "shield", href=url_for("usuarios.asignar_perfil", usuario_id=u.id), size="sm", icon_only=True) }}
+              {% endif %}
+              {% if tiene_permiso("usuarios.baja") %}
+                {% if u.estado == "Habilitada" %}
+                  {{ ui.btn("Deshabilitar", "danger-soft", "user-x", size="sm",
+                            data_confirm="1",
+                            data_confirm_title="¿Deshabilitar la cuenta de " ~ u.nombre ~ "?",
+                            data_confirm_text="La cuenta " ~ u.cuenta ~ " ya no podrá iniciar sesión. Sus datos y registros asociados se conservan.",
+                            data_confirm_label="Deshabilitar",
+                            data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=u.id),
+                            data_confirm_fields='{"accion": "deshabilitar", "volver": "' ~ request.full_path ~ '"}',
+                            data_confirm_cancel="La cuenta conserva su estado original.") }}
+                {% else %}
+                  {{ ui.btn("Habilitar", "success-soft", "user-check", size="sm",
+                            data_confirm="1", data_confirm_tone="primary",
+                            data_confirm_title="¿Habilitar la cuenta de " ~ u.nombre ~ "?",
+                            data_confirm_text="La cuenta " ~ u.cuenta ~ " podrá volver a iniciar sesión con su perfil actual.",
+                            data_confirm_label="Habilitar",
+                            data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=u.id),
+                            data_confirm_fields='{"accion": "habilitar", "volver": "' ~ request.full_path ~ '"}',
+                            data_confirm_cancel="La cuenta conserva su estado original.") }}
+                {% endif %}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif error_busqueda %}
+    {{ ui.empty_state("search", "Captura un criterio de búsqueda", "Escribe un identificador institucional o parte del nombre del usuario.") }}
+  {% else %}
+    {% call ui.empty_state("user-x", "No se encontraron usuarios",
+          "Ninguna cuenta coincide con “" ~ texto ~ "”. Revisa el criterio o busca por " ~ ("nombre" if criterio == "identificador" else "identificador") ~ ".") %}
+      {{ ui.btn("Ver todos los usuarios", "secondary", href=url_for("usuarios.lista")) }}
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

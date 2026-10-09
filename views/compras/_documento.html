@@ -1,0 +1,48 @@
+{% import "components/ui.html" as ui %}
+<article class="doc">
+  <header class="doc__header">
+    <div class="doc__brand">
+      {{ ui.logo(56) }}
+      <span><span class="brand__name">Syntra</span><br><span class="brand__sub">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+    </div>
+    <div class="doc__meta">
+      <div class="doc__title">Orden de compra</div>
+      Folio: <strong class="strong mono">{{ folio }}</strong><br>
+      Fecha: {{ fecha_doc }}
+    </div>
+  </header>
+
+  <dl class="kv mb-4">
+    <dt>Proveedor</dt><dd>{{ orden.proveedor }}</dd>
+    <dt>Fecha requerida</dt><dd>{{ orden.fecha_requerida | fecha }}</dd>
+    <dt>Solicitante</dt><dd>{{ solicitante }}</dd>
+    <dt>Justificación</dt><dd style="font-weight: 500">{{ orden.justificacion or "—" }}</dd>
+  </dl>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>#</th><th>Clave</th><th>Título</th><th>Autor</th><th>Editorial</th><th class="t-right">Cantidad</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="mono nowrap">{{ item.clave }}</td>
+          <td class="strong">{{ item.titulo }}</td>
+          <td>{{ item.autor }}</td>
+          <td>{{ item.editorial }}</td>
+          <td class="t-right strong">{{ item.cantidad }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="5" class="t-right strong">Total de ejemplares</td>
+          <td class="t-right strong" style="font-size: 1.1rem">{{ items | sum(attribute="cantidad") }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="doc__footer">
+    <span>{{ items | length }} título{{ 's' if items | length != 1 }} solicitados</span>
+    <span class="signature">Firma de autorización</span>
+  </footer>
+</article>

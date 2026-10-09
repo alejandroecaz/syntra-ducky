@@ -1,0 +1,28 @@
+{% set usuario = usuario_actual() %}
+  <div class="topbar__right">
+    {% if usuario %}
+    <div class="user-menu">
+      <button type="button" class="user-chip" data-menu-toggle="menu-usuario" aria-haspopup="true" aria-expanded="false">
+        <span class="avatar">{{ usuario.nombre.split()[0][0] }}{{ usuario.nombre.split()[1][0] if usuario.nombre.split() | length > 1 }}</span>
+        <span class="user-chip__text">
+          <span class="user-chip__name">{{ usuario.nombre.split()[0] }}</span>
+          <span class="user-chip__role">{{ usuario.perfil }}</span>
+        </span>
+        {{ icon("chevron-down", 16, "muted") }}
+      </button>
+      <div class="menu" id="menu-usuario" role="menu">
+        <div class="menu__item" style="cursor: default">
+          <span>
+            <strong class="strong">{{ usuario.nombre }}</strong><br>
+            <span class="xsmall muted">Cuenta: {{ usuario.cuenta }} · {{ usuario.perfil }}</span>
+          </span>
+        </div>
+        <hr class="divider" style="margin: 6px 0">
+        {% if tiene_permiso("cuenta.contrasena") %}
+          <a class="menu__item" role="menuitem" href="{{ url_for('cuenta.contrasena') }}">{{ icon("key", 16) }}Cambiar contraseña</a>
+        {% endif %}
+        <a class="menu__item menu__item--danger" role="menuitem" href="{{ url_for('auth.logout') }}">{{ icon("logout", 16) }}Cerrar sesión</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>

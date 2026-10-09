@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block body %}
+<header class="topbar" style="padding: 0 24px">
+  <div class="brand-light" style="display:flex;align-items:center;gap:10px">
+    {{ ui.logo(32) }}<strong class="strong">Syntra</strong>
+    <span class="muted small">· {{ self.titulo() }}</span>
+  </div>
+  <div class="topbar__right">
+    {{ ui.btn("Iniciar sesión", "primary", "user", href=url_for("auth.login"), size="sm") }}
+  </div>
+</header>
+<main class="content" id="contenido" tabindex="-1">
+  {% block contenido %}{% endblock %}
+</main>
+{% endblock %}
