@@ -31,7 +31,13 @@
       </label>
     {% endfor %}
   </fieldset>
-  {{ ui.btn("Buscar", "primary", "search", type="submit", size="lg", block=True) }}
+  <div class="m-buscador__acciones">
+    {{ ui.btn("Buscar", "primary", "search", type="submit", size="lg") }}
+    {# Regresa a la pantalla inicial: borra el texto, el campo elegido y los resultados #}
+    {% if buscando or ver_catalogo %}
+      {{ ui.btn("Limpiar", "secondary", "x", href=url_for("movil.buscar"), size="lg") }}
+    {% endif %}
+  </div>
 </form>
 
 {% if buscando %}
@@ -48,6 +54,7 @@
   {% else %}
     {% call ui.empty_state("search", cfg.MENSAJES.busqueda_sin_resultados,
           "Ningún libro coincide con “" ~ texto ~ "” en " ~ etiquetas[campo] | lower ~ ". Prueba con otro campo o revisa la ortografía.") %}
+      {{ ui.btn("Nueva búsqueda", "primary", "refresh", href=url_for("movil.buscar")) }}
       {{ ui.btn("Ver catálogo", "secondary", href=url_for("movil.buscar", ver="catalogo")) }}
     {% endcall %}
     <div class="m-lista" aria-label="Resultados"></div>

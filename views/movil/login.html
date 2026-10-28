@@ -28,8 +28,5 @@
     {{ ui.password_field("contrasena", "Contraseña", errores.get("contrasena")) }}
     {{ ui.btn("Iniciar sesión", "primary", type="submit", size="lg", block=True) }}
   </form>
-
-  <p class="m-nota">{{ icon("info", 16) }}<span>Solo para alumnos. Profesores y personal entran desde la <a href="{{ url_for('auth.login') }}">versión web</a>.</span></p>
-
 </section>
 {% endblock %}
