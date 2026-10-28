@@ -11,8 +11,8 @@
         "Crea la cuenta única de un alumno, profesor o personal autorizado. Los campos con * son obligatorios.",
         hus=["HU-01-02 Registro de usuarios"], back=url_for("usuarios.lista"), back_label="Usuarios") }}
 {% else %}
-  {{ ui.page_header("Editar datos de " ~ usuario.nombre,
-        "Solo se modifican el nombre y la cuenta. El identificador, el perfil, el estado y los registros asociados se conservan.",
+  {{ ui.page_header("Editar datos de " ~ usuario.nombre_completo,
+        "Se modifican el nombre, la cuenta y los datos de contacto. El identificador, el perfil, el estado y los registros asociados se conservan.",
         hus=["HU-01-04 Actualización de datos"], back=url_for("usuarios.detalle", usuario_id=usuario.id), back_label="Detalle del usuario") }}
 {% endif %}
 
@@ -29,10 +29,18 @@
           {{ ui.field("identificador_ro", "Identificador institucional", usuario.identificador, readonly=True,
                       help="No se puede modificar.") }}
         {% endif %}
-        {{ ui.field("nombre", "Nombre completo", valores.get("nombre"), errores.get("nombre"), required=True,
-                    placeholder="Nombre y apellidos") }}
+        {{ ui.field("nombre", "Nombre(s)", valores.get("nombre"), errores.get("nombre"), required=True,
+                    placeholder="Ej. Mariana") }}
+        {{ ui.field("apellido_paterno", "Apellido paterno", valores.get("apellido_paterno"), errores.get("apellido_paterno"),
+                    required=True, placeholder="Ej. López") }}
+        {{ ui.field("apellido_materno", "Apellido materno", valores.get("apellido_materno"), errores.get("apellido_materno"),
+                    optional=True, placeholder="Ej. Hernández") }}
         {{ ui.field("cuenta", "Cuenta", valores.get("cuenta"), errores.get("cuenta"), required=True,
                     placeholder="Ej. mlopez", help="Con esta cuenta la persona inicia sesión.", icon_name="user") }}
+        {{ ui.field("email", "Correo electrónico", valores.get("email"), errores.get("email"), optional=True, type="email",
+                    placeholder="nombre@ducky.edu.mx", autocomplete="email") }}
+        {{ ui.field("telefono", "Teléfono", valores.get("telefono"), errores.get("telefono"), optional=True, type="tel",
+                    placeholder="Ej. 81 1234 5678", autocomplete="tel") }}
         {% if es_nuevo %}
           {{ ui.password_field("contrasena", "Contraseña inicial", errores.get("contrasena"), autocomplete="new-password",
                                help="Mínimo 6 caracteres. La persona podrá cambiarla después.") }}
@@ -59,12 +67,12 @@
     <div class="card__header"><h2 class="card__title">{{ icon("info", 18) }}Reglas de validación</h2></div>
     <div class="card__body stack small">
       {% if es_nuevo %}
-        <p>• El <strong>identificador</strong> y la <strong>cuenta</strong> deben ser únicos; si ya existen, el sistema avisa y no crea un duplicado.</p>
+        <p>• El <strong>identificador</strong>, la <strong>cuenta</strong> y el <strong>correo</strong> deben ser únicos; si ya existen, el sistema avisa y no crea un duplicado.</p>
         <p>• Si falta un campo obligatorio, se señala y se conserva lo capturado.</p>
         <p>• Al guardar, el usuario aparece en la consulta y se confirma “Usuario registrado”.</p>
         <p class="muted">Para probar un duplicado usa la cuenta <code>alumno</code> o el identificador <code>600101</code>.</p>
       {% else %}
-        <p>• El <strong>nombre</strong> es obligatorio.</p>
+        <p>• El <strong>nombre</strong> y el <strong>apellido paterno</strong> son obligatorios.</p>
         <p>• Si la nueva cuenta pertenece a otra persona, se muestra “La cuenta ya está en uso” y no se guarda.</p>
         <p class="muted">Para probarlo escribe la cuenta <code>admin</code> o <code>biblio</code>.</p>
       {% endif %}

@@ -54,7 +54,7 @@
         <tr>
           <th scope="col">Clave</th>
           <th scope="col">Título</th>
-          <th scope="col">Autor</th>
+          <th scope="col">Autores</th>
           <th scope="col">Tema</th>
           <th scope="col">Editorial</th>
           <th scope="col">Disponibilidad</th>
@@ -71,7 +71,7 @@
               <a class="cell-title" href="{{ url_for('catalogo.detalle', libro_id=libro.id) }}">{{ libro.titulo }}</a>
             </div>
           </td>
-          <td>{{ libro.autor }}</td>
+          <td>{{ libro.autores }}</td>
           <td>{{ ui.badge(libro.tema, "navy") }}</td>
           <td>{{ libro.editorial }}</td>
           <td>{{ ui.disponibilidad(libro) }}</td>

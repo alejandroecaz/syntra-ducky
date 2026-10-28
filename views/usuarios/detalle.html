@@ -1,11 +1,11 @@
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
-{% block titulo %}{{ usuario.nombre }}{% endblock %}
+{% block titulo %}{{ usuario.nombre_completo }}{% endblock %}
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>{% endblock %}
 
 {% block contenido %}
-{% call ui.page_header(usuario.nombre, "Identificador " ~ usuario.identificador ~ " · Cuenta " ~ usuario.cuenta,
+{% call ui.page_header(usuario.nombre_completo, "Identificador " ~ usuario.identificador ~ " · Cuenta " ~ usuario.cuenta,
       hus=["HU-01-05 Consulta"], back=url_for("usuarios.lista"), back_label="Usuarios") %}
   {% if tiene_permiso("usuarios.editar") %}
     {{ ui.btn("Editar datos", "secondary", "edit", href=url_for("usuarios.editar", usuario_id=usuario.id)) }}
@@ -17,7 +17,7 @@
     {% if usuario.estado == "Habilitada" %}
       {{ ui.btn("Deshabilitar cuenta", "danger", "user-x",
                 data_confirm="1",
-                data_confirm_title="¿Deshabilitar la cuenta de " ~ usuario.nombre ~ "?",
+                data_confirm_title="¿Deshabilitar la cuenta de " ~ usuario.nombre_completo ~ "?",
                 data_confirm_text="La cuenta " ~ usuario.cuenta ~ " ya no podrá iniciar sesión. Sus datos y registros asociados se conservan.",
                 data_confirm_label="Deshabilitar",
                 data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=usuario.id),
@@ -26,7 +26,7 @@
     {% else %}
       {{ ui.btn("Habilitar cuenta", "primary", "user-check",
                 data_confirm="1", data_confirm_tone="primary",
-                data_confirm_title="¿Habilitar la cuenta de " ~ usuario.nombre ~ "?",
+                data_confirm_title="¿Habilitar la cuenta de " ~ usuario.nombre_completo ~ "?",
                 data_confirm_text="La cuenta podrá volver a iniciar sesión con su perfil actual.",
                 data_confirm_label="Habilitar",
                 data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=usuario.id),
@@ -48,6 +48,9 @@
       <dl class="kv">
         <dt>Identificador</dt><dd class="mono">{{ usuario.identificador }}</dd>
         <dt>Nombre</dt><dd>{{ usuario.nombre }}</dd>
+        <dt>Apellidos</dt><dd>{{ usuario.apellido_paterno }} {{ usuario.apellido_materno or "" }}</dd>
+        <dt>Correo</dt><dd>{{ usuario.email or "—" }}</dd>
+        <dt>Teléfono</dt><dd>{{ usuario.telefono or "—" }}</dd>
         <dt>Cuenta</dt><dd class="mono">{{ usuario.cuenta }}</dd>
         <dt>Contraseña</dt><dd><span class="muted" style="font-weight:500">No visible por seguridad</span></dd>
         <dt>Estado</dt><dd>{{ ui.estado_cuenta(usuario.estado) }}</dd>
@@ -66,7 +69,7 @@
       {% if permisos %}
         <p class="small muted">Permisos que otorga este perfil:</p>
         <div class="perm-list">
-          {% for permiso in permisos %}{{ ui.badge(cfg.PERMISOS_DESCRIPCION.get(permiso, permiso), "neutral") }}{% endfor %}
+          {% for permiso in permisos %}{{ ui.badge(descripciones.get(permiso, permiso), "neutral") }}{% endfor %}
         </div>
         {% if "sistema.acceder" not in permisos %}
           {{ ui.alert("warning", text="Este perfil no incluye “Acceder al sistema”: la cuenta no podrá iniciar sesión.") }}

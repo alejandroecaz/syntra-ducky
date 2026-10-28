@@ -27,13 +27,13 @@
     {% if libros %}
     <div class="table-wrap">
       <table class="table">
-        <thead><tr><th>Clave</th><th>Título</th><th>Autor</th><th>Tema</th><th>Editorial</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Clave</th><th>Título</th><th>Autores</th><th>Tema</th><th>Editorial</th><th>Estado</th></tr></thead>
         <tbody>
           {% for libro in libros %}
           <tr>
             <td class="mono nowrap">{{ libro.clave }}</td>
             <td class="strong">{{ libro.titulo }}</td>
-            <td>{{ libro.autor }}</td>
+            <td>{{ libro.autores }}</td>
             <td>{{ libro.tema }}</td>
             <td>{{ libro.editorial }}</td>
             <td>{{ estado_libro(libro) }}</td>

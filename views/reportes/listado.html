@@ -47,7 +47,7 @@
     <table class="table">
       <thead>
         <tr>
-          <th scope="col">Clave</th><th scope="col">Título</th><th scope="col">Autor</th>
+          <th scope="col">Clave</th><th scope="col">Título</th><th scope="col">Autores</th>
           <th scope="col">Tema</th><th scope="col">Editorial</th><th scope="col">Estado</th>
         </tr>
       </thead>
@@ -56,7 +56,7 @@
         <tr class="{{ 'is-muted' if not libro.activo }}">
           <td class="mono strong nowrap">{{ libro.clave }}</td>
           <td class="cell-title">{{ libro.titulo }}</td>
-          <td>{{ libro.autor }}</td>
+          <td>{{ libro.autores }}</td>
           <td>{{ libro.tema }}</td>
           <td>{{ libro.editorial }}</td>
           <td>{{ ui.estado_libro_badge(libro) }} <span class="xsmall muted nowrap">{{ libro.disponibles }}/{{ libro.total_ejemplares }}</span></td>

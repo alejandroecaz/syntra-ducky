@@ -1,3 +1,4 @@
+"""Generación del listado de libros en PDF con fpdf2 (HU-01-16)."""
 from datetime import datetime
 
 from fpdf import FPDF
@@ -5,6 +6,7 @@ from fpdf.enums import XPos, YPos
 from fpdf.fonts import FontFace
 
 import config
+from services.catalogo_servicio import estado_libro
 
 AZUL = (20, 50, 107)
 DORADO = (227, 160, 8)
@@ -42,6 +44,7 @@ class ListadoPDF(FPDF):
 
 
 def generar_listado(libros, filtros_texto, generado_por):
+    """Regresa los bytes del PDF con clave, título, autores, tema, editorial y estado."""
     pdf = ListadoPDF(orientation="L", unit="mm", format="A4")
     pdf.set_title("Listado de libros")
     pdf.set_author(_texto(generado_por))
@@ -70,25 +73,16 @@ def generar_listado(libros, filtros_texto, generado_por):
         borders_layout="HORIZONTAL_LINES",
     ) as tabla:
         encabezado = tabla.row()
-        for titulo in ("Clave", "Título", "Autor", "Tema", "Editorial", "Estado"):
+        for titulo in ("Clave", "Título", "Autores", "Tema", "Editorial", "Estado"):
             encabezado.cell(titulo)
         for libro in libros:
             fila = tabla.row()
             fila.cell(_texto(libro["clave"]))
             fila.cell(_texto(libro["titulo"]))
-            fila.cell(_texto(libro["autor"]))
+            fila.cell(_texto(libro["autores"]))
             fila.cell(_texto(libro["tema"]))
             fila.cell(_texto(libro["editorial"]))
             fila.cell(_texto(estado_libro(libro)))
 
     return bytes(pdf.output())
 
-
-def estado_libro(libro):
-    if not libro["activo"]:
-        return "Dado de baja"
-    if libro["total_ejemplares"] == 0:
-        return "Sin ejemplares"
-    if libro["disponibles"] == 0:
-        return "No disponible"
-    return f"Disponible ({libro['disponibles']} de {libro['total_ejemplares']})"

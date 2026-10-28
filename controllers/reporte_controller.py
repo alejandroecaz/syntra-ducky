@@ -1,69 +1,40 @@
+"""Controlador de reportes: listado, PDF (HU-01-16) e impresión (HU-01-17).
+
+Papel en MVC: lee los filtros de la petición, llama a services/reporte_servicio.py y regresa
+la vista o el archivo PDF.
+"""
 from datetime import datetime
 from io import BytesIO
 
-from flask import (Blueprint, flash, jsonify, redirect, render_template, request, send_file,
-                   session, url_for)
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 
 import config
-from models import libro as libro_modelo
-from utils.pdf import generar_listado
-from utils.seguridad import permiso_requerido, tiene_permiso
+from services import catalogo_servicio, reporte_servicio
+from services.errores import ErrorValidacion
+from utils.seguridad import permiso_requerido
 
 reporte_bp = Blueprint("reportes", __name__, url_prefix="/reportes")
 
 
-def _leer_filtros(origen):
-    filtros = {
-        "campo": origen.get("campo", "titulo"),
-        "q": origen.get("q", "").strip(),
-        "tema": origen.get("tema", ""),
-        "editorial": origen.get("editorial", ""),
-        "estado": origen.get("estado", "activos"),
-    }
-    # Solo el personal puede ver los libros dados de baja
-    if not tiene_permiso("libros.alta", "libros.editar", "libros.baja") or filtros["estado"] not in (
-        "activos", "baja", "todos"
-    ):
-        filtros["estado"] = "activos"
-    return filtros
-
-
-def _consultar(filtros):
-    return libro_modelo.listar(
-        campo=filtros["campo"], texto=filtros["q"], tema=filtros["tema"] or None,
-        editorial=filtros["editorial"] or None, estado=filtros["estado"],
-    )
-
-
-def describir_filtros(filtros):
-    partes = []
-    if filtros["q"]:
-        etiqueta = dict(config.CAMPOS_BUSQUEDA).get(filtros["campo"], "Texto")
-        partes.append(f"{etiqueta} contiene \"{filtros['q']}\"")
-    if filtros["tema"]:
-        partes.append(f"Tema: {filtros['tema']}")
-    if filtros["editorial"]:
-        partes.append(f"Editorial: {filtros['editorial']}")
-    partes.append({"activos": "Solo libros activos", "baja": "Solo dados de baja",
-                   "todos": "Activos y dados de baja"}[filtros["estado"]])
-    return " · ".join(partes)
+def _filtros(origen):
+    return reporte_servicio.leer_filtros(origen, catalogo_servicio.es_personal(session.get("permisos", [])))
 
 
 def _quiere_json():
+    # El botón "Generar PDF" pide el archivo con fetch y espera JSON si hay error
     return request.headers.get("X-Requested-With") == "fetch"
 
 
 @reporte_bp.route("/libros")
 @permiso_requerido("reportes.pdf", "reportes.imprimir")
 def listado():
-    filtros = _leer_filtros(request.args)
+    filtros = _filtros(request.args)
     return render_template(
         "reportes/listado.html",
-        libros=_consultar(filtros),
+        libros=reporte_servicio.consultar(filtros),
         filtros=filtros,
-        filtros_texto=describir_filtros(filtros),
-        temas=libro_modelo.valores_distintos("tema"),
-        editoriales=libro_modelo.valores_distintos("editorial"),
+        filtros_texto=reporte_servicio.describir_filtros(filtros),
+        **reporte_servicio.opciones_filtros(),
     )
 
 
@@ -72,23 +43,14 @@ def listado():
 @reporte_bp.route("/libros/pdf")
 @permiso_requerido("reportes.pdf")
 def pdf():
-    filtros = _leer_filtros(request.args)
-    libros = _consultar(filtros)
-
-    def responder_error(mensaje, codigo):
-        if _quiere_json():
-            return jsonify({"ok": False, "mensaje": mensaje}), codigo
-        flash(mensaje, "error" if codigo >= 500 else "warning")
-        return redirect(url_for("reportes.listado", **filtros))
-
-    if not libros:
-        return responder_error("No existen registros disponibles para el listado. No se generó el documento.", 422)
-
+    filtros = _filtros(request.args)
     try:
-        contenido = generar_listado(libros, describir_filtros(filtros), session.get("nombre", ""))
-    except Exception:
-        return responder_error("El documento no pudo generarse. El listado sigue disponible para "
-                               "intentarlo de nuevo.", 500)
+        contenido, total = reporte_servicio.generar_pdf(filtros, session.get("nombre", ""))
+    except ErrorValidacion as error:
+        if _quiere_json():
+            return jsonify({"ok": False, "mensaje": error.mensaje}), error.codigo
+        flash(error.mensaje, "error" if error.codigo >= 500 else "warning")
+        return redirect(url_for("reportes.listado", **filtros))
 
     respuesta = send_file(
         BytesIO(contenido),
@@ -96,7 +58,7 @@ def pdf():
         as_attachment=True,
         download_name=f"listado_libros_{datetime.now():%Y%m%d_%H%M}.pdf",
     )
-    respuesta.headers["X-Total-Registros"] = str(len(libros))
+    respuesta.headers["X-Total-Registros"] = str(total)
     return respuesta
 
 
@@ -106,40 +68,19 @@ def pdf():
 @permiso_requerido("reportes.imprimir")
 def imprimir():
     origen = request.form if request.method == "POST" else request.args
-    filtros = _leer_filtros(origen)
-    libros = _consultar(filtros)
+    filtros = _filtros(origen)
     contexto = dict(
-        libros=libros,
+        libros=reporte_servicio.consultar(filtros),
         filtros=filtros,
-        filtros_texto=describir_filtros(filtros),
+        filtros_texto=reporte_servicio.describir_filtros(filtros),
         impresoras=config.IMPRESORAS,
         seleccionada=origen.get("impresora", ""),
         ahora=datetime.now(),
     )
-
     if request.method == "GET":
         return render_template("reportes/imprimir.html", **contexto)
 
-    if not libros:
-        contexto["resultado"] = ("warning", "No hay registros que imprimir con los filtros seleccionados.")
-        return render_template("reportes/imprimir.html", **contexto), 422
-
-    impresora = next((i for i in config.IMPRESORAS if i["id"] == contexto["seleccionada"]), None)
-    if impresora is None:
-        contexto["resultado"] = ("error", "Selecciona una impresora para enviar el listado.")
-        return render_template("reportes/imprimir.html", **contexto), 400
-
-    if not impresora["disponible"]:
-        contexto["resultado"] = (
-            "error",
-            f"No fue posible enviar el documento a impresión: \"{impresora['nombre']}\" no está disponible. "
-            "Selecciona otra impresora o cancela la operación.",
-        )
-        return render_template("reportes/imprimir.html", **contexto), 503
-
-    contexto["resultado"] = (
-        "success",
-        f"Solicitud de impresión procesada: {len(libros)} registros enviados a \"{impresora['nombre']}\".",
-    )
-    contexto["imprimir_ahora"] = True
-    return render_template("reportes/imprimir.html", **contexto)
+    resultado, codigo = reporte_servicio.enviar_a_impresion(filtros, contexto["seleccionada"])
+    contexto["resultado"] = resultado
+    contexto["imprimir_ahora"] = resultado[0] == "success"
+    return render_template("reportes/imprimir.html", **contexto), codigo

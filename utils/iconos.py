@@ -1,3 +1,4 @@
+"""Íconos SVG (trazos tipo Lucide) que las plantillas usan con icon("nombre")."""
 from markupsafe import Markup
 
 TRAZOS = {
@@ -73,6 +74,7 @@ TRAZOS = {
 
 
 def icon(nombre, tamano=18, clase=""):
+    """SVG en línea del ícono; si el nombre no existe usa el de información."""
     trazo = TRAZOS.get(nombre, TRAZOS["info"])
     return Markup(
         f'<svg class="icon {clase}" width="{tamano}" height="{tamano}" viewBox="0 0 24 24" fill="none" '
