@@ -44,7 +44,7 @@ Al arrancar, la terminal muestra las dos direcciones:
 | `deshabilitado` | `Demo123` | Alumno | Criterio "Cuenta deshabilitada" | Mismo mensaje que la web |
 | `visitante` | `Demo123` | Visitante | Criterio "Perfil sin acceso al sistema" | Mismo mensaje que la web |
 
-En el **portal móvil solo entran alumnos**: el acceso se controla con el permiso `movil.acceder` ("Acceder al portal móvil"), que solo tiene el perfil Alumno y se ve en *Perfiles y permisos*. Ambas pantallas de acceso muestran estas cuentas y las llenan con un toque.
+En el **portal móvil solo entran alumnos**: el acceso se controla con el permiso `movil.acceder` ("Acceder al portal móvil"), que solo tiene el perfil Alumno y se ve en *Perfiles y permisos*. Las pantallas de acceso no muestran estas cuentas: se escriben a mano.
 
 ## Demo en celular real
 
@@ -83,8 +83,8 @@ En el **portal móvil solo entran alumnos**: el acceso se controla con el permis
 | HU-01-13 Búsqueda por filtros | Catálogo (título, autor, tema, editorial, clave) | `/movil` (chips Título, Autor, Tema, Editorial, Clave) |
 | HU-01-14 Ubicación física | Ficha del libro → Ver ubicación | Ficha → Ver ubicación (hoja inferior) |
 | HU-01-15 Disponibilidad | Ficha del libro → estado de cada ejemplar | Ficha → estado de cada ejemplar |
-| HU-01-16 Listado en PDF | Listado de libros → Generar PDF | — |
-| HU-01-17 Impresión del listado | Listado de libros → Imprimir | — |
+| HU-01-16 Listado en PDF | Listado de libros → marca los libros → Generar PDF | — |
+| HU-01-17 Impresión del listado | Listado de libros → marca los libros → Imprimir | — |
 | HU-01-18 Orden de compra | Órdenes de compra → Nueva | — |
 
 Datos de prueba útiles: `LIB-001` tiene ejemplares en dos salas; `LIB-002` (*Pedro Páramo*) tiene un ejemplar con **ubicación no registrada**; `LIB-008` (*El principito*) **no tiene ejemplares**; `LIB-006` tiene ejemplares perdido y fuera de servicio; `LIB-010`, `LIB-015` y `LIB-016` tienen **varios autores**; `LIB-014` está dado de baja.

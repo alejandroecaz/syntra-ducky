@@ -46,24 +46,6 @@
 
       <p class="small muted" style="text-align: center">¿Eres alumno y estás en tu celular? <a href="{{ url_for('movil.login') }}">Abre el portal móvil</a></p>
 
-      <details class="demo-accounts card" open>
-        <summary class="card__body" style="padding: 14px 18px">{{ icon("users", 18) }}Cuentas de demostración {{ icon("chevron-down", 16) }}</summary>
-        <div class="card__body" style="padding: 0 18px 18px">
-          <p class="xsmall muted">Haz clic en una cuenta para llenar el formulario.</p>
-          <div class="demo-list">
-            {% for cuenta, contrasena, perfil, nota in cuentas_demo %}
-              <button type="button" class="demo-item" data-demo-cuenta="{{ cuenta }}" data-demo-contrasena="{{ contrasena }}">
-                <span>
-                  <span class="demo-item__user">{{ cuenta }}</span>
-                  <span class="demo-item__meta"> · {{ contrasena }}</span><br>
-                  <span class="demo-item__meta">{{ nota }}</span>
-                </span>
-                {{ ui.badge(perfil, "error" if nota in ("Cuenta deshabilitada", "Perfil sin acceso") else "navy") }}
-              </button>
-            {% endfor %}
-          </div>
-        </div>
-      </details>
     </div>
   </section>
 </div>

@@ -13,14 +13,6 @@ from utils.seguridad import iniciar_sesion, permiso_requerido, tiene_permiso
 
 movil_bp = Blueprint("movil", __name__, url_prefix="/movil")
 
-# Cuentas para la demostración (cuenta, contraseña, nota)
-CUENTAS_DEMO = [
-    ("alumno", "Alumno123", "Alumno · entra al portal"),
-    ("profesor", "Profe123", "Profesor · solo alumnos"),
-    ("deshabilitado", "Demo123", "Cuenta deshabilitada"),
-    ("visitante", "Demo123", "Perfil sin acceso"),
-]
-
 
 def _acceso_movil(vista):
     # Sin sesión manda a /movil/login; sin el permiso responde 403 con la vista móvil
@@ -42,14 +34,14 @@ def login():
     if request.method == "GET":
         if tiene_permiso(config.PERMISO_MOVIL):
             return redirect(url_for("movil.buscar"))
-        return render_template("movil/login.html", valores={}, errores={}, cuentas_demo=CUENTAS_DEMO)
+        return render_template("movil/login.html", valores={}, errores={})
 
     try:
         datos = auth_servicio.autenticar_portal_movil(request.form.get("cuenta"), request.form.get("contrasena"))
     except ErrorValidacion as error:
         session.clear()
         return render_template("movil/login.html", valores=error.valores, errores=error.errores,
-                               error_general=error.mensaje, cuentas_demo=CUENTAS_DEMO), error.codigo
+                               error_general=error.mensaje), error.codigo
 
     iniciar_sesion(datos["usuario"], datos["perfil"], datos["permisos"])
     return redirect(url_for("movil.buscar"))

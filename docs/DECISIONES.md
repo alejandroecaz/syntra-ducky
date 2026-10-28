@@ -39,6 +39,8 @@ Se conservan las mismas cuentas y los libros `LIB-001` a `LIB-014` con los mismo
 - **Búsqueda por clave**: coincidencia exacta del valor completo (sin importar mayúsculas); `LIB-00` no encuentra `LIB-001`.
 - **Usuarios**: el formulario separa nombre, apellido paterno y materno, y agrega correo y teléfono opcionales (únicos y validados).
 - **HU-01-15**: la ficha de un libro sin ejemplares ya no muestra "0 de 0"; dice "Sin ejemplares".
+- **HU-01-16 y HU-01-17**: en el listado se marcan con casillas los libros que entran al PDF o a la impresión (todos marcados por omisión). La selección se combina con los filtros; si no hay ninguno marcado se pide marcar al menos uno y no se genera nada.
+- Las pantallas de acceso (web y móvil) ya no muestran la lista de cuentas de demostración; las cuentas siguen en el README.
 - Se mantienen la baja lógica de libros y usuarios, los mensajes de los criterios de aceptación y el diseño visual.
 
 ## 3. Portal móvil: por qué es un portal responsive dentro del mismo Flask

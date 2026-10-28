@@ -31,20 +31,5 @@
 
   <p class="m-nota">{{ icon("info", 16) }}<span>Solo para alumnos. Profesores y personal entran desde la <a href="{{ url_for('auth.login') }}">versión web</a>.</span></p>
 
-  <details class="demo-accounts card">
-    <summary class="card__body" style="padding: 14px 16px">{{ icon("users", 18) }}Cuentas de demostración {{ icon("chevron-down", 16) }}</summary>
-    <div class="card__body" style="padding: 0 16px 16px">
-      <div class="demo-list">
-        {% for cuenta, contrasena, nota in cuentas_demo %}
-          <button type="button" class="demo-item" data-demo-cuenta="{{ cuenta }}" data-demo-contrasena="{{ contrasena }}">
-            <span>
-              <span class="demo-item__user">{{ cuenta }}</span><span class="demo-item__meta"> · {{ contrasena }}</span><br>
-              <span class="demo-item__meta">{{ nota }}</span>
-            </span>
-          </button>
-        {% endfor %}
-      </div>
-    </div>
-  </details>
 </section>
 {% endblock %}

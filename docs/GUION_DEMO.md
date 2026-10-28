@@ -10,8 +10,8 @@
 
 | Tiempo | Acción | Qué decir |
 |---|---|---|
-| 0:00 | En `/login` toca la cuenta **visitante** → Iniciar sesión | "El login valida credenciales, estado y perfil: este perfil no tiene acceso." |
-| 0:15 | Toca **admin** → Iniciar sesión | "El panel y el menú muestran solo las funciones del perfil." |
+| 0:00 | En `/login` escribe **visitante** / `Demo123` → Iniciar sesión | "El login valida credenciales, estado y perfil: este perfil no tiene acceso." |
+| 0:15 | Escribe **admin** / `Admin123` → Iniciar sesión | "El panel y el menú muestran solo las funciones del perfil." |
 | 0:30 | Menú **Catálogo** → Buscar por **Autor**: `garcia marquez` → Buscar | "Búsqueda sin acentos ni mayúsculas. La consulta une libros, autores, editorial y tema." |
 | 0:50 | Cambia a **Clave**: `LIB-001` → Buscar → **Ver ejemplares** | "La clave es exacta. En la ficha: cada ejemplar con su estancia, estante, posición y estado." |
 | 1:10 | Clic en **Ver ubicación** de un ejemplar | "La ubicación viene de estancias → estantes → ejemplares, como en el diseño de BD." |

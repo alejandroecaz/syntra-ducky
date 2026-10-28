@@ -1,4 +1,6 @@
-{# Listado de libros con filtros, PDF e impresión (Vista, HU-01-16 y HU-01-17). -#}
+{# Listado de libros con filtros, PDF e impresión (Vista, HU-01-16 y HU-01-17).
+   Las casillas de la tabla pertenecen al formulario "form-seleccion": Imprimir y Generar PDF
+   mandan solo los libros marcados. -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -7,14 +9,15 @@
 {% block contenido %}
 {% set es_personal = tiene_permiso("libros.alta", "libros.editar", "libros.baja") %}
 {% call ui.page_header("Listado de libros",
-      "Aplica filtros y genera el listado en PDF o envíalo a impresión. Ambos documentos incluyen solo los registros filtrados.",
+      "Aplica filtros, marca los libros que quieres incluir y genera el PDF o envíalo a impresión. Ambos documentos incluyen solo los libros marcados.",
       hus=["HU-01-16 PDF", "HU-01-17 Impresión"]) %}
   {% if tiene_permiso("reportes.imprimir") %}
-    {{ ui.btn("Imprimir", "secondary", "printer", href=url_for("reportes.imprimir", **filtros)) }}
+    {{ ui.btn("Imprimir", "secondary", "printer", type="submit", form="form-seleccion",
+              formaction=url_for("reportes.imprimir"), formmethod="get", data_requiere_seleccion="1") }}
   {% endif %}
   {% if tiene_permiso("reportes.pdf") %}
-    {{ ui.btn("Generar PDF", "primary", "download", data_pdf_url=url_for("reportes.pdf", **filtros),
-              data_pdf_result="#resultado-pdf") }}
+    {{ ui.btn("Generar PDF", "primary", "download", data_pdf_url=url_for("reportes.pdf"),
+              data_pdf_form="form-seleccion", data_pdf_result="#resultado-pdf", data_requiere_seleccion="1") }}
   {% endif %}
 {% endcall %}
 
@@ -39,8 +42,15 @@
     </div>
   </form>
 
+  {# Lleva los filtros y los libros marcados a la impresión y al PDF #}
+  <form id="form-seleccion" method="get" action="{{ url_for('reportes.imprimir') }}">
+    {% for clave, valor in filtros.items() %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+    {% if libros %}<input type="hidden" name="seleccion" value="1">{% endif %}
+  </form>
+
   <div class="table-meta">
     <span><strong class="strong">{{ libros | length }}</strong> registro{{ 's' if libros | length != 1 }} · {{ filtros_texto }}</span>
+    {% if libros %}<span data-seleccion-resumen aria-live="polite"></span>{% endif %}
   </div>
 
   {% if libros %}
@@ -48,6 +58,9 @@
     <table class="table">
       <thead>
         <tr>
+          <th scope="col" class="check-cell">
+            <input type="checkbox" data-seleccion-todos aria-label="Seleccionar todos los libros" checked>
+          </th>
           <th scope="col">Clave</th><th scope="col">Título</th><th scope="col">Autores</th>
           <th scope="col">Tema</th><th scope="col">Editorial</th><th scope="col">Estado</th>
         </tr>
@@ -55,6 +68,11 @@
       <tbody>
         {% for libro in libros %}
         <tr class="{{ 'is-muted' if not libro.activo }}">
+          <td class="check-cell">
+            <input type="checkbox" name="libro" value="{{ libro.id }}" form="form-seleccion" data-seleccion-libro
+                   aria-label="Incluir {{ libro.clave }} · {{ libro.titulo }}"
+                   {% if seleccion is none or libro.id in seleccion %}checked{% endif %}>
+          </td>
           <td class="mono strong nowrap">{{ libro.clave }}</td>
           <td class="cell-title">{{ libro.titulo }}</td>
           <td>{{ libro.autores }}</td>
