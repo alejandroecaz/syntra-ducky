@@ -71,6 +71,11 @@ def capturas_web(navegador, base):
     capturar(pagina, "04-ficha-libro-web.png", completa=True)
     pagina.goto(base + "/perfiles")
     capturar(pagina, "05-perfiles-permisos-web.png")
+    pagina.goto(base + "/reportes/libros")
+    pagina.uncheck("[data-seleccion-todos]")
+    for casilla in pagina.locator("[data-seleccion-libro]").all()[:3]:
+        casilla.check()
+    capturar(pagina, "14-listado-seleccion-web.png")
 
 
 def capturas_movil(navegador, base):
