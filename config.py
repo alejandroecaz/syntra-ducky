@@ -1,8 +1,12 @@
+"""Configuración y constantes del sistema.
+
+Aquí viven los valores que el código usa como reglas (permisos, estados, límites y mensajes
+compartidos entre la web y el portal móvil) para no dejar valores mágicos regados.
+"""
 import os
 import secrets
 
 from dotenv import load_dotenv
-
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -12,13 +16,23 @@ SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 
 DATABASE_PATH = os.path.join(BASE_DIR, "syntra.db")
 
+# 0.0.0.0 para poder abrir el sistema desde el celular en la misma red.
+# Se usa el 5050 porque en macOS el 5000 lo ocupa AirPlay.
+HOST = "0.0.0.0"
+PUERTO = 5050
+
 NOMBRE_SISTEMA = "Syntra"
 NOMBRE_CLIENTE = "Biblioteca Universidad Ducky"
 
-# (codigo, descripcion, grupo)
+# Permisos que el código revisa por su clave (nunca por el nombre del perfil)
+PERMISO_SISTEMA = "sistema.acceder"
+PERMISO_MOVIL = "movil.acceder"
+
+# Catálogo de permisos: (codigo, descripcion, grupo). init_db.py los guarda en la tabla permisos.
 PERMISOS = [
     ("sistema.acceder", "Acceder al sistema", "General"),
     ("cuenta.contrasena", "Cambiar su propia contraseña", "General"),
+    ("movil.acceder", "Acceder al portal móvil", "General"),
     ("usuarios.consultar", "Consultar usuarios", "Usuarios"),
     ("usuarios.registrar", "Registrar usuarios", "Usuarios"),
     ("usuarios.editar", "Actualizar datos de usuarios", "Usuarios"),
@@ -34,27 +48,36 @@ PERMISOS = [
     ("compras.orden", "Generar órdenes de compra", "Compras"),
 ]
 
-PERMISOS_DESCRIPCION = {codigo: desc for codigo, desc, _ in PERMISOS}
+# Quien tenga alguno de estos permisos es personal de biblioteca (puede ver libros dados de baja)
+PERMISOS_PERSONAL = ("libros.alta", "libros.editar", "libros.baja")
 
+# Cuentas de usuario
+ESTADO_HABILITADA = "Habilitada"
+ESTADO_DESHABILITADA = "Deshabilitada"
+ESTADOS_CUENTA = [ESTADO_HABILITADA, ESTADO_DESHABILITADA]
+LONGITUD_MINIMA_CONTRASENA = 6
+PATRON_EMAIL = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+PATRON_TELEFONO = r"^[0-9 +()-]{7,20}$"
+
+# Libros y ejemplares
+ESTADO_DISPONIBLE = "Disponible"
 ESTADOS_EJEMPLAR = [
-    "Disponible",
+    ESTADO_DISPONIBLE,
     "Prestado",
     "Reservado",
     "Perdido",
     "Dañado",
     "Fuera de servicio",
 ]
-
 # Si hay ejemplares en estos estados no se puede dar de baja el libro
 ESTADOS_OPERACION_VIGENTE = ["Prestado", "Reservado"]
+TIPOS_ACCESO = ["Circulante", "Reservado", "Consulta externa"]
+ANIO_MINIMO_PUBLICACION = 1400
+# En el formulario se capturan varios autores separados por este caracter
+SEPARADOR_AUTORES = ";"
+PREFIJO_EJEMPLAR = "EJ-"
 
-ESTANCIAS = [
-    "Sala General",
-    "Sala de Lectura",
-    "Hemeroteca",
-    "Acervo Reservado",
-]
-
+# Búsqueda de libros (HU-01-13)
 CAMPOS_BUSQUEDA = [
     ("titulo", "Título"),
     ("autor", "Autor"),
@@ -62,8 +85,32 @@ CAMPOS_BUSQUEDA = [
     ("editorial", "Editorial"),
     ("clave", "Clave"),
 ]
+CAMPO_BUSQUEDA_PREDETERMINADO = "titulo"
+# Qué libros ve el personal en el catálogo: activos, dados de baja o todos
+VISTAS_CATALOGO = ("activos", "baja", "todos")
 
-# La de sala de lectura esta apagada a proposito para probar el error
+# Órdenes de compra
+CANTIDAD_MAXIMA_POR_LIBRO = 500
+ESTADO_ORDEN_REGISTRADA = "Registrada"
+ESTADOS_ORDEN = [ESTADO_ORDEN_REGISTRADA, "Cancelada"]
+
+# Portal móvil: cuántos libros mostrar en "Disponibles ahora"
+MOVIL_LIBROS_DESTACADOS = 4
+
+# Mensajes que la web y el portal móvil muestran igual
+MENSAJES = {
+    "login_campos_vacios": "Completa los campos obligatorios para iniciar sesión.",
+    "login_credenciales": "Cuenta o contraseña incorrecta",
+    "login_deshabilitada": "La cuenta no está habilitada. Comunícate con el administrador de la biblioteca.",
+    "login_sin_acceso": "Tu perfil de usuario no tiene autorización para acceder al sistema.",
+    "login_solo_alumnos": "Acceso no autorizado: el portal móvil es solo para alumnos",
+    "busqueda_vacia": "Captura un criterio de búsqueda",
+    "busqueda_sin_resultados": "No se encontraron libros",
+    "ubicacion_no_registrada": "Ubicación no registrada",
+    "libro_sin_ejemplares": "Este libro no tiene ejemplares registrados",
+}
+
+# La de sala de lectura está apagada a propósito para probar el error de HU-01-17
 IMPRESORAS = [
     {"id": "recepcion", "nombre": "HP LaserJet Pro · Recepción", "disponible": True},
     {"id": "catalogacion", "nombre": "Epson EcoTank · Oficina de catalogación", "disponible": True},

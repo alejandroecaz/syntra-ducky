@@ -1,41 +1,59 @@
+"""Modelo de libros: tabla libros con su editorial, tema y autores (libro_autores)."""
 import config
-from models.db import consultar, ejecutar, normalizar
+from models.db import consultar, ejecutar, obtener_conexion, patron_contiene
 
-# Trae el libro con su total de ejemplares y cuantos estan disponibles
-SELECT_LIBRO = """
-    SELECT l.*,
+# Nombre completo del autor, igual en todas las consultas
+NOMBRE_AUTOR = "a.nombre || COALESCE(' ' || a.apellidos, '')"
+
+# Autores del libro "l" en su orden, separados por coma
+AUTORES_DEL_LIBRO = f"""
+    (SELECT GROUP_CONCAT(nombre_completo, ', ') FROM (
+        SELECT {NOMBRE_AUTOR} AS nombre_completo
+        FROM libro_autores la JOIN autores a ON a.id = la.autor_id
+        WHERE la.libro_id = l.id ORDER BY la.orden))
+"""
+
+# Libro con editorial, tema, autores, total de ejemplares y cuántos están disponibles.
+# El primer parámetro siempre es el estado "Disponible".
+SELECT_LIBRO = f"""
+    SELECT l.*, ed.nombre AS editorial, t.nombre AS tema, {AUTORES_DEL_LIBRO} AS autores,
            COUNT(e.id) AS total_ejemplares,
-           COALESCE(SUM(CASE WHEN e.estado = 'Disponible' THEN 1 ELSE 0 END), 0) AS disponibles
+           COALESCE(SUM(CASE WHEN e.estado = ? THEN 1 ELSE 0 END), 0) AS disponibles
     FROM libros l
+    JOIN editoriales ed ON ed.id = l.editorial_id
+    JOIN temas t ON t.id = l.tema_id
     LEFT JOIN ejemplares e ON e.libro_id = l.id
 """
 
-# Solo se puede buscar por estos campos
-CAMPOS_VALIDOS = {campo for campo, _ in config.CAMPOS_BUSQUEDA}
+# Condición de búsqueda para cada campo (la clave se busca exacta)
+FILTROS_TEXTO = {
+    "titulo": "normalizar(l.titulo) LIKE ? ESCAPE '\\'",
+    "tema": "normalizar(t.nombre) LIKE ? ESCAPE '\\'",
+    "editorial": "normalizar(ed.nombre) LIKE ? ESCAPE '\\'",
+    "autor": f"""EXISTS (SELECT 1 FROM libro_autores la JOIN autores a ON a.id = la.autor_id
+                 WHERE la.libro_id = l.id AND normalizar({NOMBRE_AUTOR}) LIKE ? ESCAPE '\\')""",
+    "clave": "l.clave = ?",
+}
+
+CONDICION_VISTA = {"activos": "l.activo = 1", "baja": "l.activo = 0", "todos": None}
 
 
 def listar(campo=None, texto=None, tema=None, editorial=None, estado="activos"):
-    # La clave se busca exacta, lo demas por coincidencia
-    condiciones, parametros = [], []
+    """Libros que cumplen los filtros. estado: 'activos', 'baja' o 'todos'."""
+    condiciones, parametros = [], [config.ESTADO_DISPONIBLE]
 
-    if estado == "activos":
-        condiciones.append("l.activo = 1")
-    elif estado == "baja":
-        condiciones.append("l.activo = 0")
+    if CONDICION_VISTA.get(estado):
+        condiciones.append(CONDICION_VISTA[estado])
 
-    if campo in CAMPOS_VALIDOS and texto:
-        if campo == "clave":
-            condiciones.append("l.clave = ?")
-            parametros.append(texto)
-        else:
-            condiciones.append(f"normalizar(l.{campo}) LIKE ?")
-            parametros.append(f"%{normalizar(texto)}%")
+    if campo in FILTROS_TEXTO and texto:
+        condiciones.append(FILTROS_TEXTO[campo])
+        parametros.append(texto if campo == "clave" else patron_contiene(texto))
 
     if tema:
-        condiciones.append("l.tema = ?")
+        condiciones.append("t.nombre = ?")
         parametros.append(tema)
     if editorial:
-        condiciones.append("l.editorial = ?")
+        condiciones.append("ed.nombre = ?")
         parametros.append(editorial)
 
     sql = SELECT_LIBRO
@@ -45,52 +63,90 @@ def listar(campo=None, texto=None, tema=None, editorial=None, estado="activos"):
     return consultar(sql, parametros)
 
 
+def destacados(limite):
+    """Libros activos con ejemplares disponibles, los de más copias primero."""
+    return consultar(
+        SELECT_LIBRO + " WHERE l.activo = 1 GROUP BY l.id HAVING disponibles > 0 "
+        "ORDER BY disponibles DESC, l.titulo LIMIT ?",
+        (config.ESTADO_DISPONIBLE, limite),
+    )
+
+
 def obtener_por_id(libro_id):
-    return consultar(SELECT_LIBRO + " WHERE l.id = ? GROUP BY l.id", (libro_id,), uno=True)
+    """Un libro con sus datos completos o None."""
+    return consultar(
+        SELECT_LIBRO + " WHERE l.id = ? GROUP BY l.id", (config.ESTADO_DISPONIBLE, libro_id), uno=True
+    )
 
 
 def existe_clave(clave):
+    """True si la clave ya pertenece a un libro (sin importar mayúsculas)."""
     return consultar("SELECT id FROM libros WHERE clave = ?", (clave,), uno=True) is not None
 
 
-def valores_distintos(columna):
-    if columna not in ("tema", "editorial"):
-        return []
-    filas = consultar(f"SELECT DISTINCT {columna} AS valor FROM libros ORDER BY {columna}")
-    return [fila["valor"] for fila in filas]
+def isbn_en_uso(isbn, excluir_id=None):
+    """True si otro libro ya tiene ese ISBN."""
+    fila = consultar("SELECT id FROM libros WHERE isbn = ?", (isbn,), uno=True)
+    return fila is not None and fila["id"] != excluir_id
 
 
-def crear(clave, titulo, autor, tema, editorial, anio):
-    return ejecutar(
-        "INSERT INTO libros (clave, titulo, autor, tema, editorial, anio) VALUES (?, ?, ?, ?, ?, ?)",
-        (clave, titulo, autor, tema, editorial, anio),
+def nombres_autores(libro_id):
+    """Nombres completos de los autores del libro en su orden."""
+    filas = consultar(
+        f"SELECT {NOMBRE_AUTOR} AS nombre FROM libro_autores la JOIN autores a ON a.id = la.autor_id "
+        "WHERE la.libro_id = ? ORDER BY la.orden",
+        (libro_id,),
+    )
+    return [fila["nombre"] for fila in filas]
+
+
+def _guardar_autores(conexion, libro_id, autores_ids):
+    conexion.execute("DELETE FROM libro_autores WHERE libro_id = ?", (libro_id,))
+    conexion.executemany(
+        "INSERT INTO libro_autores (libro_id, autor_id, orden) VALUES (?, ?, ?)",
+        [(libro_id, autor_id, orden) for orden, autor_id in enumerate(autores_ids, start=1)],
     )
 
 
-def actualizar(libro_id, titulo, autor, tema, editorial, anio):
-    ejecutar(
-        "UPDATE libros SET titulo = ?, autor = ?, tema = ?, editorial = ?, anio = ? WHERE id = ?",
-        (titulo, autor, tema, editorial, anio, libro_id),
+def crear(datos, autores_ids):
+    """Inserta el libro y su relación con autores en una sola transacción. Regresa el id."""
+    conexion = obtener_conexion()
+    cursor = conexion.execute(
+        "INSERT INTO libros (clave, titulo, editorial_id, tema_id, anio, isbn, edicion, sinopsis, tipo_acceso) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            datos["clave"], datos["titulo"], datos["editorial_id"], datos["tema_id"], datos["anio"],
+            datos["isbn"], datos["edicion"], datos["sinopsis"], datos["tipo_acceso"],
+        ),
     )
+    libro_id = cursor.lastrowid
+    _guardar_autores(conexion, libro_id, autores_ids)
+    conexion.commit()
+    return libro_id
 
 
-def operaciones_vigentes(libro_id):
-    # Ejemplares prestados o reservados
-    marcadores = ",".join("?" for _ in config.ESTADOS_OPERACION_VIGENTE)
-    return consultar(
-        f"SELECT codigo, estado FROM ejemplares WHERE libro_id = ? AND estado IN ({marcadores})",
-        (libro_id, *config.ESTADOS_OPERACION_VIGENTE),
+def actualizar(libro_id, datos, autores_ids):
+    """Actualiza los datos bibliográficos y los autores. La clave y los ejemplares no cambian."""
+    conexion = obtener_conexion()
+    conexion.execute(
+        "UPDATE libros SET titulo = ?, editorial_id = ?, tema_id = ?, anio = ?, isbn = ?, edicion = ?, "
+        "sinopsis = ?, tipo_acceso = ? WHERE id = ?",
+        (
+            datos["titulo"], datos["editorial_id"], datos["tema_id"], datos["anio"], datos["isbn"],
+            datos["edicion"], datos["sinopsis"], datos["tipo_acceso"], libro_id,
+        ),
     )
+    _guardar_autores(conexion, libro_id, autores_ids)
+    conexion.commit()
 
 
 def dar_baja(libro_id):
-    # No se borra, solo se marca como inactivo
-    ejecutar(
-        "UPDATE libros SET activo = 0, fecha_baja = CURRENT_TIMESTAMP WHERE id = ?", (libro_id,)
-    )
+    """Baja lógica: no se borra, solo se marca como inactivo."""
+    ejecutar("UPDATE libros SET activo = 0, fecha_baja = CURRENT_TIMESTAMP WHERE id = ?", (libro_id,))
 
 
 def contar():
+    """Totales para el panel de inicio: libros activos, ejemplares y disponibles."""
     return consultar(
         """
         SELECT
@@ -98,42 +154,8 @@ def contar():
           (SELECT COUNT(*) FROM ejemplares e JOIN libros l ON l.id = e.libro_id
              WHERE l.activo = 1) AS ejemplares,
           (SELECT COUNT(*) FROM ejemplares e JOIN libros l ON l.id = e.libro_id
-             WHERE l.activo = 1 AND e.estado = 'Disponible') AS disponibles
+             WHERE l.activo = 1 AND e.estado = ?) AS disponibles
         """,
+        (config.ESTADO_DISPONIBLE,),
         uno=True,
-    )
-
-
-# Ejemplares
-
-def ejemplares_de(libro_id):
-    return consultar(
-        "SELECT * FROM ejemplares WHERE libro_id = ? ORDER BY codigo", (libro_id,)
-    )
-
-
-def obtener_ejemplar(ejemplar_id):
-    return consultar("SELECT * FROM ejemplares WHERE id = ?", (ejemplar_id,), uno=True)
-
-
-def siguiente_codigo_ejemplar():
-    fila = consultar("SELECT MAX(id) AS ultimo FROM ejemplares", uno=True)
-    return f"EJ-{(fila['ultimo'] or 0) + 1:04d}"
-
-
-def agregar_ejemplar(libro_id, estancia, estante, posicion, estado):
-    codigo = siguiente_codigo_ejemplar()
-    ejecutar(
-        "INSERT INTO ejemplares (codigo, libro_id, estancia, estante, posicion, estado) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (codigo, libro_id, estancia, estante, posicion, estado),
-    )
-    return codigo
-
-
-def actualizar_ejemplar(ejemplar_id, estancia, estante, posicion, estado):
-    ejecutar(
-        "UPDATE ejemplares SET estancia = ?, estante = ?, posicion = ?, estado = ?, "
-        "fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?",
-        (estancia, estante, posicion, estado, ejemplar_id),
     )
