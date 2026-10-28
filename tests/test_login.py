@@ -16,6 +16,13 @@ def test_login_exitoso(cliente):
         assert "catalogo.consultar" in sesion["permisos"]
 
 
+@pytest.mark.parametrize("ruta", ["/login", "/movil/login"])
+def test_login_sin_cuentas_de_demostracion(cliente, ruta):
+    html = cliente.get(ruta).get_data(as_text=True)
+    assert "Cuentas de demostración" not in html
+    assert "Admin123" not in html
+
+
 def test_login_muestra_solo_funciones_del_perfil(cliente):
     entrar(cliente, "alumno", "Alumno123")
     html = cliente.get("/inicio").get_data(as_text=True)

@@ -11,17 +11,6 @@ from utils.seguridad import iniciar_sesion
 
 auth_bp = Blueprint("auth", __name__)
 
-# Cuentas de prueba que se muestran en el login: (cuenta, contraseña, perfil, nota)
-CUENTAS_DEMO = [
-    ("admin", "Admin123", "Administrador", "Acceso total"),
-    ("biblio", "Biblio123", "Bibliotecario", "Catálogo y compras"),
-    ("profesor", "Profe123", "Profesor", "Consulta y reportes"),
-    ("alumno", "Alumno123", "Alumno", "Consulta y portal móvil"),
-    ("deshabilitado", "Demo123", "Alumno", "Cuenta deshabilitada"),
-    ("visitante", "Demo123", "Visitante", "Perfil sin acceso"),
-]
-
-
 def _destino_seguro(siguiente):
     # Solo rutas internas, para no redirigir a otro sitio
     return siguiente if siguiente.startswith("/") and not siguiente.startswith("//") else None
@@ -39,7 +28,7 @@ def login():
     if request.method == "GET":
         if "usuario_id" in session:
             return redirect(url_for("inicio.panel"))
-        return render_template("auth/login.html", valores={}, errores={}, cuentas_demo=CUENTAS_DEMO)
+        return render_template("auth/login.html", valores={}, errores={})
 
     siguiente = request.form.get("siguiente", "")
     try:
@@ -48,7 +37,7 @@ def login():
         session.clear()
         return render_template(
             "auth/login.html", valores=error.valores, errores=error.errores, error_general=error.mensaje,
-            cuentas_demo=CUENTAS_DEMO, siguiente=siguiente,
+            siguiente=siguiente,
         ), error.codigo
 
     iniciar_sesion(datos["usuario"], datos["perfil"], datos["permisos"])
