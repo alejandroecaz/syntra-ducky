@@ -1,3 +1,4 @@
+{# Alta y edición de libros (Vista, HU-01-09 y HU-01-11). Las validaciones están en catalogo_servicio. -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -31,17 +32,29 @@
                     placeholder="Ej. 2021", inputmode="numeric") }}
         {{ ui.field("titulo", "Título", valores.get("titulo"), errores.get("titulo"), required=True,
                     placeholder="Título completo del libro", span=True) }}
-        {{ ui.field("autor", "Autor", valores.get("autor"), errores.get("autor"), required=True,
-                    placeholder="Nombre del autor o autores") }}
+        {{ ui.field("autores", "Autores", valores.get("autores"), errores.get("autores"), required=True,
+                    placeholder="Ej. Brian W. Kernighan; Dennis M. Ritchie", span=True,
+                    help="Si son varios, sepáralos con punto y coma (;) en el orden en que aparecen en la portada.") }}
         {{ ui.field("tema", "Tema", valores.get("tema"), errores.get("tema"), required=True,
                     placeholder="Ej. Programación", list="temas-sugeridos") }}
         {{ ui.field("editorial", "Editorial", valores.get("editorial"), errores.get("editorial"), required=True,
-                    placeholder="Ej. McGraw-Hill", span=True) }}
+                    placeholder="Ej. McGraw-Hill", list="editoriales-sugeridas") }}
+        {# Temas y editoriales registrados; si se escribe uno nuevo se agrega al catálogo #}
         <datalist id="temas-sugeridos">
-          {% for t in ["Literatura", "Programación", "Ingeniería de Software", "Matemáticas", "Ciencia", "Historia", "Administración", "Bases de datos"] %}
-            <option value="{{ t }}">
-          {% endfor %}
+          {% for t in temas %}<option value="{{ t }}">{% endfor %}
         </datalist>
+        <datalist id="editoriales-sugeridas">
+          {% for e in editoriales %}<option value="{{ e }}">{% endfor %}
+        </datalist>
+        {{ ui.field("edicion", "Edición", valores.get("edicion"), errores.get("edicion"), optional=True,
+                    placeholder="Ej. 3.ª ed.") }}
+        {{ ui.field("isbn", "ISBN", valores.get("isbn"), errores.get("isbn"), optional=True,
+                    placeholder="10 o 13 dígitos", inputmode="numeric") }}
+        {% set opciones_acceso = [] %}{% for t in tipos_acceso %}{% set _ = opciones_acceso.append((t, t)) %}{% endfor %}
+        {{ ui.select_field("tipo_acceso", "Tipo de acceso", opciones_acceso, valores.get("tipo_acceso", ""),
+                           errores.get("tipo_acceso"), span=True) }}
+        {{ ui.textarea_field("sinopsis", "Sinopsis", valores.get("sinopsis"), placeholder="Breve descripción del contenido",
+                             span=True) }}
       </div>
 
       <div class="form-actions" style="margin-top: 0">
@@ -60,7 +73,8 @@
   <aside class="card">
     <div class="card__header"><h2 class="card__title">{{ icon("info", 18) }}Antes de guardar</h2></div>
     <div class="card__body stack small">
-      <p>• Clave, título, autor, tema y editorial son <strong>obligatorios</strong>; si falta alguno se señala y se conserva lo capturado.</p>
+      <p>• Clave, título, al menos un autor, tema y editorial son <strong>obligatorios</strong>; si falta alguno se señala y se conserva lo capturado.</p>
+      <p>• Si escribes un tema, editorial o autor nuevo, se agrega al catálogo; si ya existe se reutiliza.</p>
       {% if es_nuevo %}
         <p>• Si la clave ya existe, se muestra “La clave del libro ya existe” sin duplicar ni sobrescribir el registro.</p>
         <p>• Registrar el libro <strong>no crea ejemplares</strong> automáticamente.</p>

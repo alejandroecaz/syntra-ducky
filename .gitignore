@@ -19,3 +19,10 @@ syntra.db
 # Sistema y editor
 .DS_Store
 .vscode/
+
+# Plugin de Figma local (no forma parte del sistema)
+figma-plugin-estilos/
+
+# Cachés de pruebas y lint
+.pytest_cache/
+.ruff_cache/

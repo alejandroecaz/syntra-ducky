@@ -1,3 +1,4 @@
+{# Documento de la orden de compra (Vista parcial) que comparten la vista previa y el detalle. -#}
 {% import "components/ui.html" as ui %}
 <article class="doc">
   <header class="doc__header">
@@ -21,14 +22,14 @@
 
   <div class="table-wrap">
     <table class="table">
-      <thead><tr><th>#</th><th>Clave</th><th>Título</th><th>Autor</th><th>Editorial</th><th class="t-right">Cantidad</th></tr></thead>
+      <thead><tr><th>#</th><th>Clave</th><th>Título</th><th>Autores</th><th>Editorial</th><th class="t-right">Cantidad</th></tr></thead>
       <tbody>
         {% for item in items %}
         <tr>
           <td>{{ loop.index }}</td>
           <td class="mono nowrap">{{ item.clave }}</td>
           <td class="strong">{{ item.titulo }}</td>
-          <td>{{ item.autor }}</td>
+          <td>{{ item.autores }}</td>
           <td>{{ item.editorial }}</td>
           <td class="t-right strong">{{ item.cantidad }}</td>
         </tr>

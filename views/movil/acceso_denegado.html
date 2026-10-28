@@ -1,0 +1,25 @@
+{# Vista 403 del portal móvil: alguien con sesión pero sin el permiso movil.acceder
+   (por ejemplo un profesor que entró por la web y abrió /movil). -#}
+{% extends "layouts/movil.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Acceso no autorizado{% endblock %}
+
+{% block contenido %}
+<section class="m-marca">
+  {{ ui.logo(64) }}
+  <p class="m-marca__nombre">Biblioteca Ducky</p>
+  <p class="m-marca__sub">Portal móvil para alumnos</p>
+</section>
+
+<div class="card">
+  {% call ui.empty_state("lock", "Acceso no autorizado", mensaje ~ ".", tone="warning") %}
+    <div class="stack" style="width: 100%">
+      {{ ui.btn("Entrar con otra cuenta", "primary", "logout", href=url_for("movil.logout"), size="lg", block=True) }}
+      {% if tiene_permiso(cfg.PERMISO_SISTEMA) %}
+        {{ ui.btn("Ir a la versión web", "secondary", "home", href=url_for("inicio.panel"), size="lg", block=True) }}
+      {% endif %}
+    </div>
+  {% endcall %}
+</div>
+{% endblock %}

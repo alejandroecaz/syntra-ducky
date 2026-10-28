@@ -1,12 +1,13 @@
+{# Asignar perfil a una cuenta (Vista, HU-01-08). -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Asignar perfil{% endblock %}
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>
-  {{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.detalle', usuario_id=usuario.id) }}">{{ usuario.nombre }}</a>{% endblock %}
+  {{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.detalle', usuario_id=usuario.id) }}">{{ usuario.nombre_completo }}</a>{% endblock %}
 
 {% block contenido %}
-{{ ui.page_header("Asignar perfil a " ~ usuario.nombre,
+{{ ui.page_header("Asignar perfil a " ~ usuario.nombre_completo,
       "Perfil actual: " ~ (usuario.perfil_nombre or "sin perfil") ~ ". El nuevo perfil sustituye al anterior y sus permisos se aplican en el siguiente inicio de sesión.",
       hus=["HU-01-08 Asignación de perfiles"], back=url_for("usuarios.detalle", usuario_id=usuario.id), back_label="Detalle del usuario") }}
 

@@ -1,6 +1,11 @@
+"""Controlador de la cuenta propia: cambio de contraseña (HU-01-06).
+
+Papel en MVC: recibe el formulario y delega la validación a services/auth_servicio.py.
+"""
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from models import usuario as usuario_modelo
+from services import auth_servicio
+from services.errores import ErrorValidacion
 from utils.seguridad import permiso_requerido
 
 cuenta_bp = Blueprint("cuenta", __name__, url_prefix="/cuenta")
@@ -11,39 +16,13 @@ cuenta_bp = Blueprint("cuenta", __name__, url_prefix="/cuenta")
 def contrasena():
     if request.method == "GET":
         return render_template("cuenta/contrasena.html", errores={})
-
-    actual = request.form.get("actual", "")
-    nueva = request.form.get("nueva", "")
-    confirmacion = request.form.get("confirmacion", "")
-    errores = {}
-
-    if not actual:
-        errores["actual"] = "Captura tu contraseña actual."
-    if not nueva:
-        errores["nueva"] = "Captura la nueva contraseña."
-    elif len(nueva) < 6:
-        errores["nueva"] = "La nueva contraseña debe tener al menos 6 caracteres."
-    if not confirmacion:
-        errores["confirmacion"] = "Confirma la nueva contraseña."
-
-    def rechazar(mensaje):
-        return render_template("cuenta/contrasena.html", errores=errores, error_general=mensaje), 400
-
-    if errores:
-        return rechazar("Completa los campos marcados. Tu contraseña no cambió.")
-
-    if not usuario_modelo.validar_contrasena(session["usuario_id"], actual):
-        errores["actual"] = "La contraseña actual no es válida."
-        return rechazar("La contraseña actual no es válida. Se conserva tu contraseña anterior.")
-
-    if nueva != confirmacion:
-        errores["confirmacion"] = "Las contraseñas no coinciden."
-        return rechazar("La nueva contraseña y su confirmación deben coincidir. Tu contraseña no cambió.")
-
-    if nueva == actual:
-        errores["nueva"] = "Elige una contraseña distinta a la actual."
-        return rechazar("La nueva contraseña debe ser distinta a la actual.")
-
-    usuario_modelo.cambiar_contrasena(session["usuario_id"], nueva)
-    flash("Contraseña actualizada. A partir de tu siguiente inicio de sesión usa la nueva contraseña.", "success")
+    try:
+        mensaje = auth_servicio.cambiar_contrasena(
+            session["usuario_id"], request.form.get("actual", ""), request.form.get("nueva", ""),
+            request.form.get("confirmacion", ""),
+        )
+    except ErrorValidacion as error:
+        return render_template("cuenta/contrasena.html", errores=error.errores,
+                               error_general=error.mensaje), error.codigo
+    flash(mensaje, "success")
     return redirect(url_for("inicio.panel"))

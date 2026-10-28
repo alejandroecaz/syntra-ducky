@@ -1,0 +1,50 @@
+{# M00 · Inicio de sesión del portal móvil (Vista).
+   El controlador movil.login usa el mismo servicio de autenticación que la web, por eso los
+   mensajes son los mismos; además rechaza a quien no tenga el permiso movil.acceder. -#}
+{% extends "layouts/movil.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Portal móvil{% endblock %}
+
+{% block contenido %}
+<section class="m-marca">
+  {{ ui.logo(84) }}
+  <p class="m-marca__nombre">Biblioteca Ducky</p>
+  <p class="m-marca__sub">Portal móvil para alumnos</p>
+</section>
+
+<section class="m-acceso stack">
+  <div>
+    <h2 class="m-acceso__titulo">Iniciar sesión</h2>
+    <p class="muted">Usa la cuenta y contraseña que te asignó la biblioteca.</p>
+  </div>
+
+  {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+
+  <form class="stack" method="post" action="{{ url_for('movil.login') }}" novalidate>
+    {{ ui.field("cuenta", "Cuenta", valores.get("cuenta", ""), errores.get("cuenta"), required=True,
+                placeholder="Ej. alumno", autocomplete="username", icon_name="user", autocapitalize="none",
+                spellcheck="false") }}
+    {{ ui.password_field("contrasena", "Contraseña", errores.get("contrasena")) }}
+    {{ ui.btn("Iniciar sesión", "primary", type="submit", size="lg", block=True) }}
+  </form>
+
+  <p class="m-nota">{{ icon("info", 16) }}<span>Solo para alumnos. Profesores y personal entran desde la <a href="{{ url_for('auth.login') }}">versión web</a>.</span></p>
+
+  <details class="demo-accounts card">
+    <summary class="card__body" style="padding: 14px 16px">{{ icon("users", 18) }}Cuentas de demostración {{ icon("chevron-down", 16) }}</summary>
+    <div class="card__body" style="padding: 0 16px 16px">
+      <div class="demo-list">
+        {% for cuenta, contrasena, nota in cuentas_demo %}
+          <button type="button" class="demo-item" data-demo-cuenta="{{ cuenta }}" data-demo-contrasena="{{ contrasena }}">
+            <span>
+              <span class="demo-item__user">{{ cuenta }}</span><span class="demo-item__meta"> · {{ contrasena }}</span><br>
+              <span class="demo-item__meta">{{ nota }}</span>
+            </span>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+  </details>
+</section>
+{% endblock %}

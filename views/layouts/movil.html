@@ -1,0 +1,27 @@
+{# Layout del portal móvil (Vista en MVC).
+   Una sola columna pensada para celular; en computadora se centra con ancho de celular.
+   Hereda de base.html (avisos, modales y syntra.js) y agrega movil.css, que reusa los
+   tokens de syntra.css, más las meta tags para "Agregar a pantalla de inicio". -#}
+{% extends "base.html" %}
+
+{% block head %}
+    <meta name="theme-color" content="#14326b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Ducky">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/movil/apple-touch-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/movil.css') }}">
+{% endblock %}
+
+{% block body_class %}movil-body{% endblock %}
+
+{% block body %}
+<div class="movil">
+  {% block encabezado %}{% endblock %}
+  <main class="movil__contenido" id="contenido" tabindex="-1">
+    {% block contenido %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

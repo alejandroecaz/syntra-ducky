@@ -1,3 +1,4 @@
+{# Perfiles y sus permisos (Vista, HU-01-07 y HU-01-08). Aquí se ve el permiso del portal móvil. -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -36,7 +37,7 @@
           </td>
           <td>
             <div class="perm-list">
-              {% for permiso in lista_permisos[:4] %}{{ ui.badge(cfg.PERMISOS_DESCRIPCION.get(permiso, permiso), "neutral") }}{% endfor %}
+              {% for permiso in lista_permisos[:4] %}{{ ui.badge(descripciones.get(permiso, permiso), "neutral") }}{% endfor %}
               {% if lista_permisos | length > 4 %}{{ ui.badge("+" ~ (lista_permisos | length - 4) ~ " más", "navy") }}{% endif %}
               {% if "sistema.acceder" not in lista_permisos %}{{ ui.badge("Sin acceso al sistema", "warning") }}{% endif %}
             </div>

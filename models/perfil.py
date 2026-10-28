@@ -1,7 +1,9 @@
-from models.db import consultar, ejecutar, obtener_conexion
+"""Modelo de perfiles de usuario y sus permisos (tablas perfiles y perfil_permisos)."""
+from models.db import consultar, obtener_conexion
 
 
 def listar():
+    """Perfiles con su número de permisos y de cuentas; primero los disponibles."""
     return consultar(
         """
         SELECT p.*,
@@ -14,36 +16,47 @@ def listar():
 
 
 def obtener_por_id(perfil_id):
+    """Un perfil o None."""
     return consultar("SELECT * FROM perfiles WHERE id = ?", (perfil_id,), uno=True)
 
 
 def existe_nombre(nombre):
-    # No distingue mayusculas, 'alumno' y 'Alumno' cuentan como el mismo
+    """True si ya hay un perfil con ese nombre ('alumno' y 'Alumno' cuentan como el mismo)."""
     return consultar("SELECT id FROM perfiles WHERE nombre = ?", (nombre,), uno=True) is not None
 
 
 def permisos_de(perfil_id):
-    filas = consultar("SELECT permiso FROM perfil_permisos WHERE perfil_id = ?", (perfil_id,))
-    return [fila["permiso"] for fila in filas]
+    """Códigos de los permisos del perfil."""
+    filas = consultar(
+        "SELECT pe.codigo FROM perfil_permisos pp JOIN permisos pe ON pe.id = pp.permiso_id "
+        "WHERE pp.perfil_id = ? ORDER BY pe.id",
+        (perfil_id,),
+    )
+    return [fila["codigo"] for fila in filas]
 
 
 def permisos_por_perfil():
+    """Diccionario perfil_id -> lista de códigos de permiso."""
     resultado = {}
-    for fila in consultar("SELECT perfil_id, permiso FROM perfil_permisos"):
-        resultado.setdefault(fila["perfil_id"], []).append(fila["permiso"])
+    filas = consultar(
+        "SELECT pp.perfil_id, pe.codigo FROM perfil_permisos pp JOIN permisos pe ON pe.id = pp.permiso_id "
+        "ORDER BY pe.id"
+    )
+    for fila in filas:
+        resultado.setdefault(fila["perfil_id"], []).append(fila["codigo"])
     return resultado
 
 
-def crear(nombre, descripcion, permisos):
+def crear(nombre, descripcion, codigos):
+    """Registra el perfil con sus permisos en una sola transacción. Regresa el id."""
     conexion = obtener_conexion()
     cursor = conexion.execute(
-        "INSERT INTO perfiles (nombre, descripcion) VALUES (?, ?)", (nombre, descripcion)
+        "INSERT INTO perfiles (nombre, descripcion) VALUES (?, ?)", (nombre, descripcion or None)
     )
     perfil_id = cursor.lastrowid
     conexion.executemany(
-        "INSERT INTO perfil_permisos (perfil_id, permiso) VALUES (?, ?)",
-        [(perfil_id, permiso) for permiso in permisos],
+        "INSERT INTO perfil_permisos (perfil_id, permiso_id) SELECT ?, id FROM permisos WHERE codigo = ?",
+        [(perfil_id, codigo) for codigo in codigos],
     )
     conexion.commit()
     return perfil_id
-

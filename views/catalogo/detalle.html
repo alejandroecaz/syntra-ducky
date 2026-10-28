@@ -1,3 +1,4 @@
+{# Ficha del libro web (Vista, HU-01-10 a HU-01-15): datos de catalogo_servicio.ficha() y formularios de ejemplares. -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -41,18 +42,28 @@
       <div class="book-hero__info">
         <div class="row">{{ ui.badge(libro.clave, "gold") }}{{ ui.estado_libro_badge(libro) }}</div>
         <h1>{{ libro.titulo }}</h1>
-        <p class="book-hero__author">{{ libro.autor }}</p>
+        <p class="book-hero__author">{{ libro.autores }}</p>
+        {% if libro.sinopsis %}<p class="muted">{{ libro.sinopsis }}</p>{% endif %}
         <dl class="kv mt-4">
           <dt>Clave</dt><dd class="mono">{{ libro.clave }}</dd>
           <dt>Tema</dt><dd>{{ libro.tema }}</dd>
           <dt>Editorial</dt><dd>{{ libro.editorial }}</dd>
           <dt>Año de publicación</dt><dd>{{ libro.anio or "—" }}</dd>
+          <dt>Edición</dt><dd>{{ libro.edicion or "—" }}</dd>
+          <dt>ISBN</dt><dd class="mono">{{ libro.isbn or "—" }}</dd>
+          <dt>Tipo de acceso</dt><dd>{{ libro.tipo_acceso }}</dd>
         </dl>
       </div>
       <div class="card" style="padding: 18px 20px; min-width: 200px; box-shadow: none; background: var(--slate-25)">
         <span class="stat__label">Ejemplares disponibles</span>
-        <div class="stat__value" style="margin: 4px 0 10px">{{ libro.disponibles }} <span class="muted" style="font-size: 1rem; font-weight: 600">de {{ libro.total_ejemplares }}</span></div>
-        {{ ui.disponibilidad(libro) if libro.total_ejemplares else ui.badge("Sin ejemplares", "warning", dot=True) }}
+        {# Sin ejemplares no se muestra una disponibilidad "0 de 0" (HU-01-15) #}
+        {% if libro.total_ejemplares %}
+          <div class="stat__value" style="margin: 4px 0 10px">{{ libro.disponibles }} <span class="muted" style="font-size: 1rem; font-weight: 600">de {{ libro.total_ejemplares }}</span></div>
+          {{ ui.disponibilidad(libro) }}
+        {% else %}
+          <div class="stat__value" style="margin: 4px 0 10px">—</div>
+          {{ ui.badge("Sin ejemplares", "warning", dot=True) }}
+        {% endif %}
       </div>
     </div>
   </div>
@@ -91,7 +102,7 @@
               {% if tiene_permiso("libros.editar") %}
                 {{ ui.btn("Actualizar ejemplar " ~ ej.codigo, "ghost", "edit", size="sm", icon_only=True,
                           data_ejemplar={"accion": url_for("catalogo.actualizar_ejemplar", ejemplar_id=ej.id), "codigo": ej.codigo,
-                                         "estancia": ej.estancia or "", "estante": ej.estante or "", "posicion": ej.posicion or "",
+                                         "estancia": ej.estancia_id or "", "estante": ej.estante or "", "posicion": ej.posicion or "",
                                          "estado": ej.estado} | tojson | forceescape) }}
               {% endif %}
             </div>
@@ -143,7 +154,7 @@
 {% endfor %}
 
 {% if tiene_permiso("libros.editar") %}
-{% set opciones_estancia = [] %}{% for e in estancias %}{% set _ = opciones_estancia.append((e, e)) %}{% endfor %}
+{% set opciones_estancia = [] %}{% for e in estancias %}{% set _ = opciones_estancia.append((e.id, e.nombre)) %}{% endfor %}
 {% set opciones_estado = [] %}{% for e in estados %}{% set _ = opciones_estado.append((e, e)) %}{% endfor %}
 
 {# Modal: editar ejemplar #}

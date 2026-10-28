@@ -1,0 +1,16 @@
+{# Vista 404 del portal móvil: el libro no existe o ya fue dado de baja. -#}
+{% extends "layouts/movil.html" %}
+{% import "components/ui.html" as ui %}
+{% import "movil/componentes.html" as m %}
+
+{% block titulo %}No encontrado{% endblock %}
+
+{% block encabezado %}{{ m.encabezado_regreso("No encontrado", None, url_for("movil.buscar")) }}{% endblock %}
+
+{% block contenido %}
+<div class="card">
+  {% call ui.empty_state("search", "No encontramos ese libro", "El libro no existe o ya no forma parte del catálogo.") %}
+    {{ ui.btn("Volver a buscar", "primary", "search", href=url_for("movil.buscar"), size="lg") }}
+  {% endcall %}
+</div>
+{% endblock %}

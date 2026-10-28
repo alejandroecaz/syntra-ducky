@@ -1,3 +1,4 @@
+{# Menú lateral (Vista): solo muestra las secciones que permiten los permisos de la sesión. -#}
 {% import "components/ui.html" as ui %}
 {% set seccion = request.endpoint.split('.')[0] if request.endpoint else '' %}
 

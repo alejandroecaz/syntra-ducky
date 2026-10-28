@@ -1,0 +1,15 @@
+{# Error inesperado: se muestra un mensaje amable y nunca la traza del error -#}
+{% extends "layouts/app.html" if usuario_actual() else "layouts/publico.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Error del sistema{% endblock %}
+
+{% block contenido %}
+<div class="card">
+  {% call ui.empty_state("alert-triangle", "Ocurrió un error inesperado",
+        "No se pudo completar la operación. Intenta de nuevo; si el problema continúa, avisa al administrador de la biblioteca.",
+        tone="warning") %}
+    {{ ui.btn("Ir al inicio", "primary", "home", href=url_for("auth.raiz")) }}
+  {% endcall %}
+</div>
+{% endblock %}
