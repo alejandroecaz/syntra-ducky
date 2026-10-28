@@ -1,0 +1,78 @@
+{# M01 y M02 · Búsqueda y resultados del portal móvil (Vista).
+   Recibe del controlador movil.buscar lo que regresa catalogo_servicio.buscar_libros(), el
+   mismo servicio que usa el catálogo web (HU-01-12 y HU-01-13). #}
+{% extends "layouts/movil.html" %}
+{% import "components/ui.html" as ui %}
+{% import "movil/componentes.html" as m %}
+
+{% block titulo %}Buscar libros{% endblock %}
+
+{% block encabezado %}{{ m.encabezado_saludo(usuario_actual()) }}{% endblock %}
+
+{% block contenido %}
+{% set etiquetas = dict(cfg.CAMPOS_BUSQUEDA) %}
+<form class="m-buscador" method="get" action="{{ url_for('movil.buscar') }}" role="search" novalidate>
+  <input type="hidden" name="buscar" value="1">
+  <label class="m-pregunta" for="q">¿Qué libro buscas hoy?</label>
+  <div class="input-icon">
+    {{ icon("search", 18) }}
+    <input class="input{{ ' is-invalid' if error }}" id="q" name="q" type="search" value="{{ texto }}"
+           placeholder="Título, autor, tema, editorial o clave" autocomplete="off" enterkeyhint="search"
+           {% if error %}aria-invalid="true" aria-describedby="q-error"{% endif %}>
+  </div>
+  {% if error %}<span class="error-text" id="q-error">{{ icon("alert-circle", 14) }}{{ error }}</span>{% endif %}
+
+  <fieldset class="m-chips">
+    <legend>Buscar por</legend>
+    {% for valor, etiqueta in cfg.CAMPOS_BUSQUEDA %}
+      <label class="m-chip">
+        <input type="radio" name="campo" value="{{ valor }}" {% if valor == campo %}checked{% endif %}>
+        <span>{{ etiqueta }}</span>
+      </label>
+    {% endfor %}
+  </fieldset>
+  {{ ui.btn("Buscar", "primary", "search", type="submit", size="lg", block=True) }}
+</form>
+
+{% if buscando %}
+  {% if error %}
+    {{ ui.empty_state("search", error, "Escribe lo que buscas y elige el campo: título, autor, tema, editorial o clave.") }}
+  {% elif libros %}
+    <p class="m-resultados" role="status">
+      {{ libros | length }} libro{{ 's' if libros | length != 1 }} encontrado{{ 's' if libros | length != 1 }}
+      para <strong class="strong">“{{ texto }}”</strong> en {{ etiquetas[campo] | lower }}
+    </p>
+    <div class="m-lista">
+      {% for libro in libros %}{{ m.tarjeta_libro(libro, {"campo": campo, "q": texto, "buscar": 1}) }}{% endfor %}
+    </div>
+  {% else %}
+    {% call ui.empty_state("search", cfg.MENSAJES.busqueda_sin_resultados,
+          "Ningún libro coincide con “" ~ texto ~ "” en " ~ etiquetas[campo] | lower ~ ". Prueba con otro campo o revisa la ortografía.") %}
+      {{ ui.btn("Ver catálogo", "secondary", href=url_for("movil.buscar", ver="catalogo")) }}
+    {% endcall %}
+    <div class="m-lista" aria-label="Resultados"></div>
+  {% endif %}
+
+{% elif ver_catalogo %}
+  <div class="m-seccion">
+    <h2>Catálogo · {{ libros | length }} libros</h2>
+    <a href="{{ url_for('movil.buscar') }}">Disponibles ahora</a>
+  </div>
+  <div class="m-lista">
+    {% for libro in libros %}{{ m.tarjeta_libro(libro, {"ver": "catalogo"}) }}{% endfor %}
+  </div>
+
+{% else %}
+  <div class="m-resumen">
+    <div class="m-resumen__dato"><span class="m-resumen__valor">{{ resumen.libros_activos }}</span><span class="m-resumen__etiqueta">Libros en catálogo</span></div>
+    <div class="m-resumen__dato"><span class="m-resumen__valor">{{ resumen.disponibles }}</span><span class="m-resumen__etiqueta">Ejemplares disponibles</span></div>
+  </div>
+  <div class="m-seccion">
+    <h2>Disponibles ahora</h2>
+    <a href="{{ url_for('movil.buscar', ver='catalogo') }}">Ver catálogo</a>
+  </div>
+  <div class="m-lista">
+    {% for libro in libros %}{{ m.tarjeta_libro(libro) }}{% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
