@@ -1,0 +1,29 @@
+# Configuración de las herramientas de calidad (no es un paquete instalable)
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+extend-exclude = ["venv", "figma-plugin-estilos"]
+
+[tool.ruff.lint]
+# E/W: PEP 8 · F: errores (imports sin usar, nombres indefinidos) · I: orden de imports
+# N: nombres PEP 8 · B: errores comunes · D100/D103: docstring en módulos y funciones públicas
+select = ["E", "W", "F", "I", "N", "B", "D100", "D103"]
+# N818 pide el sufijo "Error" en inglés; en español el nombre empieza con él (ErrorValidacion)
+ignore = ["N818"]
+
+[tool.ruff.lint.per-file-ignores]
+# En controladores, pruebas y scripts las funciones se explican con su ruta o su nombre
+"controllers/*" = ["D103"]
+"tests/*" = ["D103"]
+"scripts/*" = ["D103"]
+"init_db.py" = ["D103"]
+# Los trazos SVG son datos y no se pueden partir en líneas cortas
+"utils/iconos.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "config", "init_db", "controllers", "models", "services", "utils"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
