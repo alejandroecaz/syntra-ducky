@@ -58,6 +58,19 @@ def test_busqueda_sin_resultados(cliente):
     assert "m-libro__titulo" not in html
 
 
+def test_login_movil_sin_aviso_de_solo_alumnos(cliente):
+    assert "Solo para alumnos." not in cliente.get("/movil/login").get_data(as_text=True)
+
+
+def test_despues_de_buscar_se_puede_limpiar(cliente):
+    entrar_movil(cliente)
+    html = cliente.get("/movil?buscar=1&campo=titulo&q=asdasd").get_data(as_text=True)
+    assert '<a href="/movil" class="btn btn--secondary btn--lg">' in html
+    assert "Nueva búsqueda" in html
+    # En la pantalla inicial no hay nada que limpiar
+    assert "<span>Limpiar</span>" not in cliente.get("/movil").get_data(as_text=True)
+
+
 def test_busqueda_con_resultados_en_tarjetas(cliente):
     entrar_movil(cliente)
     html = cliente.get("/movil?buscar=1&campo=autor&q=kernighan").get_data(as_text=True)
