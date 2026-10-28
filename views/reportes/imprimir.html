@@ -1,15 +1,16 @@
-{# Vista previa e impresión del listado (Vista, HU-01-17). -#}
+{# Vista previa e impresión del listado (Vista, HU-01-17). Conserva los filtros y los libros marcados
+   en el listado ("parametros") para confirmar o regresar sin perderlos. -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Vista previa de impresión{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('reportes.listado', **filtros) }}">Listado de libros</a>{% endblock %}
+{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('reportes.listado', **parametros) }}">Listado de libros</a>{% endblock %}
 
 {% block contenido %}
 <div class="no-print">
   {{ ui.page_header("Vista previa de impresión",
-        "Revisa el documento, elige una impresora y confirma. Solo se imprimen los registros que cumplen los filtros.",
-        hus=["HU-01-17 Impresión del listado"], back=url_for("reportes.listado", **filtros), back_label="Listado de libros") }}
+        "Revisa el documento, elige una impresora y confirma. Solo se imprimen los libros que marcaste en el listado.",
+        hus=["HU-01-17 Impresión del listado"], back=url_for("reportes.listado", **parametros), back_label="Listado de libros") }}
 </div>
 
 <div class="layout-aside">
@@ -44,7 +45,7 @@
       </table>
     </div>
     {% else %}
-      {{ ui.empty_state("inbox", "Sin registros", "No hay libros que cumplan los filtros seleccionados.") }}
+      {{ ui.empty_state("inbox", "Sin registros", "No hay libros marcados que cumplan los filtros. Regresa al listado y marca al menos uno.") }}
     {% endif %}
     <footer class="doc__footer">
       <span>Generado por {{ usuario_actual().nombre }} ({{ usuario_actual().perfil }})</span>
@@ -56,6 +57,10 @@
     <div class="card__header"><h2 class="card__title">{{ icon("printer", 18) }}Enviar a impresión</h2></div>
     <form class="card__body stack" method="post" action="{{ url_for('reportes.imprimir') }}" novalidate>
       {% for clave, valor in filtros.items() %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
+      {% if seleccion is not none %}
+        <input type="hidden" name="seleccion" value="1">
+        {% for libro_id in seleccion | sort %}<input type="hidden" name="libro" value="{{ libro_id }}">{% endfor %}
+      {% endif %}
 
       {% if resultado %}{{ ui.alert(resultado[0], text=resultado[1]) }}{% endif %}
 
@@ -75,7 +80,7 @@
       </fieldset>
 
       {{ ui.btn("Confirmar impresión", "primary", "printer", type="submit", block=True, disabled=not libros) }}
-      {{ ui.btn("Cancelar", "secondary", href=url_for("reportes.listado", **filtros), block=True) }}
+      {{ ui.btn("Cancelar", "secondary", href=url_for("reportes.listado", **parametros), block=True) }}
       {% if resultado and resultado[0] == "success" %}
         {{ ui.btn("Abrir diálogo de impresión otra vez", "ghost", "refresh", block=True, data_print="1") }}
       {% endif %}

@@ -160,16 +160,6 @@
     boton.setAttribute("aria-pressed", String(!visible));
   });
 
-  /* Cuentas de prueba del login */
-  document.addEventListener("click", function (e) {
-    var boton = e.target.closest("[data-demo-cuenta]");
-    if (!boton) return;
-    $("#cuenta").value = boton.dataset.demoCuenta;
-    $("#contrasena").value = boton.dataset.demoContrasena;
-    $("#contrasena").focus();
-    toast("info", "Se llenaron las credenciales de " + boton.dataset.demoCuenta + ". Presiona Iniciar sesión.", "Cuenta de demostración");
-  });
-
   /* Filas clicables */
   document.addEventListener("click", function (e) {
     var fila = e.target.closest("tr[data-href]");
@@ -209,7 +199,12 @@
     boton.classList.add("is-loading");
     destino.innerHTML = "";
 
-    fetch(boton.dataset.pdfUrl, { headers: { "X-Requested-With": "fetch" }, credentials: "same-origin" })
+    // Si el botón tiene un formulario asociado, manda sus datos (filtros y libros marcados)
+    var url = boton.dataset.pdfUrl;
+    var formPdf = boton.dataset.pdfForm && document.getElementById(boton.dataset.pdfForm);
+    if (formPdf) url += (url.indexOf("?") === -1 ? "?" : "&") + new URLSearchParams(new FormData(formPdf)).toString();
+
+    fetch(url, { headers: { "X-Requested-With": "fetch" }, credentials: "same-origin" })
       .then(function (resp) {
         var tipo = resp.headers.get("Content-Type") || "";
         if (resp.ok && tipo.indexOf("application/pdf") === 0) {
@@ -305,6 +300,31 @@
     contenedor.addEventListener("input", actualizarResumen);
     contenedor.addEventListener("change", actualizarResumen);
     actualizarResumen();
+  }
+
+  /* Libros marcados en el listado para imprimir o generar el PDF */
+  var casillasLibro = $$("[data-seleccion-libro]");
+  if (casillasLibro.length) {
+    var todos = $("[data-seleccion-todos]");
+    var resumen = $("[data-seleccion-resumen]");
+
+    var actualizarSeleccion = function () {
+      var marcadas = casillasLibro.filter(function (c) { return c.checked; }).length;
+      todos.checked = marcadas === casillasLibro.length;
+      todos.indeterminate = marcadas > 0 && marcadas < casillasLibro.length;
+      resumen.textContent = marcadas
+        ? marcadas + " de " + casillasLibro.length + " seleccionados"
+        : "Marca al menos un libro para imprimir o generar el PDF";
+      resumen.classList.toggle("is-warning", !marcadas);
+      $$("[data-requiere-seleccion]").forEach(function (b) { b.disabled = !marcadas; });
+    };
+
+    todos.addEventListener("change", function () {
+      casillasLibro.forEach(function (c) { c.checked = todos.checked; });
+      actualizarSeleccion();
+    });
+    casillasLibro.forEach(function (c) { c.addEventListener("change", actualizarSeleccion); });
+    actualizarSeleccion();
   }
 
   window.Syntra = { toast: toast, abrirModal: abrirModal, cerrarModal: cerrarModal };

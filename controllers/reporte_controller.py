@@ -1,7 +1,7 @@
 """Controlador de reportes: listado, PDF (HU-01-16) e impresión (HU-01-17).
 
-Papel en MVC: lee los filtros de la petición, llama a services/reporte_servicio.py y regresa
-la vista o el archivo PDF.
+Papel en MVC: lee los filtros y los libros elegidos de la petición, llama a
+services/reporte_servicio.py y regresa la vista o el archivo PDF.
 """
 from datetime import datetime
 from io import BytesIO
@@ -16,8 +16,8 @@ from utils.seguridad import permiso_requerido
 reporte_bp = Blueprint("reportes", __name__, url_prefix="/reportes")
 
 
-def _filtros(origen):
-    return reporte_servicio.leer_filtros(origen, catalogo_servicio.es_personal(session.get("permisos", [])))
+def _es_personal():
+    return catalogo_servicio.es_personal(session.get("permisos", []))
 
 
 def _quiere_json():
@@ -28,12 +28,13 @@ def _quiere_json():
 @reporte_bp.route("/libros")
 @permiso_requerido("reportes.pdf", "reportes.imprimir")
 def listado():
-    filtros = _filtros(request.args)
+    filtros = reporte_servicio.leer_filtros(request.args, _es_personal())
     return render_template(
         "reportes/listado.html",
         libros=reporte_servicio.consultar(filtros),
         filtros=filtros,
         filtros_texto=reporte_servicio.describir_filtros(filtros),
+        seleccion=reporte_servicio.leer_seleccion(request.args),
         **reporte_servicio.opciones_filtros(),
     )
 
@@ -43,14 +44,14 @@ def listado():
 @reporte_bp.route("/libros/pdf")
 @permiso_requerido("reportes.pdf")
 def pdf():
-    filtros = _filtros(request.args)
+    documento = reporte_servicio.preparar_documento(request.args, _es_personal())
     try:
-        contenido, total = reporte_servicio.generar_pdf(filtros, session.get("nombre", ""))
+        contenido, total = reporte_servicio.generar_pdf(documento, session.get("nombre", ""))
     except ErrorValidacion as error:
         if _quiere_json():
             return jsonify({"ok": False, "mensaje": error.mensaje}), error.codigo
         flash(error.mensaje, "error" if error.codigo >= 500 else "warning")
-        return redirect(url_for("reportes.listado", **filtros))
+        return redirect(url_for("reportes.listado", **documento["parametros"]))
 
     respuesta = send_file(
         BytesIO(contenido),
@@ -68,11 +69,9 @@ def pdf():
 @permiso_requerido("reportes.imprimir")
 def imprimir():
     origen = request.form if request.method == "POST" else request.args
-    filtros = _filtros(origen)
+    documento = reporte_servicio.preparar_documento(origen, _es_personal())
     contexto = dict(
-        libros=reporte_servicio.consultar(filtros),
-        filtros=filtros,
-        filtros_texto=reporte_servicio.describir_filtros(filtros),
+        **documento,
         impresoras=config.IMPRESORAS,
         seleccionada=origen.get("impresora", ""),
         ahora=datetime.now(),
@@ -80,7 +79,7 @@ def imprimir():
     if request.method == "GET":
         return render_template("reportes/imprimir.html", **contexto)
 
-    resultado, codigo = reporte_servicio.enviar_a_impresion(filtros, contexto["seleccionada"])
+    resultado, codigo = reporte_servicio.enviar_a_impresion(documento, contexto["seleccionada"])
     contexto["resultado"] = resultado
     contexto["imprimir_ahora"] = resultado[0] == "success"
     return render_template("reportes/imprimir.html", **contexto), codigo
