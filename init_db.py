@@ -1,7 +1,7 @@
 """Crea la base de datos SQLite con el esquema del Sprint 1 y los datos de demostración.
 
 El esquema sigue el diseño de base_de_datos/BD_Sistema_Ducky.drawio (versión SQLite de
-ducky_bd_sprint1.sql). Las diferencias y correcciones están en docs/DECISIONES.md.
+ducky_bd_sprint1.sql). Las correcciones al diseño están en docs/PRESENTACION.md.
 
 Uso:
     venv/bin/python init_db.py                 # borra y vuelve a crear syntra.db

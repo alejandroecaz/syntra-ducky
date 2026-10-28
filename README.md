@@ -89,50 +89,35 @@ En el **portal móvil solo entran alumnos**: el acceso se controla con el permis
 
 Datos de prueba útiles: `LIB-001` tiene ejemplares en dos salas; `LIB-002` (*Pedro Páramo*) tiene un ejemplar con **ubicación no registrada**; `LIB-008` (*El principito*) **no tiene ejemplares**; `LIB-006` tiene ejemplares perdido y fuera de servicio; `LIB-010`, `LIB-015` y `LIB-016` tienen **varios autores**; `LIB-014` está dado de baja.
 
-## Arquitectura (MVC con Flask)
+## Estructura (MVC con Flask)
 
 ```
 ingsoftprot/
-├── app.py                  # Application factory, registro de blueprints, IP para el celular
-├── config.py               # Permisos, estados, límites y mensajes compartidos
-├── init_db.py              # Esquema SQLite (según el draw.io) + datos de demostración
-├── controllers/            # C: un blueprint por módulo (auth, usuarios, perfiles, catálogo,
-│                           #    reportes, compras, cuenta) y movil_controller.py para /movil
-├── services/               # Reglas de negocio: validaciones, búsqueda, autenticación
-├── models/                 # M: acceso a datos con SQL parametrizado (una tabla o grupo por archivo)
-├── views/                  # V: plantillas Jinja
-│   ├── layouts/            #    app (web), publico, movil (portal)
-│   ├── components/ui.html  #    macros reutilizables (botones, campos, badges, ubicación…)
-│   ├── movil/              #    pantallas del portal móvil
-│   └── <módulo>/           #    pantallas web
-├── static/
-│   ├── css/syntra.css      # Design system: tokens + componentes
-│   ├── css/movil.css       # Portal móvil, sobre los tokens de syntra.css
-│   ├── manifest.json       # Para "Agregar a pantalla de inicio"
-│   └── js/syntra.js        # Avisos, modales, confirmaciones, PDF, orden de compra
-├── tests/                  # Pruebas con pytest
-├── scripts/                # tomar_capturas.py (Playwright)
-└── docs/                   # Arquitectura, estándares, decisiones, guion de demo, capturas
+├── app.py          # Arranca la app e imprime la dirección para el celular
+├── config.py       # Permisos, estados y mensajes
+├── init_db.py      # Crea la base de datos con los datos de prueba
+├── controllers/    # Controladores: uno por módulo + movil_controller.py
+├── services/       # Reglas de negocio (validaciones, búsqueda, login)
+├── models/         # Acceso a datos con SQL
+├── views/          # Vistas (plantillas); views/movil/ es el portal móvil
+├── static/         # CSS, JS, imágenes y manifest.json
+├── tests/          # Pruebas con pytest
+└── docs/           # PRESENTACION.md, capturas y material de referencia
 ```
 
-La web y el móvil **comparten servicios y modelos**; solo cambian el controlador y las vistas. Detalle en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+La web y el móvil comparten servicios y modelos; solo cambian el controlador y las vistas.
 
-- **Seguridad:** las rutas protegidas usan `@permiso_requerido(...)` con códigos de permiso (nunca nombres de perfil). Sin sesión se pide iniciar sesión; sin permiso se muestra *Acceso no autorizado* (403). Las contraseñas se guardan con hash PBKDF2 y los errores nunca muestran trazas.
-- **Base de datos:** SQLite con llaves foráneas activas, alineada con `base_de_datos/BD_Sistema_Ducky.drawio`. Los cambios respecto al diseño están en [docs/DECISIONES.md](docs/DECISIONES.md).
-- **Design system:** tokens y componentes en `static/css/syntra.css` y macros en `views/components/ui.html`; el portal móvil reusa ambos.
-
-## Calidad: pruebas y estilo
+## Pruebas
 
 ```bash
-venv/bin/pip install -r requirements-dev.txt   # pytest, ruff y playwright (solo la primera vez)
-venv/bin/pytest                                 # todas las pruebas
-venv/bin/ruff check .                           # PEP 8 y convenciones
+venv/bin/pip install -r requirements-dev.txt   # solo la primera vez
+venv/bin/pytest
+venv/bin/ruff check .
 ```
 
-Las pruebas crean su propia base de datos temporal; no modifican `syntra.db`. Convenciones en [docs/ESTANDARES.md](docs/ESTANDARES.md).
+Las pruebas usan su propia base de datos temporal; no modifican `syntra.db`.
 
-## Material para la presentación
+## Para la presentación
 
-- [docs/GUION_DEMO.md](docs/GUION_DEMO.md): guion de 4 minutos con plan B.
+- [docs/PRESENTACION.md](docs/PRESENTACION.md): arquitectura MVC, estándar de código, decisiones, guion de la demo y lecciones aprendidas.
 - [docs/capturas/](docs/capturas/): pantallas web y móviles. Para regenerarlas: `venv/bin/playwright install chromium` (una vez) y `venv/bin/python scripts/tomar_capturas.py`.
-- [docs/LECCIONES.md](docs/LECCIONES.md): borrador de lecciones aprendidas y propuesta de mejora.
