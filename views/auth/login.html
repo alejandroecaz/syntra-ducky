@@ -1,4 +1,15 @@
-{# Inicio de sesión web (Vista, HU-01-01): auth_controller muestra aquí los mensajes de auth_servicio. -#}
+{# ============================================================
+   Archivo: views/auth/login.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Inicio de sesión web (Vista, HU-01-01): auth_controller muestra aquí los mensajes de
+                auth_servicio.
+   ============================================================ -#}
 {% extends "base.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -6,6 +17,7 @@
 
 {% block body %}
 <div class="auth">
+  {# Panel izquierdo: marca del sistema y lo que ofrece #}
   <section class="auth__brand">
     <div class="auth__system">
       <span class="auth__dev-tile">{{ ui.logo_syntra(64) }}</span>
@@ -22,6 +34,7 @@
     </div>
   </section>
 
+  {# Panel derecho: formulario de acceso #}
   <section class="auth__form-wrap" id="contenido">
     <div class="auth__card stack-lg">
       <div class="stack" style="gap: 6px">
@@ -30,10 +43,12 @@
         <p class="muted">Ingresa con la cuenta y contraseña que te asignó la biblioteca.</p>
       </div>
 
+      {# HU-01-01 · Credenciales incorrectas / Campos vacíos / Cuenta deshabilitada / Perfil sin acceso #}
       {% if error_general %}
         {{ ui.alert("error", text=error_general) }}
       {% endif %}
 
+      {# HU-01-01: cuenta y contraseña; "siguiente" recuerda a dónde se quería entrar #}
       <form class="card" method="post" action="{{ url_for('auth.login') }}" novalidate>
         <div class="card__body stack">
           <input type="hidden" name="siguiente" value="{{ siguiente or request.args.get('siguiente', '') }}">
@@ -44,6 +59,7 @@
         </div>
       </form>
 
+      {# Enlace al portal móvil para alumnos #}
       <p class="small muted" style="text-align: center">¿Eres alumno y estás en tu celular? <a href="{{ url_for('movil.login') }}">Abre el portal móvil</a></p>
 
     </div>

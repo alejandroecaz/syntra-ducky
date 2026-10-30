@@ -1,4 +1,14 @@
-{# Registro y edición de usuarios (Vista, HU-01-02 y HU-01-04). usuario_servicio valida. -#}
+{# ============================================================
+   Archivo: views/usuarios/form.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Registro y edición de usuarios (Vista, HU-01-02 y HU-01-04). usuario_servicio valida.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -7,6 +17,7 @@
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>{% endblock %}
 
 {% block contenido %}
+{# Encabezado: registro (HU-01-02) o edición (HU-01-04) #}
 {% if es_nuevo %}
   {{ ui.page_header("Registrar usuario",
         "Crea la cuenta única de un alumno, profesor o personal autorizado. Los campos con * son obligatorios.",
@@ -20,8 +31,10 @@
 <div class="layout-aside">
   <form class="card" method="post" novalidate>
     <div class="card__body stack-lg">
+      {# HU-01-02 · Usuario duplicado / Registro incompleto; HU-01-04 · Cuenta asignada a otra persona #}
       {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
 
+      {# Campos de la cuenta; en edición identificador, perfil y estado no se modifican #}
       <div class="form-grid">
         {% if es_nuevo %}
           {{ ui.field("identificador", "Identificador institucional", valores.get("identificador"), errores.get("identificador"),
@@ -64,6 +77,7 @@
     </div>
   </form>
 
+  {# Reglas de validación para quien captura #}
   <aside class="card">
     <div class="card__header"><h2 class="card__title">{{ icon("info", 18) }}Reglas de validación</h2></div>
     <div class="card__body stack small">

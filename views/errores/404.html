@@ -1,10 +1,21 @@
-{# Registro o página inexistente (Vista 404). -#}
+{# ============================================================
+   Archivo: views/errores/404.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Registro o página inexistente (Vista 404).
+   ============================================================ -#}
 {% extends "layouts/app.html" if usuario_actual() else "layouts/publico.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}No encontrado{% endblock %}
 
 {% block contenido %}
+{# La página o el registro no existe #}
 <div class="card">
   {% call ui.empty_state("search", "No encontramos lo que buscas",
         "La página o el registro no existe, o ya no está disponible para tu perfil.") %}

@@ -1,4 +1,15 @@
-{# Alta y edición de libros (Vista, HU-01-09 y HU-01-11). Las validaciones están en catalogo_servicio. -#}
+{# ============================================================
+   Archivo: views/catalogo/form_libro.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Alta y edición de libros (Vista, HU-01-09 y HU-01-11). Las validaciones están en
+                catalogo_servicio.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -7,6 +18,7 @@
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('catalogo.lista') }}">Catálogo</a>{% endblock %}
 
 {% block contenido %}
+{# Encabezado: alta (HU-01-09) o edición (HU-01-11) #}
 {% if es_nuevo %}
   {{ ui.page_header("Registrar libro",
         "Captura la ficha bibliográfica. Las copias físicas (ejemplares) se agregan después desde la ficha del libro.",
@@ -20,10 +32,12 @@
 {% set destino_cancelar = url_for("catalogo.lista") if es_nuevo else url_for("catalogo.detalle", libro_id=libro.id) %}
 
 <div class="layout-aside">
+  {# Formulario de la ficha bibliográfica; en edición avisa si hay cambios sin guardar #}
   <form class="card" method="post" novalidate {% if not es_nuevo %}data-track-changes{% endif %}>
     <div class="card__body stack-lg">
       {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
 
+      {# HU-01-09 · Datos bibliográficos incompletos / HU-01-11 · Edición incompleta: los errores se marcan por campo #}
       <div class="form-grid">
         {{ ui.field("clave", "Clave", valores.get("clave"), errores.get("clave"), required=es_nuevo,
                     placeholder="Ej. LIB-015", readonly=not es_nuevo,
@@ -57,6 +71,7 @@
                              span=True) }}
       </div>
 
+      {# HU-01-11 · Cancelar edición: pide confirmar si hay cambios #}
       <div class="form-actions" style="margin-top: 0">
         {% if es_nuevo %}
           {{ ui.btn("Cancelar", "secondary", href=destino_cancelar) }}
@@ -70,6 +85,7 @@
     </div>
   </form>
 
+  {# Reglas de validación para quien captura #}
   <aside class="card">
     <div class="card__header"><h2 class="card__title">{{ icon("info", 18) }}Antes de guardar</h2></div>
     <div class="card__body stack small">

@@ -1,6 +1,13 @@
 -- ============================================================
--- Sistema Ducky de Gestión Bibliotecaria - Syntra Technologies (Equipo 1)
--- Base de datos COMPLETA (Sprints 1-4) - MySQL 8
+-- Archivo: base_de_datos/ducky_bd_completa.sql
+-- Proyecto: Sistema Ducky de Gestión Bibliotecaria
+-- Syntra Technologies - Equipo 1 - Sprint 1
+-- Materia: Ingeniería de Software
+-- Autores:
+--   - Melissa Silva Vázquez                #624352
+--   - Tomás Zapata Pérez                   #629048
+--   - Alejandro Evaristo Cazares Escobedo  #626337
+-- Descripción: Base de datos COMPLETA (Sprints 1-4) - MySQL 8
 -- ============================================================
 DROP DATABASE IF EXISTS ducky_biblioteca;
 CREATE DATABASE ducky_biblioteca CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;

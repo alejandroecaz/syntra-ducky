@@ -1,12 +1,23 @@
-{# M00 · Inicio de sesión del portal móvil (Vista).
-   El controlador movil.login usa el mismo servicio de autenticación que la web, por eso los
-   mensajes son los mismos; además rechaza a quien no tenga el permiso movil.acceder. -#}
+{# ============================================================
+   Archivo: views/movil/login.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: M00 · Inicio de sesión del portal móvil (Vista). El controlador movil.login usa el mismo
+                servicio de autenticación que la web, por eso los mensajes son los mismos; además rechaza a
+                quien no tenga el permiso movil.acceder.
+   ============================================================ -#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Portal móvil{% endblock %}
 
 {% block contenido %}
+{# Marca del portal #}
 <section class="m-marca">
   {{ ui.logo(84) }}
   <p class="m-marca__nombre">Biblioteca Ducky</p>
@@ -19,6 +30,7 @@
     <p class="muted">Usa la cuenta y contraseña que te asignó la biblioteca.</p>
   </div>
 
+  {# HU-01-01: mismos mensajes que la web, más el de solo alumnos #}
   {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
 
   <form class="stack" method="post" action="{{ url_for('movil.login') }}" novalidate>

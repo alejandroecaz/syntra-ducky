@@ -31,7 +31,11 @@ flowchart LR
 
 - Nombres en español y consistentes con la BD (`libros`, `estante_id`, `apellido_paterno`).
 - Un archivo por módulo en cada capa: `catalogo_controller.py` → `catalogo_servicio.py` → `models/libro.py`.
-- PEP 8 revisado con **ruff**; docstring breve en cada módulo, servicio y modelo.
+- PEP 8 revisado con **ruff**.
+- **Encabezado en todos los archivos** (Python, vistas, CSS, JS y SQL): archivo, proyecto, materia, autores con matrícula y descripción, con el comentario de cada lenguaje (`#`, `{# #}`, `/* */`, `--`).
+- **Trazabilidad con las historias de usuario:** cada ruta, servicio y prueba dice en su docstring qué HU implementa, y cada validación lleva un comentario con el criterio de aceptación que cubre (ej. `# HU-01-09 · Clave duplicada`). Las vistas marcan sus secciones igual.
+- **Docstring en cada función** (también controladores, pruebas y scripts; ruff lo exige) y un comentario antes de cada bloque de pasos.
+- CSS con secciones `/* === TÍTULO === */` y propiedades en orden alfabético dentro de cada regla.
 - Permisos, estados y límites en `config.py`; el acceso se revisa por permiso (`catalogo.consultar`), nunca por nombre de perfil.
 - SQL siempre con parámetros `?`; contraseñas con hash; los errores nunca muestran la traza.
 - Ramas y Pull Requests, nunca commit directo a `main`; commits cortos en español (`Esquema:`, `Web:`, `Móvil:`…).

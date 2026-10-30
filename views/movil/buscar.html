@@ -1,6 +1,16 @@
-{# M01 y M02 · Búsqueda y resultados del portal móvil (Vista).
-   Recibe del controlador movil.buscar lo que regresa catalogo_servicio.buscar_libros(), el
-   mismo servicio que usa el catálogo web (HU-01-12 y HU-01-13). -#}
+{# ============================================================
+   Archivo: views/movil/buscar.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: M01 y M02 · Búsqueda y resultados del portal móvil (Vista). Recibe del controlador movil.buscar
+                lo que regresa catalogo_servicio.buscar_libros(), el mismo servicio que usa el catálogo web
+                (HU-01-12 y HU-01-13).
+   ============================================================ -#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 {% import "movil/componentes.html" as m %}
@@ -11,6 +21,7 @@
 
 {% block contenido %}
 {% set etiquetas = dict(cfg.CAMPOS_BUSQUEDA) %}
+{# HU-01-13: buscador con chips para elegir el campo #}
 <form class="m-buscador" method="get" action="{{ url_for('movil.buscar') }}" role="search" novalidate>
   <input type="hidden" name="buscar" value="1">
   <label class="m-pregunta" for="q">¿Qué libro buscas hoy?</label>
@@ -40,9 +51,12 @@
   </div>
 </form>
 
+{# Resultados de la búsqueda #}
 {% if buscando %}
+  {# HU-01-13 · Criterio vacío #}
   {% if error %}
     {{ ui.empty_state("search", error, "Escribe lo que buscas y elige el campo: título, autor, tema, editorial o clave.") }}
+  {# HU-01-13 · Búsqueda por título, autor, tema, editorial o clave #}
   {% elif libros %}
     <p class="m-resultados" role="status">
       {{ libros | length }} libro{{ 's' if libros | length != 1 }} encontrado{{ 's' if libros | length != 1 }}
@@ -51,6 +65,7 @@
     <div class="m-lista">
       {% for libro in libros %}{{ m.tarjeta_libro(libro, {"campo": campo, "q": texto, "buscar": 1}) }}{% endfor %}
     </div>
+  {# HU-01-13 · Sin coincidencias #}
   {% else %}
     {% call ui.empty_state("search", cfg.MENSAJES.busqueda_sin_resultados,
           "Ningún libro coincide con “" ~ texto ~ "” en " ~ etiquetas[campo] | lower ~ ". Prueba con otro campo o revisa la ortografía.") %}
@@ -60,6 +75,7 @@
     <div class="m-lista" aria-label="Resultados"></div>
   {% endif %}
 
+{# HU-01-12 · Mostrar catálogo #}
 {% elif ver_catalogo %}
   <div class="m-seccion">
     <h2>Catálogo · {{ libros | length }} libros</h2>
@@ -69,6 +85,7 @@
     {% for libro in libros %}{{ m.tarjeta_libro(libro, {"ver": "catalogo"}) }}{% endfor %}
   </div>
 
+{# Pantalla de inicio: resumen y libros disponibles ahora #}
 {% else %}
   <div class="m-resumen">
     <div class="m-resumen__dato"><span class="m-resumen__valor">{{ resumen.libros_activos }}</span><span class="m-resumen__etiqueta">Libros en catálogo</span></div>

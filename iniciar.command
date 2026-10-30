@@ -1,4 +1,15 @@
 #!/bin/bash
+# ============================================================
+# Archivo: iniciar.command
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Arranque rápido en macOS: crea el entorno virtual, prepara syntra.db y abre el navegador.
+# ============================================================
 cd "$(dirname "$0")"
 
 if [ ! -d "venv" ]; then

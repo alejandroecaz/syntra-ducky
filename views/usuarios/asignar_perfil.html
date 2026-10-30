@@ -1,4 +1,14 @@
-{# Asignar perfil a una cuenta (Vista, HU-01-08). -#}
+{# ============================================================
+   Archivo: views/usuarios/asignar_perfil.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Asignar perfil a una cuenta (Vista, HU-01-08).
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -13,8 +23,10 @@
 
 <form class="card" method="post" novalidate>
   <div class="card__body stack-lg">
+    {# HU-01-08 · Perfil sin seleccionar / Perfil inexistente o no disponible #}
     {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
 
+    {# HU-01-08 · Asignar perfil / Modificar perfil de usuario #}
     <fieldset class="check-group{{ ' is-invalid' if errores.get('perfil_id') }}">
       <legend>Perfiles registrados</legend>
       <div class="check-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">

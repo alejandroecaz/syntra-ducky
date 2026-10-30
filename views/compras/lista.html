@@ -1,4 +1,14 @@
-{# Órdenes de compra registradas (Vista, HU-01-18). -#}
+{# ============================================================
+   Archivo: views/compras/lista.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Órdenes de compra registradas (Vista, HU-01-18).
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -12,6 +22,7 @@
 {% endcall %}
 
 <div class="card">
+  {# HU-01-18: órdenes registradas con su folio #}
   {% if ordenes %}
   <div class="table-wrap">
     <table class="table">
@@ -39,6 +50,7 @@
       </tbody>
     </table>
   </div>
+  {# Todavía no hay órdenes #}
   {% else %}
     {% call ui.empty_state("clipboard", "Aún no hay órdenes de compra",
           "Cuando registres una orden aparecerá aquí con su folio para consultarla después.") %}

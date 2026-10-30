@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: services/inicio_servicio.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Servicio del panel de inicio: funciones e indicadores según los permisos del perfil (HU-01-01).
+# ============================================================
 """Servicio del panel de inicio: funciones e indicadores según los permisos del perfil (HU-01-01)."""
 import config
 from models import libro as libro_modelo
@@ -26,26 +37,33 @@ ACCIONES = [
 
 
 def _tiene(permisos, *requeridos):
+    """True si en permisos está al menos uno de los requeridos."""
     return any(permiso in permisos for permiso in requeridos)
 
 
 def acciones_para(permisos):
-    """Solo las funciones que el perfil tiene autorizadas."""
+    """HU-01-01: Solo las funciones que el perfil tiene autorizadas."""
     return [accion for accion in ACCIONES if _tiene(permisos, *accion[0])]
 
 
 def indicadores_para(permisos):
     """Indicadores del panel: (icono, etiqueta, valor, endpoint)."""
     indicadores = []
+
+    # Catálogo: libros activos y ejemplares disponibles
     if _tiene(permisos, "catalogo.consultar"):
         totales = libro_modelo.contar()
         indicadores.append(("library", "Libros en catálogo", totales["libros_activos"], "catalogo.lista"))
         indicadores.append(("check-circle", "Ejemplares disponibles",
                             f"{totales['disponibles']} / {totales['ejemplares']}", "catalogo.lista"))
+
+    # Usuarios: cuentas habilitadas
     if _tiene(permisos, "usuarios.consultar"):
         estados = usuario_modelo.contar_por_estado()
         indicadores.append(("user-check", "Cuentas habilitadas", estados.get(config.ESTADO_HABILITADA, 0),
                             "usuarios.lista"))
+
+    # Compras: órdenes registradas
     if _tiene(permisos, "compras.orden"):
         indicadores.append(("clipboard", "Órdenes de compra", orden_modelo.contar(), "compras.lista"))
     return indicadores

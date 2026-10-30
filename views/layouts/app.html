@@ -1,12 +1,24 @@
-{# Layout de la app web (Vista): menú lateral, barra superior y contenido. -#}
+{# ============================================================
+   Archivo: views/layouts/app.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Layout de la app web (Vista): menú lateral, barra superior y contenido.
+   ============================================================ -#}
 {% extends "base.html" %}
 
 {% block body %}
 <div class="app">
+  {# Menú lateral según los permisos #}
   {% include "components/sidebar.html" %}
   <div class="overlay" aria-hidden="true"></div>
 
   <div class="main">
+    {# Barra superior: menú en celular, ruta de navegación y menú del usuario #}
     <header class="topbar">
       <button type="button" class="btn btn--ghost btn--icon topbar__menu" data-sidebar-toggle aria-controls="sidebar" aria-label="Abrir menú">
         {{ icon("menu", 20) }}
@@ -18,6 +30,7 @@
       </nav>
       {% include "components/topbar.html" %}
     </header>
+    {# Contenido de cada pantalla #}
     <main class="content" id="contenido" tabindex="-1">
       {% block contenido %}{% endblock %}
     </main>

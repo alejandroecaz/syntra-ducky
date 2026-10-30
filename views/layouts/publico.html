@@ -1,8 +1,19 @@
-{# Layout de las páginas sin sesión (Vista). -#}
+{# ============================================================
+   Archivo: views/layouts/publico.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Layout de las páginas sin sesión (Vista).
+   ============================================================ -#}
 {% extends "base.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block body %}
+{# Barra con la marca y el botón para iniciar sesión #}
 <header class="topbar" style="padding: 0 24px">
   <div class="brand-light" style="display:flex;align-items:center;gap:10px">
     {{ ui.logo(32) }}<strong class="strong">Syntra</strong>

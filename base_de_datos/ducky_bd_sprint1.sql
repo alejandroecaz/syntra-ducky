@@ -1,6 +1,13 @@
 -- ============================================================
--- Sistema Ducky de Gestión Bibliotecaria - Syntra Technologies (Equipo 1)
--- Base de datos PRIMERA ENTREGA (Sprint 1) - MySQL 8
+-- Archivo: base_de_datos/ducky_bd_sprint1.sql
+-- Proyecto: Sistema Ducky de Gestión Bibliotecaria
+-- Syntra Technologies - Equipo 1 - Sprint 1
+-- Materia: Ingeniería de Software
+-- Autores:
+--   - Melissa Silva Vázquez                #624352
+--   - Tomás Zapata Pérez                   #629048
+--   - Alejandro Evaristo Cazares Escobedo  #626337
+-- Descripción: Base de datos PRIMERA ENTREGA (Sprint 1) - MySQL 8
 -- ============================================================
 DROP DATABASE IF EXISTS ducky_biblioteca_sprint1;
 CREATE DATABASE ducky_biblioteca_sprint1 CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;

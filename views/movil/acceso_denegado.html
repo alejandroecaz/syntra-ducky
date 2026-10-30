@@ -1,17 +1,29 @@
-{# Vista 403 del portal móvil: alguien con sesión pero sin el permiso movil.acceder
-   (por ejemplo un profesor que entró por la web y abrió /movil). -#}
+{# ============================================================
+   Archivo: views/movil/acceso_denegado.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Vista 403 del portal móvil: alguien con sesión pero sin el permiso movil.acceder (por ejemplo un
+                profesor que entró por la web y abrió /movil).
+   ============================================================ -#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Acceso no autorizado{% endblock %}
 
 {% block contenido %}
+{# Marca del portal #}
 <section class="m-marca">
   {{ ui.logo(64) }}
   <p class="m-marca__nombre">Biblioteca Ducky</p>
   <p class="m-marca__sub">Portal móvil para alumnos</p>
 </section>
 
+{# HU-01-01 (móvil) · Acceso sin autorización: solo alumnos #}
 <div class="card">
   {% call ui.empty_state("lock", "Acceso no autorizado", mensaje ~ ".", tone="warning") %}
     <div class="stack" style="width: 100%">

@@ -1,6 +1,16 @@
-{# Listado de libros con filtros, PDF e impresión (Vista, HU-01-16 y HU-01-17).
-   Las casillas de la tabla pertenecen al formulario "form-seleccion": Imprimir y Generar PDF
-   mandan solo los libros marcados. -#}
+{# ============================================================
+   Archivo: views/reportes/listado.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Listado de libros con filtros, PDF e impresión (Vista, HU-01-16 y HU-01-17). Las casillas de la
+                tabla pertenecen al formulario "form-seleccion": Imprimir y Generar PDF mandan solo los libros
+                marcados.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -8,6 +18,7 @@
 
 {% block contenido %}
 {% set es_personal = tiene_permiso("libros.alta", "libros.editar", "libros.baja") %}
+{# Acciones: imprimir (HU-01-17) y generar PDF (HU-01-16) con los libros marcados #}
 {% call ui.page_header("Listado de libros",
       "Aplica filtros, marca los libros que quieres incluir y genera el PDF o envíalo a impresión. Ambos documentos incluyen solo los libros marcados.",
       hus=["HU-01-16 PDF", "HU-01-17 Impresión"]) %}
@@ -24,6 +35,7 @@
 <div id="resultado-pdf" class="mb-4" aria-live="polite"></div>
 
 <div class="card">
+  {# HU-01-16 y HU-01-17 · con filtros: texto, tema, editorial y estado #}
   <form class="card__body" method="get" action="{{ url_for('reportes.listado') }}" novalidate>
     <div class="form-grid" style="grid-template-columns: repeat({{ 5 if es_personal else 4 }}, minmax(0, 1fr))">
       {{ ui.select_field("campo", "Buscar en", cfg.CAMPOS_BUSQUEDA, filtros.campo) }}
@@ -53,6 +65,7 @@
     {% if libros %}<span data-seleccion-resumen aria-live="polite"></span>{% endif %}
   </div>
 
+  {# Tabla con casillas para elegir qué libros entran al documento #}
   {% if libros %}
   <div class="table-wrap">
     <table class="table">
@@ -84,6 +97,7 @@
       </tbody>
     </table>
   </div>
+  {# HU-01-16 · Catálogo sin registros #}
   {% else %}
     {% call ui.empty_state("inbox", "No hay libros con estos filtros",
           "No existen registros disponibles para el listado. Si intentas generar el PDF, el sistema lo indicará y no creará un documento vacío.") %}

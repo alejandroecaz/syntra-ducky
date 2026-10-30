@@ -1,4 +1,15 @@
-{# Ficha del libro web (Vista, HU-01-10 a HU-01-15): datos de catalogo_servicio.ficha() y formularios de ejemplares. -#}
+{# ============================================================
+   Archivo: views/catalogo/detalle.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Ficha del libro web (Vista, HU-01-10 a HU-01-15): datos de catalogo_servicio.ficha() y
+                formularios de ejemplares.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -9,6 +20,7 @@
 {% set hus = ["HU-01-12 Detalle", "HU-01-14 Ubicación", "HU-01-15 Disponibilidad"] %}
 {% if es_personal %}{% set hus = hus + ["HU-01-10 Baja", "HU-01-11 Actualización"] %}{% endif %}
 
+{# Encabezado con acciones: compra (HU-01-18), editar (HU-01-11) y baja con confirmación (HU-01-10) #}
 {% call ui.page_header("Ficha del libro", hus=hus, back=url_for("catalogo.lista"), back_label="Catálogo") %}
   {% if tiene_permiso("compras.orden") and libro.activo %}
     {{ ui.btn("Solicitar compra", "secondary", "cart", href=url_for("compras.nueva", libro=libro.id)) }}
@@ -27,6 +39,7 @@
   {% endif %}
 {% endcall %}
 
+{# Avisos: libro dado de baja o con operaciones vigentes (HU-01-10) #}
 {% if not libro.activo %}
   {{ ui.alert("warning", "Libro dado de baja", "Se dio de baja el " ~ (libro.fecha_baja | fecha) ~ ". No aparece en el catálogo de alumnos y profesores; se conserva para consulta administrativa.") }}
   <div style="height: 20px"></div>
@@ -35,6 +48,7 @@
   <div style="height: 20px"></div>
 {% endif %}
 
+{# HU-01-12 · Abrir detalle de libro: datos bibliográficos y disponibilidad #}
 <section class="card">
   <div class="card__body">
     <div class="book-hero">
@@ -69,6 +83,7 @@
   </div>
 </section>
 
+{# HU-01-14 y HU-01-15: ejemplares con su ubicación física y estado #}
 <section class="card mt-6">
   <div class="card__header">
     <h2 class="card__title">{{ icon("layers", 18) }}Ejemplares y ubicación</h2>
@@ -112,6 +127,7 @@
       </tbody>
     </table>
   </div>
+  {# HU-01-15 · Libro sin ejemplares #}
   {% else %}
     {% call ui.empty_state("package", "Este libro no tiene ejemplares registrados",
           "Existe la ficha bibliográfica, pero aún no hay copias físicas. Por eso no se muestra disponibilidad.", tone="warning") %}
@@ -153,6 +169,7 @@
 </div>
 {% endfor %}
 
+{# Modales para el personal: actualizar y agregar ejemplares #}
 {% if tiene_permiso("libros.editar") %}
 {% set opciones_estancia = [] %}{% for e in estancias %}{% set _ = opciones_estancia.append((e.id, e.nombre)) %}{% endfor %}
 {% set opciones_estado = [] %}{% for e in estados %}{% set _ = opciones_estado.append((e, e)) %}{% endfor %}

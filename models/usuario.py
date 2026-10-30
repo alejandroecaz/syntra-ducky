@@ -1,9 +1,21 @@
+# ============================================================
+# Archivo: models/usuario.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Modelo de usuarios: cuentas con nombre, apellidos, contacto, perfil y estado.
+# ============================================================
 """Modelo de usuarios: cuentas con nombre, apellidos, contacto, perfil y estado.
 
 La contraseña llega ya cifrada desde los servicios; aquí solo se guarda y se lee.
 """
 from models.db import consultar, ejecutar, patron_contiene
 
+# Nombre completo armado con nombre y apellidos (el materno es opcional)
 NOMBRE_COMPLETO = "u.nombre || ' ' || u.apellido_paterno || COALESCE(' ' || u.apellido_materno, '')"
 
 # No incluye la contraseña
@@ -42,8 +54,11 @@ def listar():
 
 def buscar(criterio, valor):
     """Por identificador (exacto) o por nombre completo (contiene, sin acentos)."""
+    # El identificador institucional se busca exacto
     if criterio == "identificador":
         return consultar(SELECT_USUARIO + " WHERE u.identificador = ?", (valor,))
+
+    # El nombre se busca por coincidencia, sin acentos ni mayúsculas
     return consultar(
         SELECT_USUARIO + f" WHERE normalizar({NOMBRE_COMPLETO}) LIKE ? ESCAPE '\\' ORDER BY nombre_completo",
         (patron_contiene(valor),),

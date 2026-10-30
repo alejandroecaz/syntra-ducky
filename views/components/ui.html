@@ -1,4 +1,15 @@
-{# Macros del design system (Vista): botones, campos, badges, ubicación... Los importan la web y el portal móvil. -#}
+{# ============================================================
+   Archivo: views/components/ui.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Macros del design system (Vista): botones, campos, badges, ubicación... Los importan la web y el
+                portal móvil.
+   ============================================================ -#}
 {# Logos: en logo() se da la altura y en logo_syntra() el ancho #}
 {% macro logo(size=44) -%}
 <img class="brand__mark" src="{{ url_for('static', filename='img/ducky-libreria.png') }}"
@@ -12,6 +23,7 @@
      alt="Syntra Technologies">
 {%- endmacro %}
 
+{# Logo con el nombre de la biblioteca (enlace al inicio si se da href) #}
 {% macro brand(href=None, name="Biblioteca Universidad Ducky", size=44) -%}
 {%- set contenido -%}
   {{ logo(size) }}
@@ -26,6 +38,7 @@
 {% for clave, valor in extra.items() %} {{ clave | replace('_', '-') }}="{{ valor }}"{% endfor %}
 {%- endmacro %}
 
+{# Botón o enlace con estilo de botón; kwargs se vuelven atributos data-* #}
 {% macro btn(label, variant="primary", icon_name=None, href=None, type="button", size=None, block=False,
              disabled=False, icon_only=False) -%}
 {%- set clases = "btn btn--" ~ variant ~ (" btn--" ~ size if size else "") ~ (" btn--block" if block else "")
@@ -41,6 +54,7 @@
 {%- endif -%}
 {%- endmacro %}
 
+{# Etiquetas de estado #}
 {% macro badge(text, tone="neutral", dot=False) -%}
 <span class="badge badge--{{ tone }}{{ ' badge--dot' if dot }}">{{ text }}</span>
 {%- endmacro %}
@@ -62,6 +76,7 @@
 {%- else -%}{{ badge("Disponible", "success", dot=True) }}{%- endif -%}
 {%- endmacro %}
 
+{# HU-01-15: barra de ejemplares disponibles #}
 {% macro disponibilidad(libro) -%}
 {% if libro.total_ejemplares == 0 or libro.disponibles == 0 or not libro.activo %}
   {{ estado_libro_badge(libro) }}
@@ -73,6 +88,7 @@
 {% endif %}
 {%- endmacro %}
 
+{# HU-01-14 · Ubicación registrada / Ubicación pendiente #}
 {% macro ubicacion(ej) -%}
 {% if ej.estancia %}
   <span class="loc">{{ icon("map-pin", 15) }}{{ ej.estancia }} · Estante {{ ej.estante }} · Posición {{ ej.posicion }}</span>
@@ -81,12 +97,14 @@
 {% endif %}
 {%- endmacro %}
 
+{# Portada generada con el título del libro #}
 {% macro cover(titulo, size=None, gray=False) -%}
 <div class="cover{{ ' cover--' ~ size if size }}{{ ' cover--gray' if gray }}" aria-hidden="true">
   {%- if size == "sm" -%}{{ titulo[:2] | upper }}{%- else -%}{{ titulo | truncate(48) }}{%- endif -%}
 </div>
 {%- endmacro %}
 
+{# Alerta con ícono según el tono #}
 {% macro alert(tone, title=None, text=None) -%}
 {%- set iconos = {"success": "check-circle", "error": "alert-circle", "warning": "alert-triangle", "info": "info"} -%}
 <div class="alert alert--{{ tone }}" role="{{ 'alert' if tone in ('error', 'warning') else 'status' }}">
@@ -111,6 +129,7 @@
 </header>
 {%- endmacro %}
 
+{# Estado vacío: sin resultados, sin registros, etc. #}
 {% macro empty_state(icon_name, title, text, tone=None) -%}
 <div class="empty" role="status">
   <span class="empty__icon{{ ' empty__icon--' ~ tone if tone }}">{{ icon(icon_name, 28) }}</span>
@@ -120,6 +139,7 @@
 </div>
 {%- endmacro %}
 
+{# Indicador del panel de inicio #}
 {% macro stat(icon_name, label, value, href=None) -%}
 {%- set contenido -%}
   <span class="stat__icon">{{ icon(icon_name, 22) }}</span>
@@ -132,6 +152,7 @@
 {% else %}<div class="card stat">{{ contenido }}</div>{% endif %}
 {%- endmacro %}
 
+{# Piezas internas de los campos: etiqueta y mensaje de error o ayuda #}
 {% macro _label(name, label, required, optional=False) -%}
 <label class="label" for="{{ name }}">{{ label }}{% if required %}<span class="req" aria-hidden="true">*</span>{% elif optional %}<span class="opt">(opcional)</span>{% endif %}</label>
 {%- endmacro %}
@@ -144,6 +165,7 @@
 {% endif %}
 {%- endmacro %}
 
+{# Campos de formulario con su etiqueta, error por campo y ayuda #}
 {% macro field(name, label, value="", error=None, type="text", required=False, optional=False, placeholder="",
                help=None, readonly=False, disabled=False, autocomplete="off", icon_name=None, span=False, id=None) -%}
 {%- set fid = id or name -%}

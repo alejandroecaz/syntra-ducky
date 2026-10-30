@@ -1,6 +1,18 @@
-{# Documento base (Vista): head, avisos flotantes, modales comunes y syntra.js. Todas las páginas heredan de aquí. -#}
+{# ============================================================
+   Archivo: views/base.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Documento base (Vista): head, avisos flotantes, modales comunes y syntra.js. Todas las páginas
+                heredan de aquí.
+   ============================================================ -#}
 <!DOCTYPE html>
 <html lang="es">
+  {# Metadatos, fuente Plus Jakarta Sans y hoja de estilos del design system #}
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +27,7 @@
   <body class="{% block body_class %}{% endblock %}">
     <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
+    {# Avisos flotantes con los mensajes flash de los controladores #}
     <div class="toast-stack" aria-live="polite">
       {% set titulos = {"success": "Listo", "error": "No se pudo completar", "warning": "Atención", "info": "Aviso"} %}
       {% set iconos = {"success": "check-circle", "error": "alert-circle", "warning": "alert-triangle", "info": "info"} %}
@@ -27,8 +40,10 @@
       {% endfor %}
     </div>
 
+    {# Contenido de cada layout (app, móvil o público) #}
     {% block body %}{% endblock %}
 
+    {# Modales comunes y comportamiento de la interfaz #}
     {% include "components/modales.html" %}
     <script src="{{ url_for('static', filename='js/syntra.js') }}"></script>
     {% block scripts %}{% endblock %}

@@ -1,6 +1,15 @@
-{# M03 · Ficha del libro y M04 · Ubicación del ejemplar (Vista).
-   Los datos vienen de catalogo_servicio.ficha(), el mismo que usa la ficha web
-   (HU-01-12, HU-01-14 y HU-01-15). -#}
+{# ============================================================
+   Archivo: views/movil/detalle.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: M03 · Ficha del libro y M04 · Ubicación del ejemplar (Vista). Los datos vienen de
+                catalogo_servicio.ficha(), el mismo que usa la ficha web (HU-01-12, HU-01-14 y HU-01-15).
+   ============================================================ -#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 {% import "movil/componentes.html" as m %}
@@ -10,6 +19,7 @@
 {% block encabezado %}{{ m.encabezado_regreso("Ficha del libro", libro.clave, url_for("movil.buscar", **volver)) }}{% endblock %}
 
 {% block contenido %}
+{# HU-01-12 · Abrir detalle de libro #}
 <section class="m-libro-hero">
   {{ ui.cover(libro.titulo, "md") }}
   <div class="m-libro-hero__datos">
@@ -31,6 +41,7 @@
   <div><dt>Tipo de acceso</dt><dd>{{ libro.tipo_acceso }}</dd></div>
 </dl>
 
+{# HU-01-14 y HU-01-15: ejemplares con su estado y ubicación #}
 <div class="m-seccion"><h2>Ejemplares y ubicación</h2></div>
 
 {% if ejemplares %}
@@ -46,6 +57,7 @@
       </article>
     {% endfor %}
   </div>
+{# HU-01-15 · Libro sin ejemplares #}
 {% else %}
   <div class="card">
     {{ ui.empty_state("package", cfg.MENSAJES.libro_sin_ejemplares,

@@ -1,10 +1,21 @@
-{# Captura de la orden de compra (Vista, HU-01-18). compra_servicio valida y regresa los errores. -#}
+{# ============================================================
+   Archivo: views/compras/form.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Captura de la orden de compra (Vista, HU-01-18). compra_servicio valida y regresa los errores.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Nueva orden de compra{% endblock %}
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
 
+{# Renglón de la orden: libro, cantidad y botón para quitarlo #}
 {% macro renglon(item={}) -%}
 <div class="order-row">
   <select class="select" name="libro_id" aria-label="Libro">
@@ -26,8 +37,10 @@
 <form method="post" novalidate>
   <div class="layout-aside">
     <div class="stack-lg">
+      {# HU-01-18 · Datos incompletos de la orden #}
       {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
 
+      {# Datos de la solicitud: proveedor, fecha requerida y justificación #}
       <section class="card">
         <div class="card__header"><h2 class="card__title">{{ icon("clipboard", 18) }}Datos de la solicitud</h2></div>
         <div class="card__body form-grid">
@@ -44,6 +57,7 @@
         </div>
       </section>
 
+      {# Libros a adquirir; la plantilla se clona con syntra.js al agregar un renglón #}
       <section class="card">
         <div class="card__header">
           <h2 class="card__title">{{ icon("library", 18) }}Libros a adquirir</h2>
@@ -62,6 +76,7 @@
       </section>
     </div>
 
+    {# Resumen que syntra.js actualiza al cambiar libros o cantidades #}
     <aside class="card" style="position: sticky; top: 88px">
       <div class="card__header"><h2 class="card__title">{{ icon("cart", 18) }}Resumen de la orden</h2></div>
       <div class="card__body summary">

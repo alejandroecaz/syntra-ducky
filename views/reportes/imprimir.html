@@ -1,5 +1,15 @@
-{# Vista previa e impresión del listado (Vista, HU-01-17). Conserva los filtros y los libros marcados
-   en el listado ("parametros") para confirmar o regresar sin perderlos. -#}
+{# ============================================================
+   Archivo: views/reportes/imprimir.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Vista previa e impresión del listado (Vista, HU-01-17). Conserva los filtros y los libros
+                marcados en el listado ("parametros") para confirmar o regresar sin perderlos.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -14,6 +24,7 @@
 </div>
 
 <div class="layout-aside">
+  {# HU-01-17 · Vista previa de impresión (se imprime solo el documento) #}
   <article class="doc" {% if imprimir_ahora %}data-auto-print{% endif %}>
     <header class="doc__header">
       <div class="doc__brand">
@@ -53,6 +64,7 @@
     </footer>
   </article>
 
+  {# Envío a impresión: conserva filtros y selección en campos ocultos #}
   <aside class="card no-print" style="position: sticky; top: 88px">
     <div class="card__header"><h2 class="card__title">{{ icon("printer", 18) }}Enviar a impresión</h2></div>
     <form class="card__body stack" method="post" action="{{ url_for('reportes.imprimir') }}" novalidate>
@@ -62,6 +74,7 @@
         {% for libro_id in seleccion | sort %}<input type="hidden" name="libro" value="{{ libro_id }}">{% endfor %}
       {% endif %}
 
+      {# HU-01-17 · Impresión satisfactoria / Impresora no disponible #}
       {% if resultado %}{{ ui.alert(resultado[0], text=resultado[1]) }}{% endif %}
 
       <fieldset class="check-group">

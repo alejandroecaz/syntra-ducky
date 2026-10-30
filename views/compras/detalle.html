@@ -1,4 +1,14 @@
-{# Detalle de una orden registrada (Vista, HU-01-18). -#}
+{# ============================================================
+   Archivo: views/compras/detalle.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Detalle de una orden registrada (Vista, HU-01-18).
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -6,6 +16,7 @@
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
 
 {% block contenido %}
+{# HU-01-18 · Orden de compra registrada: encabezado e impresión (no se imprime) #}
 <div class="no-print">
   {% call ui.page_header("Orden " ~ orden.folio, "Registrada el " ~ (orden.fecha_registro | fecha("%d/%m/%Y %H:%M")) ~ ".",
         hus=["HU-01-18 Orden de compra"], back=url_for("compras.lista"), back_label="Órdenes de compra") %}
@@ -14,6 +25,7 @@
   {% endcall %}
 </div>
 
+{# Datos que usa el documento compartido #}
 {% set folio = orden.folio %}
 {% set fecha_doc = orden.fecha_registro | fecha %}
 {% set solicitante = orden.solicitante ~ " (" ~ orden.solicitante_id ~ ")" %}

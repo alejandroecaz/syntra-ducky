@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: init_db.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Crea la base de datos SQLite con el esquema del Sprint 1 y los datos de demostración.
+# ============================================================
 """Crea la base de datos SQLite con el esquema del Sprint 1 y los datos de demostración.
 
 El esquema sigue el diseño de base_de_datos/BD_Sistema_Ducky.drawio (versión SQLite de
@@ -17,10 +28,11 @@ import config
 
 
 def _lista_sql(valores):
-    # ['A', 'B'] -> "'A', 'B'" para las restricciones CHECK
+    """['A', 'B'] -> "'A', 'B'" para las restricciones CHECK."""
     return ", ".join(f"'{valor}'" for valor in valores)
 
 
+# Esquema SQLite del Sprint 1 (tablas, llaves foráneas, restricciones e índices)
 ESQUEMA = f"""
 -- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...)
 CREATE TABLE perfiles (
@@ -413,6 +425,7 @@ LIBROS = [
      ]),
 ]
 
+# Fecha de baja del libro de prueba que está dado de baja (LIB-014)
 FECHA_BAJA_DEMO = "2026-09-15 10:00:00"
 
 
@@ -422,10 +435,12 @@ def nombre_autor(nombre, apellidos):
 
 
 def crear_tablas(cursor):
+    """Crea todas las tablas e índices del esquema."""
     cursor.executescript(ESQUEMA)
 
 
 def insertar_permisos(cursor):
+    """Guarda el catálogo de permisos de config.py. Regresa {codigo: id}."""
     ids = {}
     for codigo, descripcion, grupo in config.PERMISOS:
         cursor.execute(
@@ -436,13 +451,16 @@ def insertar_permisos(cursor):
 
 
 def insertar_perfiles(cursor, permisos_ids):
+    """Guarda los perfiles de prueba con sus permisos. Regresa {nombre: id}."""
     ids = {}
     for nombre, descripcion, disponible, permisos in PERFILES:
+        # Insertamos el perfil
         cursor.execute(
             "INSERT INTO perfiles (nombre, descripcion, disponible) VALUES (?, ?, ?)",
             (nombre, descripcion, disponible),
         )
         ids[nombre] = cursor.lastrowid
+        # Relacionamos sus permisos
         for codigo in permisos:
             cursor.execute(
                 "INSERT INTO perfil_permisos (perfil_id, permiso_id) VALUES (?, ?)",
@@ -452,6 +470,7 @@ def insertar_perfiles(cursor, permisos_ids):
 
 
 def insertar_usuarios(cursor, perfiles_ids):
+    """Guarda las cuentas de demostración con su contraseña cifrada."""
     for (identificador, nombre, paterno, materno, cuenta, email, contrasena,
          perfil, estado) in USUARIOS:
         cursor.execute(
@@ -466,20 +485,29 @@ def insertar_usuarios(cursor, perfiles_ids):
 
 
 def insertar_catalogos(cursor):
-    # Regresa los ids por nombre para usarlos al insertar libros y ejemplares
+    """Guarda editoriales, temas, autores, estancias y proveedores.
+
+    Regresa los ids por nombre para usarlos al insertar libros y ejemplares.
+    """
     ids = {"editoriales": {}, "temas": {}, "autores": {}, "estancias": {}}
+
+    # Editoriales y temas
     for nombre, pais in EDITORIALES:
         cursor.execute("INSERT INTO editoriales (nombre, pais) VALUES (?, ?)", (nombre, pais))
         ids["editoriales"][nombre] = cursor.lastrowid
     for nombre in TEMAS:
         cursor.execute("INSERT INTO temas (nombre) VALUES (?)", (nombre,))
         ids["temas"][nombre] = cursor.lastrowid
+
+    # Autores (la llave es su nombre completo)
     for nombre, apellidos, nacionalidad in AUTORES:
         cursor.execute(
             "INSERT INTO autores (nombre, apellidos, nacionalidad) VALUES (?, ?, ?)",
             (nombre, apellidos, nacionalidad),
         )
         ids["autores"][nombre_autor(nombre, apellidos)] = cursor.lastrowid
+
+    # Estancias (salas) y proveedores
     for nombre, descripcion in ESTANCIAS:
         cursor.execute("INSERT INTO estancias (nombre, descripcion) VALUES (?, ?)", (nombre, descripcion))
         ids["estancias"][nombre] = cursor.lastrowid
@@ -489,7 +517,7 @@ def insertar_catalogos(cursor):
 
 
 def obtener_estante(cursor, estancia_id, clave, estantes):
-    # Crea el estante la primera vez que aparece en los datos de prueba
+    """Id del estante; lo crea la primera vez que aparece en los datos de prueba."""
     llave = (estancia_id, clave)
     if llave not in estantes:
         cursor.execute("INSERT INTO estantes (estancia_id, clave) VALUES (?, ?)", llave)
@@ -498,10 +526,12 @@ def obtener_estante(cursor, estancia_id, clave, estantes):
 
 
 def insertar_libros(cursor, ids):
+    """Guarda los libros de prueba con sus autores (en orden) y sus ejemplares."""
     consecutivo = 1
     estantes = {}
     for (clave, titulo, autores, tema, editorial, anio, edicion, tipo_acceso,
          activo, ejemplares) in LIBROS:
+        # Insertamos el libro (los inactivos llevan fecha de baja)
         cursor.execute(
             "INSERT INTO libros (clave, titulo, editorial_id, tema_id, anio, edicion, sinopsis, "
             "tipo_acceso, activo, fecha_baja) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -511,11 +541,15 @@ def insertar_libros(cursor, ids):
             ),
         )
         libro_id = cursor.lastrowid
+
+        # Relacionamos sus autores en el orden capturado
         for orden, autor in enumerate(autores, start=1):
             cursor.execute(
                 "INSERT INTO libro_autores (libro_id, autor_id, orden) VALUES (?, ?, ?)",
                 (libro_id, ids["autores"][autor], orden),
             )
+
+        # Insertamos sus ejemplares con código consecutivo (sin estancia = ubicación pendiente)
         for estancia, estante, posicion, estado in ejemplares:
             estante_id = obtener_estante(cursor, ids["estancias"][estancia], estante, estantes) if estancia else None
             cursor.execute(
@@ -527,19 +561,25 @@ def insertar_libros(cursor, ids):
 
 def inicializar(ruta=config.DATABASE_PATH, con_libros=True):
     """Borra la base de datos y la vuelve a crear con datos de prueba."""
+    # Borramos la base anterior si existe
     if os.path.exists(ruta):
         os.remove(ruta)
 
+    # Abrimos la conexión con llaves foráneas activas y creamos las tablas
     conexion = sqlite3.connect(ruta)
     conexion.execute("PRAGMA foreign_keys = ON")
     cursor = conexion.cursor()
     crear_tablas(cursor)
+
+    # Insertamos los datos de prueba en orden de dependencias
     permisos_ids = insertar_permisos(cursor)
     perfiles_ids = insertar_perfiles(cursor, permisos_ids)
     insertar_usuarios(cursor, perfiles_ids)
     ids = insertar_catalogos(cursor)
     if con_libros:
         insertar_libros(cursor, ids)
+
+    # Guardamos los cambios y cerramos
     conexion.commit()
     conexion.close()
 
@@ -548,6 +588,8 @@ def esquema_vigente(ruta=config.DATABASE_PATH):
     """True si la base de datos existe y tiene todas las tablas del esquema actual."""
     if not os.path.exists(ruta):
         return False
+
+    # Leemos las tablas que existen y revisamos que estén todas
     conexion = sqlite3.connect(ruta)
     filas = conexion.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
     conexion.close()
@@ -556,10 +598,12 @@ def esquema_vigente(ruta=config.DATABASE_PATH):
 
 
 if __name__ == "__main__":
+    # Con --si-hace-falta no se toca una base de datos que ya está al día
     if "--si-hace-falta" in sys.argv and esquema_vigente():
         print("La base de datos ya está al día:", config.DATABASE_PATH)
         sys.exit(0)
 
+    # Creamos la base de datos y mostramos las cuentas de demostración
     inicializar()
     print("Base de datos creada en:", config.DATABASE_PATH)
     print("Cuentas de demostración:")

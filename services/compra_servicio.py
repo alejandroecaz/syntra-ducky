@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: services/compra_servicio.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Servicio de órdenes de compra (HU-01-18).
+# ============================================================
 """Servicio de órdenes de compra (HU-01-18)."""
 from datetime import date
 
@@ -9,12 +20,12 @@ from services.errores import ErrorValidacion
 
 
 def listar():
-    """Órdenes registradas."""
+    """HU-01-18: Órdenes registradas."""
     return orden_modelo.listar()
 
 
 def obtener(orden_id):
-    """(orden, renglones) o None si no existe."""
+    """HU-01-18 · Orden de compra registrada: (orden, renglones) o None si no existe."""
     orden = orden_modelo.obtener(orden_id)
     if orden is None:
         return None
@@ -32,21 +43,24 @@ def proveedores():
 
 
 def renglones_de(borrador):
-    """Renglones del borrador en el formato del formulario."""
+    """HU-01-18 · Modificación de la orden: renglones del borrador en el formato del formulario."""
     return [{"libro_id": str(i["libro_id"]), "cantidad": str(i["cantidad"])} for i in borrador["items"]]
 
 
 def validar(form):
-    """Valida la captura. Regresa el borrador o lanza ErrorValidacion.
+    """HU-01-18: Valida la captura. Regresa el borrador o lanza ErrorValidacion.
 
     En el error, valores trae el borrador y "renglones" con lo capturado tal cual para regresarlo
     al formulario.
     """
+    # Leemos los datos generales de la orden
     borrador = {
         "proveedor": (form.get("proveedor") or "").strip(),
         "fecha_requerida": (form.get("fecha_requerida") or "").strip(),
         "justificacion": (form.get("justificacion") or "").strip(),
     }
+
+    # HU-01-18 · Datos incompletos de la orden: proveedor y fecha (no anterior a hoy)
     errores = {}
     if not borrador["proveedor"]:
         errores["proveedor"] = "Indica el proveedor."
@@ -59,10 +73,12 @@ def validar(form):
         except ValueError:
             errores["fecha_requerida"] = "Escribe una fecha válida."
 
+    # Juntamos cada libro con su cantidad y los libros activos que se pueden pedir
     renglones = [{"libro_id": libro_id, "cantidad": cantidad}
                  for libro_id, cantidad in zip(form.getlist("libro_id"), form.getlist("cantidad"))]
     activos = {str(libro["id"]) for libro in libros_disponibles()}
 
+    # Validamos renglón por renglón (los vacíos se ignoran)
     errores_renglones = []
     acumulado = {}
     for numero, renglon in enumerate(renglones, start=1):
@@ -81,11 +97,13 @@ def validar(form):
         libro_id = int(renglon["libro_id"])
         acumulado[libro_id] = acumulado.get(libro_id, 0) + int(cantidad)
 
+    # La orden necesita al menos un renglón válido
     if errores_renglones:
         errores["items"] = " ".join(errores_renglones)
     elif not acumulado:
         errores["items"] = "Agrega al menos un libro con su cantidad."
 
+    # Regresamos el borrador o los errores con lo capturado para no perderlo
     borrador["items"] = [{"libro_id": libro_id, "cantidad": cantidad} for libro_id, cantidad in acumulado.items()]
     if errores:
         raise ErrorValidacion("Falta información para generar la orden. Completa los campos marcados.",
@@ -94,7 +112,7 @@ def validar(form):
 
 
 def resolver_items(items):
-    """Agrega los datos de cada libro a los renglones del borrador."""
+    """HU-01-18 · Vista previa: agrega los datos de cada libro a los renglones del borrador."""
     resueltos = []
     for item in items:
         libro = libro_modelo.obtener_por_id(item["libro_id"])
@@ -104,8 +122,11 @@ def resolver_items(items):
 
 
 def registrar(borrador, usuario_id):
-    """Registra la orden confirmada. Regresa (id, mensaje)."""
+    """HU-01-18 · Orden de compra: registra la orden confirmada. Regresa (id, mensaje)."""
+    # El proveedor se registra si es nuevo
     proveedor_id = proveedor_modelo.obtener_o_crear(borrador["proveedor"])
+
+    # Guardamos la orden con sus renglones y su folio
     orden_id, folio = orden_modelo.registrar(
         proveedor_id, borrador["fecha_requerida"], borrador["justificacion"], usuario_id, borrador["items"]
     )

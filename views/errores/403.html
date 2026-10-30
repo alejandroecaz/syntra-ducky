@@ -1,10 +1,21 @@
-{# Acceso no autorizado (Vista 403): hay sesión pero el perfil no tiene el permiso de la función. -#}
+{# ============================================================
+   Archivo: views/errores/403.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Acceso no autorizado (Vista 403): hay sesión pero el perfil no tiene el permiso de la función.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Acceso no autorizado{% endblock %}
 
 {% block contenido %}
+{# Criterio Acceso sin autorización de todas las HU #}
 <div class="card">
   {% call ui.empty_state("lock", "Acceso no autorizado",
         "Tu perfil de usuario (" ~ usuario_actual().perfil ~ ") no tiene permiso para usar esta función. "

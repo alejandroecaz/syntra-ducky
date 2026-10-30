@@ -1,4 +1,14 @@
-{# Vista 404 del portal móvil: el libro no existe o ya fue dado de baja. -#}
+{# ============================================================
+   Archivo: views/movil/no_encontrado.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Vista 404 del portal móvil: el libro no existe o ya fue dado de baja.
+   ============================================================ -#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 {% import "movil/componentes.html" as m %}
@@ -8,6 +18,7 @@
 {% block encabezado %}{{ m.encabezado_regreso("No encontrado", None, url_for("movil.buscar")) }}{% endblock %}
 
 {% block contenido %}
+{# El libro no existe o ya fue dado de baja #}
 <div class="card">
   {% call ui.empty_state("search", "No encontramos ese libro", "El libro no existe o ya no forma parte del catálogo.") %}
     {{ ui.btn("Volver a buscar", "primary", "search", href=url_for("movil.buscar"), size="lg") }}

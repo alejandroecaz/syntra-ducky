@@ -1,4 +1,15 @@
-{# Modales comunes (Vista): confirmación y descartar cambios; los abre y cierra syntra.js. -#}
+{# ============================================================
+   Archivo: views/components/modales.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Modales comunes (Vista): confirmación y descartar cambios; los abre y cierra syntra.js.
+   ============================================================ -#}
+{# Confirmación genérica (baja de libro, deshabilitar cuenta...): syntra.js llena título, texto y acción #}
 <div class="modal" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-titulo">
   <div class="modal__backdrop" data-modal-close></div>
   <div class="modal__dialog">
@@ -19,6 +30,7 @@
   </div>
 </div>
 
+{# Descartar cambios al cancelar una edición (HU-01-11 · Cancelar edición) #}
 <div class="modal" id="modal-descartar" role="dialog" aria-modal="true" aria-labelledby="modal-descartar-titulo"
      data-cancel-message="Puedes seguir editando; tus cambios siguen en el formulario.">
   <div class="modal__backdrop" data-modal-close></div>

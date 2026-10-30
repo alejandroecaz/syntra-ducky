@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: models/db.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Conexión a SQLite y funciones comunes de acceso a datos (capa Modelo del MVC).
+# ============================================================
 """Conexión a SQLite y funciones comunes de acceso a datos (capa Modelo del MVC).
 
 Todos los modelos usan consultar() y ejecutar() con SQL parametrizado (con ?),
@@ -11,8 +22,10 @@ from flask import current_app, g
 
 def obtener_conexion():
     """Regresa la conexión de la petición actual (una por petición, con llaves foráneas activas)."""
+    # Abrimos la conexión solo la primera vez que se pide en la petición
     if "db" not in g:
         g.db = sqlite3.connect(current_app.config["DATABASE_PATH"])
+        # Filas como diccionario (fila["titulo"]) y llaves foráneas activas
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
         # Para poder usar normalizar() dentro del SQL
@@ -24,12 +37,14 @@ def normalizar(texto):
     """Quita acentos y mayúsculas: 'Páramo' -> 'paramo'."""
     if texto is None:
         return None
+    # Separamos cada letra de su acento y nos quedamos solo con la letra
     descompuesto = unicodedata.normalize("NFKD", str(texto))
     return "".join(c for c in descompuesto if not unicodedata.combining(c)).lower()
 
 
 def patron_contiene(texto):
     """Patrón para LIKE ... ESCAPE '\\' que busca el texto en cualquier parte (sin acentos)."""
+    # Escapamos \, % y _ para que el usuario no pueda meter comodines
     limpio = normalizar(texto).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     return f"%{limpio}%"
 
@@ -43,9 +58,12 @@ def cerrar_conexion(_error=None):
 
 def consultar(sql, parametros=(), uno=False):
     """Ejecuta un SELECT. Con uno=True regresa la primera fila o None."""
+    # Ejecutamos la consulta con parámetros y cerramos el cursor
     cursor = obtener_conexion().execute(sql, parametros)
     filas = cursor.fetchall()
     cursor.close()
+
+    # Regresamos una sola fila o la lista completa
     if uno:
         return filas[0] if filas else None
     return filas
@@ -53,9 +71,12 @@ def consultar(sql, parametros=(), uno=False):
 
 def ejecutar(sql, parametros=()):
     """Ejecuta un INSERT, UPDATE o DELETE, confirma el cambio y regresa el último id insertado."""
+    # Ejecutamos y guardamos los cambios
     conexion = obtener_conexion()
     cursor = conexion.execute(sql, parametros)
     conexion.commit()
+
+    # Regresamos el id del registro insertado (si aplica)
     ultimo_id = cursor.lastrowid
     cursor.close()
     return ultimo_id

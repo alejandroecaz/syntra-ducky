@@ -1,4 +1,14 @@
-{# Crear perfil con sus permisos (Vista, HU-01-07). Los permisos vienen de la tabla permisos. -#}
+{# ============================================================
+   Archivo: views/perfiles/form.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Crear perfil con sus permisos (Vista, HU-01-07). Los permisos vienen de la tabla permisos.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -12,8 +22,10 @@
 
 <form class="card" method="post" novalidate>
   <div class="card__body stack-lg">
+    {# HU-01-07 · Nombre duplicado / Perfil incompleto #}
     {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
 
+    {# Nombre y descripción del perfil #}
     <div class="form-grid">
       {{ ui.field("nombre", "Nombre del perfil", valores.get("nombre"), errores.get("nombre"), required=True,
                   placeholder="Ej. Servicio social", help="Debe ser único. Prueba “Alumno” para ver el aviso de duplicado.") }}
@@ -21,6 +33,7 @@
                   placeholder="¿Para quién es este perfil?") }}
     </div>
 
+    {# Permisos agrupados (al menos uno) #}
     <div class="stack">
       <div class="row-between">
         <span class="label">Permisos<span class="req" aria-hidden="true">*</span></span>

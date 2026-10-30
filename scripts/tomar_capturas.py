@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: scripts/tomar_capturas.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Toma las capturas de pantalla de docs/capturas/ con Playwright.
+# ============================================================
 """Toma las capturas de pantalla de docs/capturas/ con Playwright.
 
 Levanta la app con una copia temporal de la base de datos (no toca syntra.db), recorre las
@@ -35,6 +46,7 @@ SIN_AVISOS = ".toast-stack { display: none !important; }"
 
 
 def iniciar_servidor():
+    """Arranca la app en un hilo con una base de datos temporal. Regresa (servidor, url)."""
     ruta = os.path.join(tempfile.mkdtemp(), "capturas.db")
     init_db.inicializar(ruta)
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
@@ -44,6 +56,7 @@ def iniciar_servidor():
 
 
 def capturar(pagina, nombre, completa=False):
+    """Oculta los avisos y guarda la captura de la página en docs/capturas/."""
     pagina.add_style_tag(content=SIN_AVISOS)
     pagina.wait_for_load_state("networkidle")
     pagina.screenshot(path=os.path.join(DESTINO, nombre), full_page=completa)
@@ -51,6 +64,7 @@ def capturar(pagina, nombre, completa=False):
 
 
 def entrar(pagina, base, ruta, cuenta, contrasena):
+    """Inicia sesión desde el formulario de la ruta indicada (web o móvil)."""
     pagina.goto(base + ruta)
     pagina.fill("#cuenta", cuenta)
     pagina.fill("#contrasena", contrasena)
@@ -59,6 +73,7 @@ def entrar(pagina, base, ruta, cuenta, contrasena):
 
 
 def capturas_web(navegador, base):
+    """Capturas de las pantallas web (login, inicio, búsqueda, ficha, perfiles y listado)."""
     pagina = navegador.new_context(**ESCRITORIO).new_page()
     pagina.goto(base + "/login")
     capturar(pagina, "01-login-web.png")
@@ -79,6 +94,7 @@ def capturas_web(navegador, base):
 
 
 def capturas_movil(navegador, base):
+    """Capturas del portal móvil con tamaño de celular."""
     pagina = navegador.new_context(**IPHONE).new_page()
     pagina.goto(base + "/movil/login")
     capturar(pagina, "06-login-movil.png")
@@ -103,6 +119,7 @@ def capturas_movil(navegador, base):
 
 
 def main():
+    """Arranca el servidor, toma todas las capturas y lo detiene."""
     os.makedirs(DESTINO, exist_ok=True)
     servidor, base = iniciar_servidor()
     print("Guardando capturas en", DESTINO)

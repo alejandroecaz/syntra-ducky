@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: app.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Punto de entrada: crea la aplicación Flask y registra los controladores (blueprints).
+# ============================================================
 """Punto de entrada: crea la aplicación Flask y registra los controladores (blueprints).
 
 Ejecutar:  venv/bin/python app.py
@@ -25,13 +36,17 @@ from services.catalogo_servicio import estado_libro
 from utils.iconos import icon
 from utils.seguridad import tiene_permiso, usuario_actual
 
+# Un blueprint por módulo de la web, más el del portal móvil
 BLUEPRINTS = (auth_bp, inicio_bp, usuario_bp, perfil_bp, catalogo_bp, reporte_bp, compra_bp, cuenta_bp, movil_bp)
 
 
 def fecha(valor, formato="%d/%m/%Y"):
     """Filtro de Jinja para mostrar las fechas como dd/mm/aaaa."""
+    # Sin fecha se muestra un guion
     if not valor:
         return "—"
+
+    # SQLite regresa las fechas como texto: probamos los dos formatos que usa
     if isinstance(valor, str):
         for patron in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
             try:
@@ -56,13 +71,16 @@ def preparar_base_de_datos(ruta):
 
 def crear_aplicacion(configuracion=None):
     """Application factory. En las pruebas se pasa otra DATABASE_PATH."""
+    # Creamos la aplicación con las carpetas del MVC y su configuración
     app = Flask(__name__, template_folder="views", static_folder="static")
     app.secret_key = config.SECRET_KEY
     app.config["DATABASE_PATH"] = config.DATABASE_PATH
     app.config.update(configuracion or {})
 
+    # Revisamos que la base de datos exista y tenga el esquema vigente
     preparar_base_de_datos(app.config["DATABASE_PATH"])
 
+    # Registramos los controladores y el cierre de la conexión al terminar cada petición
     for blueprint in BLUEPRINTS:
         app.register_blueprint(blueprint)
 
@@ -81,15 +99,18 @@ def crear_aplicacion(configuracion=None):
 
     @app.errorhandler(403)
     def acceso_no_autorizado(_error):
+        """Criterio "Acceso sin autorización" de todas las HU: hay sesión pero falta el permiso."""
         return render_template("errores/403.html"), 403
 
     @app.errorhandler(404)
     def no_encontrado(_error):
+        """Registro o página inexistente."""
         return render_template("errores/404.html"), 404
 
     # Nunca se muestra la traza del error al usuario
     @app.errorhandler(500)
     def error_interno(_error):
+        """Error inesperado con un mensaje amable."""
         return render_template("errores/500.html"), 500
 
     return app
@@ -109,14 +130,18 @@ def ip_local():
 
 
 if __name__ == "__main__":
+    # Creamos la app; si la BD es del esquema anterior se explica qué correr
     try:
         app = crear_aplicacion()
     except RuntimeError as error:
         raise SystemExit(str(error)) from None
 
+    # Imprimimos las direcciones para la web y para el celular
     print()
     print(f"  Web (esta computadora):  http://127.0.0.1:{config.PUERTO}")
     print(f"  Portal móvil (celular):  http://{ip_local()}:{config.PUERTO}/movil")
     print("  El celular debe estar en la misma red WiFi que esta computadora.")
     print()
+
+    # Corremos el servidor
     app.run(host=config.HOST, port=config.PUERTO, debug=False)

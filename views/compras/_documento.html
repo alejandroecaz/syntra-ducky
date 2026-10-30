@@ -1,6 +1,17 @@
-{# Documento de la orden de compra (Vista parcial) que comparten la vista previa y el detalle. -#}
+{# ============================================================
+   Archivo: views/compras/_documento.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Documento de la orden de compra (Vista parcial) que comparten la vista previa y el detalle.
+   ============================================================ -#}
 {% import "components/ui.html" as ui %}
 <article class="doc">
+  {# Encabezado con logo, folio y fecha #}
   <header class="doc__header">
     <div class="doc__brand">
       {{ ui.logo(56) }}
@@ -13,6 +24,7 @@
     </div>
   </header>
 
+  {# Datos generales de la orden #}
   <dl class="kv mb-4">
     <dt>Proveedor</dt><dd>{{ orden.proveedor }}</dd>
     <dt>Fecha requerida</dt><dd>{{ orden.fecha_requerida | fecha }}</dd>
@@ -20,6 +32,7 @@
     <dt>Justificación</dt><dd style="font-weight: 500">{{ orden.justificacion or "—" }}</dd>
   </dl>
 
+  {# Renglones de la orden con el total de ejemplares #}
   <div class="table-wrap">
     <table class="table">
       <thead><tr><th>#</th><th>Clave</th><th>Título</th><th>Autores</th><th>Editorial</th><th class="t-right">Cantidad</th></tr></thead>

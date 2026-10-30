@@ -1,4 +1,14 @@
-{# Consulta de usuarios (Vista, HU-01-05 y HU-01-03). -#}
+{# ============================================================
+   Archivo: views/usuarios/lista.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Consulta de usuarios (Vista, HU-01-05 y HU-01-03).
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -14,6 +24,7 @@
 {% endcall %}
 
 <div class="card">
+  {# HU-01-05: búsqueda por identificador (exacto) o nombre (contiene) #}
   <form class="card__body" method="get" action="{{ url_for('usuarios.lista') }}" role="search" novalidate>
     <input type="hidden" name="buscar" value="1">
     <div class="searchbar">
@@ -37,6 +48,7 @@
     <span class="xsmall">La contraseña nunca se muestra en la consulta.</span>
   </div>
 
+  {# HU-01-05 · Consulta por identificador / Coincidencias por nombre #}
   {% if usuarios %}
   <div class="table-wrap">
     <table class="table">
@@ -71,6 +83,7 @@
               {% if tiene_permiso("perfiles.asignar") %}
                 {{ ui.btn("Asignar perfil", "ghost", "shield", href=url_for("usuarios.asignar_perfil", usuario_id=u.id), size="sm", icon_only=True) }}
               {% endif %}
+              {# HU-01-03: deshabilitar o habilitar con confirmación (Cancelar cambio de estado) #}
               {% if tiene_permiso("usuarios.baja") %}
                 {% if u.estado == "Habilitada" %}
                   {{ ui.btn("Deshabilitar", "danger-soft", "user-x", size="sm",
@@ -99,8 +112,10 @@
       </tbody>
     </table>
   </div>
+  {# Se buscó sin texto #}
   {% elif error_busqueda %}
     {{ ui.empty_state("search", "Captura un criterio de búsqueda", "Escribe un identificador institucional o parte del nombre del usuario.") }}
+  {# HU-01-05 · Consulta sin coincidencias #}
   {% else %}
     {% call ui.empty_state("user-x", "No se encontraron usuarios",
           "Ninguna cuenta coincide con “" ~ texto ~ "”. Revisa el criterio o busca por " ~ ("nombre" if criterio == "identificador" else "identificador") ~ ".") %}

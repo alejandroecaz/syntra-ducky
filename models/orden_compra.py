@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: models/orden_compra.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Modelo de órdenes de compra y sus renglones (tablas ordenes_compra y orden_items).
+# ============================================================
 """Modelo de órdenes de compra y sus renglones (tablas ordenes_compra y orden_items)."""
 from datetime import date
 
@@ -56,12 +67,14 @@ def items_de(orden_id):
 
 def siguiente_folio():
     """Folio consecutivo del año: OC-2026-0001."""
+    # Tomamos el último id y le sumamos uno
     fila = consultar("SELECT MAX(id) AS ultimo FROM ordenes_compra", uno=True)
     return f"OC-{date.today().year}-{(fila['ultimo'] or 0) + 1:04d}"
 
 
 def registrar(proveedor_id, fecha_requerida, justificacion, usuario_id, items):
     """Registra la orden y sus renglones en una sola transacción. Regresa (id, folio)."""
+    # Insertamos el encabezado de la orden con su folio
     conexion = obtener_conexion()
     folio = siguiente_folio()
     cursor = conexion.execute(
@@ -70,6 +83,8 @@ def registrar(proveedor_id, fecha_requerida, justificacion, usuario_id, items):
         (folio, proveedor_id, fecha_requerida, justificacion or None, usuario_id),
     )
     orden_id = cursor.lastrowid
+
+    # Insertamos los renglones y confirmamos todo junto
     conexion.executemany(
         "INSERT INTO orden_items (orden_id, libro_id, cantidad) VALUES (?, ?, ?)",
         [(orden_id, item["libro_id"], item["cantidad"]) for item in items],

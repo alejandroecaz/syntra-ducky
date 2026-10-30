@@ -1,4 +1,15 @@
-{# Catálogo y búsqueda web (Vista, HU-01-12 y HU-01-13). Recibe lo que regresa catalogo_servicio.buscar_libros(). -#}
+{# ============================================================
+   Archivo: views/catalogo/lista.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Catálogo y búsqueda web (Vista, HU-01-12 y HU-01-13). Recibe lo que regresa
+                catalogo_servicio.buscar_libros().
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -6,6 +17,7 @@
 
 {% block contenido %}
 {% set etiquetas = dict(cfg.CAMPOS_BUSQUEDA) %}
+{# Encabezado con acciones según los permisos del perfil #}
 {% call ui.page_header("Catálogo de libros",
       "Busca por título, autor, tema, editorial o clave y abre un libro para ver la ubicación y disponibilidad de sus ejemplares.",
       hus=["HU-01-12 Consulta", "HU-01-13 Búsqueda"] + (["HU-01-09 Alta"] if tiene_permiso("libros.alta") else [])) %}
@@ -18,6 +30,7 @@
 {% endcall %}
 
 <div class="card">
+  {# HU-01-13: buscador por título, autor, tema, editorial o clave #}
   <form class="card__body" method="get" action="{{ url_for('catalogo.lista') }}" role="search" novalidate>
     <input type="hidden" name="buscar" value="1">
     <input type="hidden" name="ver" value="{{ vista }}">
@@ -30,6 +43,7 @@
     </div>
   </form>
 
+  {# Resumen de resultados y, para el personal, selector de activos / dados de baja #}
   <div class="table-meta">
     {% if buscando and not error_busqueda %}
       <span>{{ libros | length }} resultado{{ 's' if libros | length != 1 }} para <strong class="strong">“{{ texto }}”</strong> en {{ etiquetas.get(campo, campo) | lower }}</span>
@@ -48,6 +62,7 @@
     {% endif %}
   </div>
 
+  {# HU-01-12 · Mostrar catálogo: tabla de libros con su disponibilidad #}
   {% if libros %}
   <div class="table-wrap">
     <table class="table">
@@ -82,12 +97,15 @@
       </tbody>
     </table>
   </div>
+  {# HU-01-13 · Criterio vacío #}
   {% elif error_busqueda %}
     {{ ui.empty_state("search", "Captura un criterio de búsqueda", "Escribe el texto que quieres buscar y presiona Buscar. El formulario se mantiene para que lo corrijas.") }}
+  {# HU-01-12 · Catálogo vacío #}
   {% elif not hay_catalogo %}
     {% call ui.empty_state("library", "No hay libros registrados", "El catálogo todavía no tiene libros. Cuando el personal de biblioteca registre uno, aparecerá aquí.") %}
       {% if tiene_permiso("libros.alta") %}{{ ui.btn("Registrar el primer libro", "primary", "plus", href=url_for("catalogo.nuevo")) }}{% endif %}
     {% endcall %}
+  {# HU-01-13 · Sin coincidencias #}
   {% elif buscando %}
     {% call ui.empty_state("search", "No se encontraron libros",
           "Ningún libro activo coincide con “" ~ texto ~ "” en " ~ etiquetas.get(campo, campo) | lower ~ ". Prueba con otro campo o revisa la ortografía.") %}

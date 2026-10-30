@@ -1,4 +1,14 @@
-{# Detalle de una cuenta (Vista, HU-01-05). -#}
+{# ============================================================
+   Archivo: views/usuarios/detalle.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Detalle de una cuenta (Vista, HU-01-05).
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -6,6 +16,7 @@
 {% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>{% endblock %}
 
 {% block contenido %}
+{# Acciones: editar (HU-01-04), asignar perfil (HU-01-08) y habilitar o deshabilitar con confirmación (HU-01-03) #}
 {% call ui.page_header(usuario.nombre_completo, "Identificador " ~ usuario.identificador ~ " · Cuenta " ~ usuario.cuenta,
       hus=["HU-01-05 Consulta"], back=url_for("usuarios.lista"), back_label="Usuarios") %}
   {% if tiene_permiso("usuarios.editar") %}
@@ -37,11 +48,13 @@
   {% endif %}
 {% endcall %}
 
+{# Aviso de cuenta deshabilitada #}
 {% if usuario.estado != "Habilitada" %}
   {{ ui.alert("warning", "Cuenta deshabilitada", "Esta cuenta no puede iniciar sesión. Su información e historial se conservan.") }}
   <div style="height: 20px"></div>
 {% endif %}
 
+{# HU-01-05: datos de la cuenta (sin contraseña) y permisos de su perfil #}
 <div class="grid grid-2">
   <section class="card">
     <div class="card__header"><h2 class="card__title">{{ icon("user", 18) }}Datos de la cuenta</h2></div>

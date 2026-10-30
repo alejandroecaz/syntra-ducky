@@ -1,3 +1,14 @@
+# ============================================================
+# Archivo: config.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Configuración y constantes del sistema.
+# ============================================================
 """Configuración y constantes del sistema.
 
 Aquí viven los valores que el código usa como reglas (permisos, estados, límites y mensajes
@@ -8,12 +19,14 @@ import secrets
 
 from dotenv import load_dotenv
 
+# Carpeta del proyecto y variables de entorno de .env
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # Se lee de .env; si no existe se usa una clave aleatoria
 SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 
+# Ruta del archivo de base de datos SQLite
 DATABASE_PATH = os.path.join(BASE_DIR, "syntra.db")
 
 # 0.0.0.0 para poder abrir el sistema desde el celular en la misma red.
@@ -21,6 +34,7 @@ DATABASE_PATH = os.path.join(BASE_DIR, "syntra.db")
 HOST = "0.0.0.0"
 PUERTO = 5050
 
+# Nombres que se muestran en pantallas y documentos
 NOMBRE_SISTEMA = "Syntra"
 NOMBRE_CLIENTE = "Biblioteca Universidad Ducky"
 
@@ -51,7 +65,7 @@ PERMISOS = [
 # Quien tenga alguno de estos permisos es personal de biblioteca (puede ver libros dados de baja)
 PERMISOS_PERSONAL = ("libros.alta", "libros.editar", "libros.baja")
 
-# Cuentas de usuario
+# Cuentas de usuario (HU-01-02 a HU-01-06)
 ESTADO_HABILITADA = "Habilitada"
 ESTADO_DESHABILITADA = "Deshabilitada"
 ESTADOS_CUENTA = [ESTADO_HABILITADA, ESTADO_DESHABILITADA]
@@ -59,7 +73,7 @@ LONGITUD_MINIMA_CONTRASENA = 6
 PATRON_EMAIL = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 PATRON_TELEFONO = r"^[0-9 +()-]{7,20}$"
 
-# Libros y ejemplares
+# Libros y ejemplares (HU-01-09 a HU-01-11, HU-01-14 y HU-01-15)
 ESTADO_DISPONIBLE = "Disponible"
 ESTADOS_EJEMPLAR = [
     ESTADO_DISPONIBLE,
@@ -89,7 +103,7 @@ CAMPO_BUSQUEDA_PREDETERMINADO = "titulo"
 # Qué libros ve el personal en el catálogo: activos, dados de baja o todos
 VISTAS_CATALOGO = ("activos", "baja", "todos")
 
-# Órdenes de compra
+# Órdenes de compra (HU-01-18)
 CANTIDAD_MAXIMA_POR_LIBRO = 500
 ESTADO_ORDEN_REGISTRADA = "Registrada"
 ESTADOS_ORDEN = [ESTADO_ORDEN_REGISTRADA, "Cancelada"]
@@ -97,7 +111,7 @@ ESTADOS_ORDEN = [ESTADO_ORDEN_REGISTRADA, "Cancelada"]
 # Portal móvil: cuántos libros mostrar en "Disponibles ahora"
 MOVIL_LIBROS_DESTACADOS = 4
 
-# Mensajes que la web y el portal móvil muestran igual
+# Mensajes de los criterios de aceptación que la web y el portal móvil muestran igual
 MENSAJES = {
     "login_campos_vacios": "Completa los campos obligatorios para iniciar sesión.",
     "login_credenciales": "Cuenta o contraseña incorrecta",

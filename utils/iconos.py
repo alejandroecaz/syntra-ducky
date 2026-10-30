@@ -1,6 +1,18 @@
+# ============================================================
+# Archivo: utils/iconos.py
+# Proyecto: Sistema Ducky de Gestión Bibliotecaria
+# Syntra Technologies - Equipo 1 - Sprint 1
+# Materia: Ingeniería de Software
+# Autores:
+#   - Melissa Silva Vázquez                #624352
+#   - Tomás Zapata Pérez                   #629048
+#   - Alejandro Evaristo Cazares Escobedo  #626337
+# Descripción: Íconos SVG (trazos tipo Lucide) que las plantillas usan con icon("nombre").
+# ============================================================
 """Íconos SVG (trazos tipo Lucide) que las plantillas usan con icon("nombre")."""
 from markupsafe import Markup
 
+# Trazos SVG de cada ícono (viewBox 24x24); el nombre es el que se usa en las plantillas
 TRAZOS = {
     "home": '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     "book": '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
@@ -75,7 +87,10 @@ TRAZOS = {
 
 def icon(nombre, tamano=18, clase=""):
     """SVG en línea del ícono; si el nombre no existe usa el de información."""
+    # Si el nombre no existe usamos el ícono de información
     trazo = TRAZOS.get(nombre, TRAZOS["info"])
+
+    # Markup evita que Jinja escape el SVG
     return Markup(
         f'<svg class="icon {clase}" width="{tamano}" height="{tamano}" viewBox="0 0 24 24" fill="none" '
         f'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '

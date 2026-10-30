@@ -1,9 +1,24 @@
+/* ============================================================
+   Archivo: static/js/syntra.js
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Comportamiento de la interfaz: avisos, modales, confirmaciones, cambios sin guardar, PDF,
+                impresión, orden de compra y selección de libros del listado.
+   ============================================================ */
 (function () {
   "use strict";
 
+  /* === UTILIDADES === */
+  // Atajos para buscar un elemento ($) o una lista de elementos ($$)
   var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
   var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
 
+  // Trazos SVG de los íconos de los avisos (los mismos de utils/iconos.py)
   var ICONOS = {
     success: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
     error: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
@@ -11,31 +26,37 @@
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
   };
 
+  // Arma el SVG de un ícono con su tamaño
   function svg(trazo, tam) {
     return '<svg class="icon" width="' + (tam || 20) + '" height="' + (tam || 20) + '" viewBox="0 0 24 24" fill="none" ' +
       'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazo + "</svg>";
   }
 
+  // Escapa el texto para insertarlo como HTML sin riesgo
   function escapar(texto) {
     var div = document.createElement("div");
     div.textContent = texto;
     return div.innerHTML;
   }
 
-  /* Toasts */
+  /* === AVISOS FLOTANTES (TOASTS) === */
+  // Título de cada tipo de aviso
   var TITULOS = { success: "Listo", error: "No se pudo completar", warning: "Atención", info: "Aviso" };
 
+  // Cierra el aviso con animación
   function cerrarToast(toast) {
     if (!toast || toast.classList.contains("is-leaving")) return;
     toast.classList.add("is-leaving");
     setTimeout(function () { toast.remove(); }, 250);
   }
 
+  // Los errores se quedan más tiempo en pantalla
   function programarCierre(toast) {
     var tiempo = toast.classList.contains("toast--error") ? 9000 : 6000;
     setTimeout(function () { cerrarToast(toast); }, tiempo);
   }
 
+  // Muestra un aviso nuevo (lo usan los modales y el PDF)
   function toast(tono, mensaje, titulo) {
     var pila = $(".toast-stack");
     if (!pila) return;
@@ -51,15 +72,18 @@
     programarCierre(el);
   }
 
+  // Avisos que ya vienen del servidor (mensajes flash) y botón para cerrarlos
   $$(".toast").forEach(programarCierre);
   document.addEventListener("click", function (e) {
     var boton = e.target.closest(".toast__close");
     if (boton) cerrarToast(boton.closest(".toast"));
   });
 
-  /* Modales */
+  /* === MODALES === */
+  // Elemento que tenía el foco antes de abrir el modal, para regresarlo al cerrar
   var ultimoFoco = null;
 
+  // Abre el modal y pone el foco en su primer control
   function abrirModal(modal) {
     if (!modal) return;
     ultimoFoco = document.activeElement;
@@ -69,6 +93,7 @@
     if (foco) setTimeout(function () { foco.focus(); }, 30);
   }
 
+  // Cierra el modal; si fue cancelado avisa que no hubo cambios
   function cerrarModal(modal, cancelado) {
     if (!modal || !modal.classList.contains("is-open")) return;
     modal.classList.remove("is-open");
@@ -77,6 +102,7 @@
     if (cancelado && modal.dataset.cancelMessage) toast("info", modal.dataset.cancelMessage, "Operación cancelada");
   }
 
+  // Botones que abren (data-modal-open) o cierran (data-modal-close) un modal
   document.addEventListener("click", function (e) {
     var abrir = e.target.closest("[data-modal-open]");
     if (abrir) { e.preventDefault(); abrirModal(document.getElementById(abrir.dataset.modalOpen)); return; }
@@ -84,6 +110,7 @@
     if (cerrar) { e.preventDefault(); cerrarModal(cerrar.closest(".modal"), true); }
   });
 
+  // Escape cierra el modal abierto y los menús
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       var abierto = $$(".modal.is-open").pop();
@@ -92,7 +119,8 @@
     }
   });
 
-  /* Confirmacion para botones con data-confirm */
+  /* === CONFIRMACIÓN (HU-01-03 Y HU-01-10) === */
+  // Botones con data-confirm: deshabilitar cuenta, dar de baja un libro... Cancelar no cambia nada
   document.addEventListener("click", function (e) {
     var disparador = e.target.closest("[data-confirm]");
     if (!disparador) return;
@@ -111,6 +139,7 @@
     var form = $("form", modal);
     form.action = d.confirmAction;
     $(".confirm-fields", form).innerHTML = "";
+    // Campos ocultos que se mandan con la confirmación (por ejemplo la acción)
     var campos = d.confirmFields ? JSON.parse(d.confirmFields) : {};
     Object.keys(campos).forEach(function (nombre) {
       var input = document.createElement("input");
@@ -121,7 +150,8 @@
     abrirModal(modal);
   });
 
-  /* Boton en modo carga al enviar formularios */
+  /* === BOTÓN EN MODO CARGA === */
+  // Al enviar un formulario el botón muestra que está procesando
   document.addEventListener("submit", function (e) {
     var boton = e.submitter || $("[type=submit]", e.target);
     if (boton && !e.defaultPrevented) {
@@ -131,12 +161,14 @@
     if (form.hasAttribute("data-track-changes")) form.dataset.enviando = "1";
   });
 
-  /* Avisar si hay cambios sin guardar */
+  /* === CAMBIOS SIN GUARDAR (HU-01-11 · CANCELAR EDICIÓN) === */
+  // Se guarda el estado inicial del formulario para saber si se modificó
   $$("form[data-track-changes]").forEach(function (form) {
     var inicial = new URLSearchParams(new FormData(form)).toString();
     form.estaModificado = function () { return new URLSearchParams(new FormData(form)).toString() !== inicial; };
   });
 
+  // Si se cancela con cambios, se pide confirmar antes de descartarlos
   document.addEventListener("click", function (e) {
     var enlace = e.target.closest("[data-cancel-edit]");
     if (!enlace) return;
@@ -149,7 +181,7 @@
     }
   });
 
-  /* Mostrar / ocultar contraseña */
+  /* === MOSTRAR / OCULTAR CONTRASEÑA === */
   document.addEventListener("click", function (e) {
     var boton = e.target.closest("[data-toggle-password]");
     if (!boton) return;
@@ -160,16 +192,18 @@
     boton.setAttribute("aria-pressed", String(!visible));
   });
 
-  /* Filas clicables */
+  /* === FILAS CLICABLES === */
+  // Las filas con data-href abren el detalle (salvo que se dé clic en un botón o enlace)
   document.addEventListener("click", function (e) {
     var fila = e.target.closest("tr[data-href]");
     if (!fila || e.target.closest("a, button, form, input, select")) return;
     window.location.href = fila.dataset.href;
   });
 
-  /* Menu movil y menu de usuario */
+  /* === MENÚ LATERAL EN CELULAR Y MENÚ DEL USUARIO === */
   var sidebar = $(".sidebar");
   var overlay = $(".overlay");
+  // Abre o cierra el menú lateral en pantallas chicas
   function alternarSidebar(abrir) {
     if (!sidebar) return;
     sidebar.classList.toggle("is-open", abrir);
@@ -179,6 +213,7 @@
     if (e.target.closest("[data-sidebar-toggle]")) alternarSidebar(!sidebar.classList.contains("is-open"));
     else if (e.target.closest(".overlay")) alternarSidebar(false);
 
+    // Menú del usuario: se cierra al dar clic fuera
     var chip = e.target.closest("[data-menu-toggle]");
     $$(".menu.is-open").forEach(function (m) {
       if (!chip || m !== document.getElementById(chip.dataset.menuToggle)) m.classList.remove("is-open");
@@ -190,7 +225,8 @@
     }
   });
 
-  /* Generar PDF */
+  /* === GENERAR PDF (HU-01-16) === */
+  // Se pide el PDF con fetch para mostrar el resultado sin salir del listado
   document.addEventListener("click", function (e) {
     var boton = e.target.closest("[data-pdf-url]");
     if (!boton) return;
@@ -204,6 +240,7 @@
     var formPdf = boton.dataset.pdfForm && document.getElementById(boton.dataset.pdfForm);
     if (formPdf) url += (url.indexOf("?") === -1 ? "?" : "&") + new URLSearchParams(new FormData(formPdf)).toString();
 
+    // HU-01-16 · Generación satisfactoria / Catálogo sin registros / Error durante la generación
     fetch(url, { headers: { "X-Requested-With": "fetch" }, credentials: "same-origin" })
       .then(function (resp) {
         var tipo = resp.headers.get("Content-Type") || "";
@@ -240,13 +277,15 @@
       .finally(function () { boton.classList.remove("is-loading"); });
   });
 
-  /* Abrir la ventana de impresion */
+  /* === IMPRESIÓN (HU-01-17 Y HU-01-18) === */
+  // Abre el diálogo de impresión al confirmar o con los botones data-print
   if ($("[data-auto-print]")) setTimeout(function () { window.print(); }, 600);
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-print]")) { e.preventDefault(); window.print(); }
   });
 
-  /* Llenar el modal para editar un ejemplar */
+  /* === ACTUALIZAR EJEMPLAR (HU-01-15 · DISPONIBILIDAD ACTUALIZADA) === */
+  // Llena el modal con los datos del ejemplar elegido
   document.addEventListener("click", function (e) {
     var boton = e.target.closest("[data-ejemplar]");
     if (!boton) return;
@@ -261,11 +300,12 @@
     abrirModal(modal);
   });
 
-  /* Renglones de la orden de compra */
+  /* === RENGLONES DE LA ORDEN DE COMPRA (HU-01-18) === */
   var contenedor = $("[data-order-rows]");
   if (contenedor) {
     var plantilla = document.getElementById("plantilla-renglon");
 
+    // Recalcula renglones, títulos distintos y total de ejemplares
     var actualizarResumen = function () {
       var filas = $$(".order-row", contenedor);
       var titulos = {};
@@ -284,6 +324,7 @@
       $("[data-sum-renglones]").textContent = filas.length;
     };
 
+    // Agregar un renglón (copia de la plantilla) o quitarlo
     document.addEventListener("click", function (e) {
       if (e.target.closest("[data-add-row]")) {
         contenedor.appendChild(plantilla.content.cloneNode(true));
@@ -302,12 +343,14 @@
     actualizarResumen();
   }
 
-  /* Libros marcados en el listado para imprimir o generar el PDF */
+  /* === SELECCIÓN DE LIBROS DEL LISTADO (HU-01-16 Y HU-01-17) === */
+  // Solo los libros marcados entran al PDF y a la impresión
   var casillasLibro = $$("[data-seleccion-libro]");
   if (casillasLibro.length) {
     var todos = $("[data-seleccion-todos]");
     var resumen = $("[data-seleccion-resumen]");
 
+    // Actualiza la casilla "todos", el resumen y habilita o deshabilita Imprimir y PDF
     var actualizarSeleccion = function () {
       var marcadas = casillasLibro.filter(function (c) { return c.checked; }).length;
       todos.checked = marcadas === casillasLibro.length;
@@ -327,5 +370,6 @@
     actualizarSeleccion();
   }
 
+  // Funciones disponibles para otras páginas
   window.Syntra = { toast: toast, abrirModal: abrirModal, cerrarModal: cerrarModal };
 })();

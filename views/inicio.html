@@ -1,4 +1,15 @@
-{# Panel de inicio web (Vista): funciones e indicadores que manda inicio_controller según los permisos del perfil. -#}
+{# ============================================================
+   Archivo: views/inicio.html
+   Proyecto: Sistema Ducky de Gestión Bibliotecaria
+   Syntra Technologies - Equipo 1 - Sprint 1
+   Materia: Ingeniería de Software
+   Autores:
+     - Melissa Silva Vázquez                #624352
+     - Tomás Zapata Pérez                   #629048
+     - Alejandro Evaristo Cazares Escobedo  #626337
+   Descripción: Panel de inicio web (Vista): funciones e indicadores que manda inicio_controller según los
+                permisos del perfil.
+   ============================================================ -#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -6,6 +17,7 @@
 
 {% block contenido %}
 {% set usuario = usuario_actual() %}
+{# HU-01-01: saludo con el perfil y búsqueda rápida por título #}
 <section class="welcome">
   <div>
     <h1>Hola, {{ usuario.nombre.split()[0] }}</h1>
@@ -24,6 +36,7 @@
   {% endif %}
 </section>
 
+{# Indicadores según los permisos del perfil #}
 {% if indicadores %}
 <div class="grid grid-4 mb-4" style="margin-bottom: 24px">
   {% for icono, etiqueta, valor, destino in indicadores %}
@@ -32,6 +45,7 @@
 </div>
 {% endif %}
 
+{# HU-01-01 · Inicio de sesión exitoso: solo las funciones del perfil #}
 <div class="row-between" style="margin-bottom: 14px">
   <h2>Tus funciones</h2>
   <span class="muted small">{{ acciones | length }} disponibles para el perfil {{ usuario.perfil }}</span>
