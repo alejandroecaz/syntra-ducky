@@ -1,15 +1,24 @@
-# ============================================================
-# Archivo: models/orden_compra.py
-# Proyecto: Sistema Ducky de Gestión Bibliotecaria
-# Syntra Technologies - Equipo 1 - Sprint 1
-# Materia: Ingeniería de Software
-# Autores:
-#   - Melissa Silva Vázquez                #624352
-#   - Tomás Zapata Pérez                   #629048
-#   - Alejandro Evaristo Cazares Escobedo  #626337
-# Descripción: Modelo de órdenes de compra y sus renglones (tablas ordenes_compra y orden_items).
-# ============================================================
-"""Modelo de órdenes de compra y sus renglones (tablas ordenes_compra y orden_items)."""
+"""
+============================================================
+Archivo:      models/orden_compra.py
+Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+Empresa desarrolladora: Syntra Technologies
+Cliente:      Universidad Ducky
+
+Descripcion:
+    Modelo de ordenes de compra y sus renglones (tablas ordenes_compra y
+    orden_items).
+
+Autores:
+    Melissa Silva Vazquez (624352)
+    Tomas Zapata Perez (629048)
+    Alejandro Evaristo Cazares Escobedo (626337)
+
+Fecha:
+    21/09/2026
+============================================================
+"""
+
 from datetime import date
 
 from models.db import consultar, obtener_conexion
@@ -18,7 +27,17 @@ from models.usuario import NOMBRE_COMPLETO
 
 
 def listar():
-    """Órdenes registradas, la más reciente primero, con totales."""
+    """
+    Descripcion:
+        Lista las ordenes registradas, la mas reciente primero, con proveedor,
+        solicitante y totales.
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        list[sqlite3.Row]: ordenes de compra.
+    """
     return consultar(
         f"""
         SELECT o.*, pr.nombre AS proveedor, {NOMBRE_COMPLETO} AS solicitante,
@@ -35,7 +54,16 @@ def listar():
 
 
 def obtener(orden_id):
-    """Una orden con el nombre del proveedor y del solicitante, o None."""
+    """
+    Descripcion:
+        Busca una orden con el nombre del proveedor y del solicitante.
+
+    Parametros:
+        orden_id (int): id de la orden.
+
+    Salida:
+        sqlite3.Row o None si no existe.
+    """
     return consultar(
         f"""
         SELECT o.*, pr.nombre AS proveedor, {NOMBRE_COMPLETO} AS solicitante,
@@ -50,12 +78,21 @@ def obtener(orden_id):
     )
 
 
-def items_de(orden_id):
-    """Renglones de la orden con los datos de cada libro."""
+def listar_items(orden_id):
+    """
+    Descripcion:
+        Lista los renglones de la orden con los datos de cada libro.
+
+    Parametros:
+        orden_id (int): id de la orden.
+
+    Salida:
+        list[sqlite3.Row]: renglones ordenados por clave.
+    """
     return consultar(
         f"""
-        SELECT i.cantidad, l.id AS libro_id, l.clave, l.titulo, {AUTORES_DEL_LIBRO} AS autores,
-               ed.nombre AS editorial
+        SELECT i.cantidad, l.id AS libro_id, l.clave, l.titulo,
+               {AUTORES_DEL_LIBRO} AS autores, ed.nombre AS editorial
         FROM orden_items i
         JOIN libros l ON l.id = i.libro_id
         JOIN editoriales ed ON ed.id = l.editorial_id
@@ -65,28 +102,61 @@ def items_de(orden_id):
     )
 
 
-def siguiente_folio():
-    """Folio consecutivo del año: OC-2026-0001."""
-    # Tomamos el último id y le sumamos uno
+def generar_siguiente_folio():
+    """
+    Descripcion:
+        Genera el folio consecutivo del anio, por ejemplo OC-2026-0001.
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        str: folio de la siguiente orden.
+    """
+    # Tomamos el ultimo id y le sumamos uno.
     fila = consultar("SELECT MAX(id) AS ultimo FROM ordenes_compra", uno=True)
     return f"OC-{date.today().year}-{(fila['ultimo'] or 0) + 1:04d}"
 
 
 def registrar(proveedor_id, fecha_requerida, justificacion, usuario_id, items):
-    """Registra la orden y sus renglones en una sola transacción. Regresa (id, folio)."""
-    # Insertamos el encabezado de la orden con su folio
+    """
+    Descripcion:
+        Registra la orden y sus renglones en una sola transaccion.
+
+    Parametros:
+        proveedor_id (int): id del proveedor.
+        fecha_requerida (str): fecha en formato aaaa-mm-dd.
+        justificacion (str): motivo de la compra (opcional).
+        usuario_id (int): id de quien solicita.
+        items (list[dict]): renglones con libro_id y cantidad.
+
+    Salida:
+        tuple[int, str]: id y folio de la orden.
+
+    Excepciones:
+        sqlite3.IntegrityError si un libro o el proveedor no existen.
+    """
+    # Insertamos el encabezado de la orden con su folio.
     conexion = obtener_conexion()
-    folio = siguiente_folio()
+    folio = generar_siguiente_folio()
     cursor = conexion.execute(
-        "INSERT INTO ordenes_compra (folio, proveedor_id, fecha_requerida, justificacion, usuario_id) "
+        "INSERT INTO ordenes_compra (folio, proveedor_id, fecha_requerida, "
+        "justificacion, usuario_id) "
         "VALUES (?, ?, ?, ?, ?)",
-        (folio, proveedor_id, fecha_requerida, justificacion or None, usuario_id),
+        (
+            folio,
+            proveedor_id,
+            fecha_requerida,
+            justificacion or None,
+            usuario_id,
+        ),
     )
     orden_id = cursor.lastrowid
 
-    # Insertamos los renglones y confirmamos todo junto
+    # Insertamos los renglones y confirmamos todo junto.
     conexion.executemany(
-        "INSERT INTO orden_items (orden_id, libro_id, cantidad) VALUES (?, ?, ?)",
+        "INSERT INTO orden_items (orden_id, libro_id, cantidad) VALUES (?, "
+        "?, ?)",
         [(orden_id, item["libro_id"], item["cantidad"]) for item in items],
     )
     conexion.commit()
@@ -94,6 +164,15 @@ def registrar(proveedor_id, fecha_requerida, justificacion, usuario_id, items):
 
 
 def contar():
-    """Número de órdenes registradas."""
+    """
+    Descripcion:
+        Cuenta las ordenes registradas.
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        int: numero de ordenes.
+    """
     fila = consultar("SELECT COUNT(*) AS total FROM ordenes_compra", uno=True)
     return fila["total"]
