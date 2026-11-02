@@ -1,7 +1,7 @@
 # Configuración de las herramientas de calidad (no es un paquete instalable)
 
 [tool.ruff]
-line-length = 120
+line-length = 79
 target-version = "py39"
 extend-exclude = ["venv", "figma-plugin-estilos"]
 
