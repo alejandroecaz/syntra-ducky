@@ -1,19 +1,57 @@
 -- ============================================================
--- Archivo: base_de_datos/ducky_bd_completa.sql
--- Proyecto: Sistema Ducky de Gestión Bibliotecaria
--- Syntra Technologies - Equipo 1 - Sprint 1
--- Materia: Ingeniería de Software
+-- Archivo:      base_de_datos/ducky_bd_completa.sql
+-- Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+-- Empresa desarrolladora: Syntra Technologies
+-- Cliente:      Universidad Ducky
+--
+-- Descripcion:
+--     Script de referencia en MySQL 8 con la base de datos completa del
+--     sistema (Sprints 1 a 4). Sigue el diseno de BD_Sistema_Ducky.drawio.
+--
+--     El prototipo del Sprint 1 no usa este script: init_db.py crea en
+--     SQLite solo las tablas de la primera entrega.
+--
 -- Autores:
---   - Melissa Silva Vázquez                #624352
---   - Tomás Zapata Pérez                   #629048
---   - Alejandro Evaristo Cazares Escobedo  #626337
--- Descripción: Base de datos COMPLETA (Sprints 1-4) - MySQL 8
+--     Melissa Silva Vazquez (624352)
+--     Tomas Zapata Perez (629048)
+--     Alejandro Evaristo Cazares Escobedo (626337)
+--
+-- Fecha:
+--     21/09/2026
+-- ============================================================
+--
+-- ============================================================
+-- Contenido del listado:
+--     CREACION DE LA BASE DE DATOS
+--     USUARIOS, PERFILES Y PERMISOS
+--         perfiles, permisos, perfil_permisos, usuarios
+--     CATALOGO DE LIBROS
+--         editoriales, autores, temas, libros, libro_autores
+--     UBICACION FISICA Y EJEMPLARES
+--         estancias, estantes, ejemplares
+--     COMPRAS Y BAJAS DE EJEMPLARES
+--         precios_libro, tipos_cambio, proveedores, ordenes_compra, orden_items, bajas_ejemplar
+--     PRESTAMOS Y DEVOLUCIONES
+--         prestamos, renovaciones, devoluciones, comprobantes_prestamo, lista_espera
+--     AVISOS Y MULTAS
+--         avisos, multas, pagos_multa
+--     INDICES
+-- ============================================================
+
+-- ============================================================
+-- CREACION DE LA BASE DE DATOS
+-- Borra la base anterior y la crea con caracteres en espanol.
 -- ============================================================
 DROP DATABASE IF EXISTS ducky_biblioteca;
 CREATE DATABASE ducky_biblioteca CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;
 USE ducky_biblioteca;
 
--- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...) y sus reglas de préstamo
+-- ============================================================
+-- USUARIOS, PERFILES Y PERMISOS
+-- Cuentas de acceso y lo que cada perfil puede hacer en el sistema.
+-- ============================================================
+
+-- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...) y sus reglas de prestamo.
 CREATE TABLE perfiles (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(60) NOT NULL UNIQUE,
@@ -27,7 +65,7 @@ CREATE TABLE perfiles (
     CONSTRAINT pk_perfiles PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Catálogo de permisos del sistema (ej. libros.alta)
+-- Catalogo de permisos del sistema (ej. libros.alta).
 CREATE TABLE permisos (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     codigo                 VARCHAR(60) NOT NULL UNIQUE,
@@ -36,7 +74,7 @@ CREATE TABLE permisos (
     CONSTRAINT pk_permisos PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Relación N:M entre perfiles y permisos
+-- Relacion N:M entre perfiles y permisos.
 CREATE TABLE perfil_permisos (
     perfil_id              INT UNSIGNED NOT NULL,
     permiso_id             INT UNSIGNED NOT NULL,
@@ -47,7 +85,7 @@ CREATE TABLE perfil_permisos (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Cuentas de alumnos, profesores y personal
+-- Cuentas de alumnos, profesores y personal.
 CREATE TABLE usuarios (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     identificador          VARCHAR(20) NOT NULL UNIQUE,
@@ -67,7 +105,12 @@ CREATE TABLE usuarios (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Editoriales de los libros
+-- ============================================================
+-- CATALOGO DE LIBROS
+-- Ficha bibliografica de cada titulo y sus catalogos de apoyo.
+-- ============================================================
+
+-- Editoriales de los libros.
 CREATE TABLE editoriales (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(150) NOT NULL UNIQUE,
@@ -75,7 +118,7 @@ CREATE TABLE editoriales (
     CONSTRAINT pk_editoriales PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Autores
+-- Autores.
 CREATE TABLE autores (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(100) NOT NULL,
@@ -84,7 +127,7 @@ CREATE TABLE autores (
     CONSTRAINT pk_autores PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Temas o categorías del catálogo
+-- Temas o categorias del catalogo.
 CREATE TABLE temas (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(120) NOT NULL UNIQUE,
@@ -92,7 +135,7 @@ CREATE TABLE temas (
     CONSTRAINT pk_temas PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Ficha bibliográfica de cada título
+-- Ficha bibliografica de cada titulo.
 CREATE TABLE libros (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     clave                  VARCHAR(20) NOT NULL UNIQUE,
@@ -103,7 +146,8 @@ CREATE TABLE libros (
     anio                   SMALLINT,
     edicion                VARCHAR(30),
     sinopsis               TEXT,
-    tipo_acceso            ENUM('Circulante','Reservado','Consulta externa') NOT NULL DEFAULT 'Circulante',
+    tipo_acceso            ENUM('Circulante','Reservado','Consulta externa')
+                                NOT NULL DEFAULT 'Circulante',
     activo                 BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_registro         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_baja             DATETIME,
@@ -114,7 +158,7 @@ CREATE TABLE libros (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Relación N:M entre libros y autores
+-- Relacion N:M entre libros y autores.
 CREATE TABLE libro_autores (
     libro_id               INT UNSIGNED NOT NULL,
     autor_id               INT UNSIGNED NOT NULL,
@@ -126,7 +170,12 @@ CREATE TABLE libro_autores (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Salas de la biblioteca (Sala General, Hemeroteca...)
+-- ============================================================
+-- UBICACION FISICA Y EJEMPLARES
+-- Salas, estantes y copias fisicas de cada libro.
+-- ============================================================
+
+-- Salas de la biblioteca (Sala General, Hemeroteca...).
 CREATE TABLE estancias (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(60) NOT NULL UNIQUE,
@@ -134,7 +183,7 @@ CREATE TABLE estancias (
     CONSTRAINT pk_estancias PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Estantes dentro de cada estancia
+-- Estantes dentro de cada estancia.
 CREATE TABLE estantes (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estancia_id            INT UNSIGNED NOT NULL,
@@ -145,14 +194,15 @@ CREATE TABLE estantes (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Copias físicas de cada libro, con ubicación y estado
+-- Copias fisicas de cada libro, con ubicacion y estado.
 CREATE TABLE ejemplares (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     codigo                 VARCHAR(20) NOT NULL UNIQUE,
     libro_id               INT UNSIGNED NOT NULL,
     estante_id             INT UNSIGNED,
     posicion               VARCHAR(20),
-    estado                 ENUM('Disponible','Prestado','Reservado','Perdido','Dañado','Fuera de servicio') NOT NULL DEFAULT 'Disponible',
+    estado                 ENUM('Disponible','Prestado','Reservado','Perdido','Dañado',
+                                'Fuera de servicio') NOT NULL DEFAULT 'Disponible',
     fecha_alta             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion    DATETIME,
     CONSTRAINT pk_ejemplares PRIMARY KEY (id),
@@ -162,7 +212,12 @@ CREATE TABLE ejemplares (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Historial de precios (para calcular reposición por pérdida)
+-- ============================================================
+-- COMPRAS Y BAJAS DE EJEMPLARES
+-- Precios, proveedores, ordenes de compra y retiro de ejemplares.
+-- ============================================================
+
+-- Historial de precios (para calcular reposicion por perdida).
 CREATE TABLE precios_libro (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     libro_id               INT UNSIGNED NOT NULL,
@@ -175,7 +230,7 @@ CREATE TABLE precios_libro (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Tipo de cambio vigente por fecha
+-- Tipo de cambio vigente por fecha.
 CREATE TABLE tipos_cambio (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     moneda                 ENUM('USD') NOT NULL DEFAULT 'USD',
@@ -186,7 +241,7 @@ CREATE TABLE tipos_cambio (
     CONSTRAINT ck_tipos_cambio_1 CHECK (valor_mxn > 0)
 ) ENGINE=InnoDB;
 
--- Proveedores de libros
+-- Proveedores de libros.
 CREATE TABLE proveedores (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(150) NOT NULL,
@@ -196,7 +251,7 @@ CREATE TABLE proveedores (
     CONSTRAINT pk_proveedores PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Órdenes de compra generadas por el bibliotecario
+-- Ordenes de compra generadas por el bibliotecario.
 CREATE TABLE ordenes_compra (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     folio                  VARCHAR(20) NOT NULL UNIQUE,
@@ -204,7 +259,8 @@ CREATE TABLE ordenes_compra (
     usuario_id             INT UNSIGNED NOT NULL,
     fecha_requerida        DATE NOT NULL,
     justificacion          TEXT,
-    estado                 ENUM('Registrada','Enviada','Recibida','Cancelada') NOT NULL DEFAULT 'Registrada',
+    estado                 ENUM('Registrada','Enviada','Recibida','Cancelada')
+                                NOT NULL DEFAULT 'Registrada',
     fecha_registro         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_ordenes_compra PRIMARY KEY (id),
     CONSTRAINT fk_ordenes_compra_proveedor FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
@@ -213,7 +269,7 @@ CREATE TABLE ordenes_compra (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Renglones (libros y cantidades) de cada orden
+-- Renglones (libros y cantidades) de cada orden.
 CREATE TABLE orden_items (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     orden_id               INT UNSIGNED NOT NULL,
@@ -231,7 +287,7 @@ CREATE TABLE orden_items (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Retiro de ejemplares perdidos, robados, dañados u obsoletos
+-- Retiro de ejemplares perdidos, robados, danados u obsoletos.
 CREATE TABLE bajas_ejemplar (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     ejemplar_id            INT UNSIGNED NOT NULL UNIQUE,
@@ -246,7 +302,12 @@ CREATE TABLE bajas_ejemplar (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Préstamo de un ejemplar a un usuario
+-- ============================================================
+-- PRESTAMOS Y DEVOLUCIONES
+-- Prestamos, renovaciones, devoluciones, comprobantes y lista de espera.
+-- ============================================================
+
+-- Prestamo de un ejemplar a un usuario.
 CREATE TABLE prestamos (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     ejemplar_id            INT UNSIGNED NOT NULL,
@@ -264,7 +325,7 @@ CREATE TABLE prestamos (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Historial de renovaciones de cada préstamo
+-- Historial de renovaciones de cada prestamo.
 CREATE TABLE renovaciones (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     prestamo_id            INT UNSIGNED NOT NULL,
@@ -278,7 +339,7 @@ CREATE TABLE renovaciones (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Registro de la devolución (máximo una por préstamo)
+-- Registro de la devolucion (maximo una por prestamo).
 CREATE TABLE devoluciones (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     prestamo_id            INT UNSIGNED NOT NULL UNIQUE,
@@ -293,7 +354,7 @@ CREATE TABLE devoluciones (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Recibos de préstamo enviados o impresos
+-- Recibos de prestamo enviados o impresos.
 CREATE TABLE comprobantes_prestamo (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     prestamo_id            INT UNSIGNED NOT NULL,
@@ -305,13 +366,14 @@ CREATE TABLE comprobantes_prestamo (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Usuarios esperando un libro sin ejemplares disponibles
+-- Usuarios esperando un libro sin ejemplares disponibles.
 CREATE TABLE lista_espera (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     libro_id               INT UNSIGNED NOT NULL,
     usuario_id             INT UNSIGNED NOT NULL,
     fecha_solicitud        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado                 ENUM('En espera','Notificado','Atendido','Cancelado') NOT NULL DEFAULT 'En espera',
+    estado                 ENUM('En espera','Notificado','Atendido','Cancelado')
+                                NOT NULL DEFAULT 'En espera',
     CONSTRAINT pk_lista_espera PRIMARY KEY (id),
     CONSTRAINT fk_lista_espera_libro FOREIGN KEY (libro_id) REFERENCES libros(id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -319,7 +381,12 @@ CREATE TABLE lista_espera (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Avisos de vencimiento, adeudo y lista de espera
+-- ============================================================
+-- AVISOS Y MULTAS
+-- Avisos a los usuarios, multas y sus pagos.
+-- ============================================================
+
+-- Avisos de vencimiento, adeudo y lista de espera.
 CREATE TABLE avisos (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     usuario_id             INT UNSIGNED NOT NULL,
@@ -335,7 +402,7 @@ CREATE TABLE avisos (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Multas generadas por un préstamo
+-- Multas generadas por un prestamo.
 CREATE TABLE multas (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     prestamo_id            INT UNSIGNED NOT NULL,
@@ -349,7 +416,7 @@ CREATE TABLE multas (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Pagos (totales o parciales) de cada multa
+-- Pagos (totales o parciales) de cada multa.
 CREATE TABLE pagos_multa (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     multa_id               INT UNSIGNED NOT NULL,
@@ -366,11 +433,14 @@ CREATE TABLE pagos_multa (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Índices para búsquedas del catálogo
+-- ============================================================
+-- INDICES
+-- Indices para las busquedas del catalogo y los reportes.
+-- ============================================================
+
 CREATE INDEX idx_libros_titulo ON libros (titulo);
 CREATE INDEX idx_autores_nombre ON autores (apellidos, nombre);
 CREATE INDEX idx_usuarios_nombre ON usuarios (apellido_paterno, nombre);
 CREATE INDEX idx_ejemplares_estado ON ejemplares (estado);
 CREATE INDEX idx_prestamos_estado ON prestamos (estado, fecha_vencimiento);
 CREATE INDEX idx_multas_estado ON multas (estado);
-

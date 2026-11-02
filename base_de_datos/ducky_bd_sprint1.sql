@@ -1,19 +1,39 @@
 -- ============================================================
--- Archivo: base_de_datos/ducky_bd_sprint1.sql
--- Proyecto: Sistema Ducky de Gestión Bibliotecaria
--- Syntra Technologies - Equipo 1 - Sprint 1
--- Materia: Ingeniería de Software
+-- Archivo:      base_de_datos/ducky_bd_sprint1.sql
+-- Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+-- Empresa desarrolladora: Syntra Technologies
+-- Cliente:      Universidad Ducky
+--
+-- Descripcion:
+--     Script de referencia en MySQL 8 con las tablas de la primera entrega
+--     (Sprint 1): usuarios y perfiles, catalogo, ubicacion de ejemplares y
+--     ordenes de compra.
+--
+--     init_db.py crea esta misma estructura en SQLite para el prototipo.
+--
 -- Autores:
---   - Melissa Silva Vázquez                #624352
---   - Tomás Zapata Pérez                   #629048
---   - Alejandro Evaristo Cazares Escobedo  #626337
--- Descripción: Base de datos PRIMERA ENTREGA (Sprint 1) - MySQL 8
+--     Melissa Silva Vazquez (624352)
+--     Tomas Zapata Perez (629048)
+--     Alejandro Evaristo Cazares Escobedo (626337)
+--
+-- Fecha:
+--     21/09/2026
+-- ============================================================
+
+-- ============================================================
+-- CREACION DE LA BASE DE DATOS
+-- Borra la base anterior y la crea con caracteres en espanol.
 -- ============================================================
 DROP DATABASE IF EXISTS ducky_biblioteca_sprint1;
 CREATE DATABASE ducky_biblioteca_sprint1 CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;
 USE ducky_biblioteca_sprint1;
 
--- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...)
+-- ============================================================
+-- USUARIOS, PERFILES Y PERMISOS
+-- Cuentas de acceso y lo que cada perfil puede hacer en el sistema.
+-- ============================================================
+
+-- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...).
 CREATE TABLE perfiles (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(60) NOT NULL UNIQUE,
@@ -23,7 +43,7 @@ CREATE TABLE perfiles (
     CONSTRAINT pk_perfiles PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Catálogo de permisos del sistema (ej. libros.alta)
+-- Catalogo de permisos del sistema (ej. libros.alta).
 CREATE TABLE permisos (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     codigo                 VARCHAR(60) NOT NULL UNIQUE,
@@ -32,7 +52,7 @@ CREATE TABLE permisos (
     CONSTRAINT pk_permisos PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Relación N:M entre perfiles y permisos
+-- Relacion N:M entre perfiles y permisos.
 CREATE TABLE perfil_permisos (
     perfil_id              INT UNSIGNED NOT NULL,
     permiso_id             INT UNSIGNED NOT NULL,
@@ -43,7 +63,7 @@ CREATE TABLE perfil_permisos (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Cuentas de alumnos, profesores y personal
+-- Cuentas de alumnos, profesores y personal.
 CREATE TABLE usuarios (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     identificador          VARCHAR(20) NOT NULL UNIQUE,
@@ -63,7 +83,12 @@ CREATE TABLE usuarios (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Editoriales de los libros
+-- ============================================================
+-- CATALOGO DE LIBROS
+-- Ficha bibliografica de cada titulo y sus catalogos de apoyo.
+-- ============================================================
+
+-- Editoriales de los libros.
 CREATE TABLE editoriales (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(150) NOT NULL UNIQUE,
@@ -71,7 +96,7 @@ CREATE TABLE editoriales (
     CONSTRAINT pk_editoriales PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Autores
+-- Autores.
 CREATE TABLE autores (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(100) NOT NULL,
@@ -80,7 +105,7 @@ CREATE TABLE autores (
     CONSTRAINT pk_autores PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Temas o categorías del catálogo
+-- Temas o categorias del catalogo.
 CREATE TABLE temas (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(120) NOT NULL UNIQUE,
@@ -88,7 +113,7 @@ CREATE TABLE temas (
     CONSTRAINT pk_temas PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Ficha bibliográfica de cada título
+-- Ficha bibliografica de cada titulo.
 CREATE TABLE libros (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     clave                  VARCHAR(20) NOT NULL UNIQUE,
@@ -109,7 +134,7 @@ CREATE TABLE libros (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Relación N:M entre libros y autores
+-- Relacion N:M entre libros y autores.
 CREATE TABLE libro_autores (
     libro_id               INT UNSIGNED NOT NULL,
     autor_id               INT UNSIGNED NOT NULL,
@@ -121,7 +146,12 @@ CREATE TABLE libro_autores (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Salas de la biblioteca (Sala General, Hemeroteca...)
+-- ============================================================
+-- UBICACION FISICA Y EJEMPLARES
+-- Salas, estantes y copias fisicas de cada libro.
+-- ============================================================
+
+-- Salas de la biblioteca (Sala General, Hemeroteca...).
 CREATE TABLE estancias (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(60) NOT NULL UNIQUE,
@@ -129,7 +159,7 @@ CREATE TABLE estancias (
     CONSTRAINT pk_estancias PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Estantes dentro de cada estancia
+-- Estantes dentro de cada estancia.
 CREATE TABLE estantes (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estancia_id            INT UNSIGNED NOT NULL,
@@ -140,14 +170,15 @@ CREATE TABLE estantes (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Copias físicas de cada libro, con ubicación y estado
+-- Copias fisicas de cada libro, con ubicacion y estado.
 CREATE TABLE ejemplares (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     codigo                 VARCHAR(20) NOT NULL UNIQUE,
     libro_id               INT UNSIGNED NOT NULL,
     estante_id             INT UNSIGNED,
     posicion               VARCHAR(20),
-    estado                 ENUM('Disponible','Prestado','Reservado','Perdido','Dañado','Fuera de servicio') NOT NULL DEFAULT 'Disponible',
+    estado                 ENUM('Disponible','Prestado','Reservado','Perdido','Dañado',
+                                'Fuera de servicio') NOT NULL DEFAULT 'Disponible',
     fecha_alta             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion    DATETIME,
     CONSTRAINT pk_ejemplares PRIMARY KEY (id),
@@ -157,7 +188,12 @@ CREATE TABLE ejemplares (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Proveedores de libros
+-- ============================================================
+-- COMPRAS Y BAJAS DE EJEMPLARES
+-- Precios, proveedores, ordenes de compra y retiro de ejemplares.
+-- ============================================================
+
+-- Proveedores de libros.
 CREATE TABLE proveedores (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nombre                 VARCHAR(150) NOT NULL,
@@ -167,7 +203,7 @@ CREATE TABLE proveedores (
     CONSTRAINT pk_proveedores PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
--- Órdenes de compra generadas por el bibliotecario
+-- Ordenes de compra generadas por el bibliotecario.
 CREATE TABLE ordenes_compra (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     folio                  VARCHAR(20) NOT NULL UNIQUE,
@@ -184,7 +220,7 @@ CREATE TABLE ordenes_compra (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Renglones (libros y cantidades) de cada orden
+-- Renglones (libros y cantidades) de cada orden.
 CREATE TABLE orden_items (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
     orden_id               INT UNSIGNED NOT NULL,
@@ -199,9 +235,12 @@ CREATE TABLE orden_items (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- Índices para búsquedas del catálogo
+-- ============================================================
+-- INDICES
+-- Indices para las busquedas del catalogo y los reportes.
+-- ============================================================
+
 CREATE INDEX idx_libros_titulo ON libros (titulo);
 CREATE INDEX idx_autores_nombre ON autores (apellidos, nombre);
 CREATE INDEX idx_usuarios_nombre ON usuarios (apellido_paterno, nombre);
 CREATE INDEX idx_ejemplares_estado ON ejemplares (estado);
-
