@@ -1,126 +1,183 @@
-{# ============================================================
-   Archivo: views/usuarios/lista.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/usuarios/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Consulta de usuarios (Vista, HU-01-05 y HU-01-03).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Consulta de usuarios (Vista, HU-01-05 y HU-01-03).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Usuarios{% endblock %}
 
 {% block contenido %}
-{% call ui.page_header("Usuarios",
-      "Consulta las cuentas por identificador institucional o por nombre para verificar su perfil y estado antes de cualquier operación.",
-      hus=["HU-01-05 Consulta", "HU-01-03 Baja", "HU-01-02 Registro"]) %}
-  {% if tiene_permiso("usuarios.registrar") %}
-    {{ ui.btn("Registrar usuario", "primary", "user-plus", href=url_for("usuarios.nuevo")) }}
-  {% endif %}
+{% call ui.dibujar_encabezado_pagina("Usuarios",
+                                     "Consulta las cuentas por identificador institucional o por "
+                                     "nombre para verificar su perfil y estado antes de cualquier "
+                                     "operación.",
+                                     hus=["HU-01-05 Consulta", "HU-01-03 Baja",
+                                          "HU-01-02 Registro"]) %}
+    {% if verificar_permiso("usuarios.registrar") %}
+        {{ ui.dibujar_boton("Registrar usuario", "primario", "user-plus",
+                            enlace=url_for("usuarios.registrar")) }}
+    {% endif %}
 {% endcall %}
 
-<div class="card">
-  {# HU-01-05: búsqueda por identificador (exacto) o nombre (contiene) #}
-  <form class="card__body" method="get" action="{{ url_for('usuarios.lista') }}" role="search" novalidate>
-    <input type="hidden" name="buscar" value="1">
-    <div class="searchbar">
-      {{ ui.select_field("criterio", "Buscar por", [("nombre", "Nombre"), ("identificador", "Identificador")], criterio) }}
-      {{ ui.field("q", "Texto de búsqueda", texto, error_busqueda,
-                  placeholder="Ej. López o 600101", icon_name="search",
-                  help="Identificador: coincidencia exacta. Nombre: contiene el texto.") }}
-      <div class="field"><span class="label" aria-hidden="true">&nbsp;</span>{{ ui.btn("Buscar", "primary", "search", type="submit") }}</div>
-      <div class="field"><span class="label" aria-hidden="true">&nbsp;</span>{{ ui.btn("Ver todos", "secondary", href=url_for("usuarios.lista"), disabled=not buscando) }}</div>
+<div class="tarjeta">
+    {# HU-01-05: busqueda por identificador (exacto) o nombre (contiene). #}
+    <form class="tarjeta-cuerpo" method="get" action="{{ url_for('usuarios.listar') }}"
+          role="search"
+          novalidate>
+        <input type="hidden" name="buscar" value="1">
+        <div class="barra-busqueda">
+            {{ ui.dibujar_campo_seleccion("criterio", "Buscar por",
+                                          [("nombre", "Nombre"),
+                                           ("identificador", "Identificador")], criterio) }}
+            {{ ui.dibujar_campo("q", "Texto de búsqueda", texto, error_busqueda,
+                                sugerencia="Ej. López o 600101", icono="search",
+                                ayuda="Identificador: coincidencia exacta. Nombre: contiene el "
+                                "texto.") }}
+            <div class="campo"><span class="etiqueta-campo" aria-hidden="true">&nbsp;</span>{{
+                ui.dibujar_boton("Buscar", "primario", "search", tipo="submit") }}</div>
+            <div class="campo"><span class="etiqueta-campo" aria-hidden="true">&nbsp;</span>{{
+                ui.dibujar_boton("Ver todos", "secundario", enlace=url_for("usuarios.listar"),
+                                 deshabilitado=not buscando) }}</div>
+        </div>
+    </form>
+
+    <div class="resumen-tabla">
+        {% if buscando and not error_busqueda %}
+            <span>{{ usuarios | length }} resultado{{ 's' if usuarios | length != 1 }} para <strong
+                class="resaltado">“{{ texto }}”</strong> por {{
+                    "identificador" if criterio == "identificador" else "nombre" }}</span>
+        {% elif not buscando %}
+            <span>{{ usuarios | length }} cuentas registradas</span>
+        {% else %}
+            <span>Captura un criterio para buscar</span>
+        {% endif %}
+        <span class="texto-muy-chico">La contraseña nunca se muestra en la consulta.</span>
     </div>
-  </form>
 
-  <div class="table-meta">
-    {% if buscando and not error_busqueda %}
-      <span>{{ usuarios | length }} resultado{{ 's' if usuarios | length != 1 }} para <strong class="strong">“{{ texto }}”</strong> por {{ "identificador" if criterio == "identificador" else "nombre" }}</span>
-    {% elif not buscando %}
-      <span>{{ usuarios | length }} cuentas registradas</span>
+    {# HU-01-05 · Consulta por identificador / Coincidencias por nombre. #}
+    {% if usuarios %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Identificador</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Cuenta</th>
+                    <th scope="col">Perfil</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="alinear-derecha">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr class="{{ 'destacado' if usuario.id == resaltar }}"
+                    data-enlace="{{ url_for('usuarios.mostrar_detalle', usuario_id=usuario.id) }}">
+                    <td class="monoespaciado resaltado">{{ usuario.identificador }}</td>
+                    <td>
+                        <div class="fila" style="gap: 10px; flex-wrap: nowrap">
+                            <span class="avatar">{{ usuario.nombre[0] }}{{
+                                usuario.apellido_paterno[0] }}</span>
+                            <a class="celda-titulo" href="{{
+                                url_for('usuarios.mostrar_detalle', usuario_id=usuario.id) }}">{{
+                                usuario.nombre_completo }}</a>
+                        </div>
+                    </td>
+                    <td class="monoespaciado">{{ usuario.cuenta }}</td>
+                    {% set tono_perfil = "azul" if usuario.perfil_nombre else "advertencia" %}
+                    <td>{{ ui.dibujar_etiqueta(usuario.perfil_nombre or "Sin perfil",
+                                               tono_perfil) }}</td>
+                    <td>{{ ui.dibujar_estado_cuenta(usuario.estado) }}</td>
+                    <td>
+                        <div class="acciones-tabla">
+                            {% if verificar_permiso("usuarios.editar") %}
+                                {{ ui.dibujar_boton(
+                                    "Editar datos", "transparente", "edit",
+                                    enlace=url_for("usuarios.editar", usuario_id=usuario.id),
+                                    tamano="chico", solo_icono=True) }}
+                            {% endif %}
+                            {% if verificar_permiso("perfiles.asignar") %}
+                                {{ ui.dibujar_boton(
+                                    "Asignar perfil", "transparente", "shield",
+                                    enlace=url_for("usuarios.asignar_perfil",
+                                                   usuario_id=usuario.id),
+                                    tamano="chico", solo_icono=True) }}
+                            {% endif %}
+                            {# HU-01-03: deshabilitar o habilitar con confirmacion (Cancelar
+                               cambio de estado). #}
+                            {% if verificar_permiso("usuarios.baja") %}
+                                {% if usuario.estado == "Habilitada" %}
+                                    {{ ui.dibujar_boton(
+                                        "Deshabilitar", "peligro-suave", "user-x", tamano="chico",
+                                        data_confirmar="1",
+                                        data_confirmar_titulo="¿Deshabilitar la cuenta de "
+                                            ~ usuario.nombre_completo ~ "?",
+                                        data_confirmar_texto="La cuenta " ~ usuario.cuenta
+                                            ~ " ya no podrá iniciar sesión. Sus datos y "
+                                            "registros asociados se conservan.",
+                                        data_confirmar_etiqueta="Deshabilitar",
+                                        data_confirmar_accion=url_for("usuarios.cambiar_estado",
+                                                                      usuario_id=usuario.id),
+                                        data_confirmar_campos='{"accion": "deshabilitar", '
+                                            '"volver": "' ~ request.full_path ~ '"}',
+                                        data_confirmar_cancelado="La cuenta conserva su "
+                                            "estado original.") }}
+                                {% else %}
+                                    {{ ui.dibujar_boton(
+                                        "Habilitar", "exito-suave", "user-check", tamano="chico",
+                                        data_confirmar="1",
+                                        data_confirmar_tono="primario",
+                                        data_confirmar_titulo="¿Habilitar la cuenta de "
+                                            ~ usuario.nombre_completo ~ "?",
+                                        data_confirmar_texto="La cuenta " ~ usuario.cuenta
+                                            ~ " podrá volver a iniciar sesión con su perfil "
+                                            "actual.",
+                                        data_confirmar_etiqueta="Habilitar",
+                                        data_confirmar_accion=url_for("usuarios.cambiar_estado",
+                                                                      usuario_id=usuario.id),
+                                        data_confirmar_campos='{"accion": "habilitar", '
+                                            '"volver": "' ~ request.full_path ~ '"}',
+                                        data_confirmar_cancelado="La cuenta conserva su "
+                                            "estado original.") }}
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {# Se busco sin texto. #}
+    {% elif error_busqueda %}
+        {{ ui.dibujar_estado_vacio("search", "Captura un criterio de búsqueda",
+                                   "Escribe un identificador institucional o parte del nombre del "
+                                   "usuario.") }}
+    {# HU-01-05 · Consulta sin coincidencias. #}
     {% else %}
-      <span>Captura un criterio para buscar</span>
+        {% call ui.dibujar_estado_vacio("user-x", "No se encontraron usuarios",
+                                        "Ninguna cuenta coincide con “" ~ texto ~ "”. Revisa el "
+                                        "criterio o busca por "
+                                        ~ ("nombre" if criterio == "identificador"
+                                           else "identificador") ~ ".") %}
+            {{ ui.dibujar_boton("Ver todos los usuarios", "secundario",
+                                enlace=url_for("usuarios.listar")) }}
+        {% endcall %}
     {% endif %}
-    <span class="xsmall">La contraseña nunca se muestra en la consulta.</span>
-  </div>
-
-  {# HU-01-05 · Consulta por identificador / Coincidencias por nombre #}
-  {% if usuarios %}
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col">Identificador</th>
-          <th scope="col">Nombre</th>
-          <th scope="col">Cuenta</th>
-          <th scope="col">Perfil</th>
-          <th scope="col">Estado</th>
-          <th scope="col" class="t-right">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for u in usuarios %}
-        <tr class="{{ 'is-highlight' if u.id == resaltar }}" data-href="{{ url_for('usuarios.detalle', usuario_id=u.id) }}">
-          <td class="mono strong">{{ u.identificador }}</td>
-          <td>
-            <div class="row" style="gap: 10px; flex-wrap: nowrap">
-              <span class="avatar">{{ u.nombre[0] }}{{ u.apellido_paterno[0] }}</span>
-              <a class="cell-title" href="{{ url_for('usuarios.detalle', usuario_id=u.id) }}">{{ u.nombre_completo }}</a>
-            </div>
-          </td>
-          <td class="mono">{{ u.cuenta }}</td>
-          <td>{{ ui.badge(u.perfil_nombre or "Sin perfil", "navy" if u.perfil_nombre else "warning") }}</td>
-          <td>{{ ui.estado_cuenta(u.estado) }}</td>
-          <td>
-            <div class="table-actions">
-              {% if tiene_permiso("usuarios.editar") %}
-                {{ ui.btn("Editar datos", "ghost", "edit", href=url_for("usuarios.editar", usuario_id=u.id), size="sm", icon_only=True) }}
-              {% endif %}
-              {% if tiene_permiso("perfiles.asignar") %}
-                {{ ui.btn("Asignar perfil", "ghost", "shield", href=url_for("usuarios.asignar_perfil", usuario_id=u.id), size="sm", icon_only=True) }}
-              {% endif %}
-              {# HU-01-03: deshabilitar o habilitar con confirmación (Cancelar cambio de estado) #}
-              {% if tiene_permiso("usuarios.baja") %}
-                {% if u.estado == "Habilitada" %}
-                  {{ ui.btn("Deshabilitar", "danger-soft", "user-x", size="sm",
-                            data_confirm="1",
-                            data_confirm_title="¿Deshabilitar la cuenta de " ~ u.nombre_completo ~ "?",
-                            data_confirm_text="La cuenta " ~ u.cuenta ~ " ya no podrá iniciar sesión. Sus datos y registros asociados se conservan.",
-                            data_confirm_label="Deshabilitar",
-                            data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=u.id),
-                            data_confirm_fields='{"accion": "deshabilitar", "volver": "' ~ request.full_path ~ '"}',
-                            data_confirm_cancel="La cuenta conserva su estado original.") }}
-                {% else %}
-                  {{ ui.btn("Habilitar", "success-soft", "user-check", size="sm",
-                            data_confirm="1", data_confirm_tone="primary",
-                            data_confirm_title="¿Habilitar la cuenta de " ~ u.nombre_completo ~ "?",
-                            data_confirm_text="La cuenta " ~ u.cuenta ~ " podrá volver a iniciar sesión con su perfil actual.",
-                            data_confirm_label="Habilitar",
-                            data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=u.id),
-                            data_confirm_fields='{"accion": "habilitar", "volver": "' ~ request.full_path ~ '"}',
-                            data_confirm_cancel="La cuenta conserva su estado original.") }}
-                {% endif %}
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {# Se buscó sin texto #}
-  {% elif error_busqueda %}
-    {{ ui.empty_state("search", "Captura un criterio de búsqueda", "Escribe un identificador institucional o parte del nombre del usuario.") }}
-  {# HU-01-05 · Consulta sin coincidencias #}
-  {% else %}
-    {% call ui.empty_state("user-x", "No se encontraron usuarios",
-          "Ninguna cuenta coincide con “" ~ texto ~ "”. Revisa el criterio o busca por " ~ ("nombre" if criterio == "identificador" else "identificador") ~ ".") %}
-      {{ ui.btn("Ver todos los usuarios", "secondary", href=url_for("usuarios.lista")) }}
-    {% endcall %}
-  {% endif %}
 </div>
 {% endblock %}

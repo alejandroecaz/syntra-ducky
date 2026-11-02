@@ -1,27 +1,41 @@
-{# ============================================================
-   Archivo: views/errores/403.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/errores/403.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Acceso no autorizado (Vista 403): hay sesion pero el perfil no tiene
+       el permiso de la funcion.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Acceso no autorizado (Vista 403): hay sesión pero el perfil no tiene el permiso de la función.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Acceso no autorizado{% endblock %}
 
 {% block contenido %}
-{# Criterio Acceso sin autorización de todas las HU #}
-<div class="card">
-  {% call ui.empty_state("lock", "Acceso no autorizado",
-        "Tu perfil de usuario (" ~ usuario_actual().perfil ~ ") no tiene permiso para usar esta función. "
-        ~ "No se mostró información protegida ni se realizaron cambios.", tone="warning") %}
-    {{ ui.btn("Ir al inicio", "primary", "home", href=url_for("inicio.panel")) }}
-    {{ ui.btn("Regresar", "secondary", "arrow-left", href="javascript:history.back()") }}
-  {% endcall %}
+{# Criterio Acceso sin autorizacion de todas las HU. #}
+<div class="tarjeta">
+    {% call ui.dibujar_estado_vacio("lock", "Acceso no autorizado",
+                                    "Tu perfil de usuario "
+                                    "(" ~ obtener_usuario_actual().perfil ~ ") no tiene permiso "
+                                    "para usar esta función. "
+                                    ~ "No se mostró información protegida ni se realizaron "
+                                    "cambios.", tono="advertencia") %}
+        {{ ui.dibujar_boton("Ir al inicio", "primario", "home",
+                            enlace=url_for("inicio.mostrar_panel")) }}
+        {{ ui.dibujar_boton("Regresar", "secundario", "arrow-left",
+                            enlace="javascript:history.back()") }}
+    {% endcall %}
 </div>
 {% endblock %}

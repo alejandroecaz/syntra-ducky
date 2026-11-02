@@ -1,103 +1,144 @@
-{# ============================================================
-   Archivo: views/reportes/imprimir.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/reportes/imprimir.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Vista previa e impresion del listado (Vista, HU-01-17). Conserva los
+       filtros y los libros marcados en el listado ("parametros") para
+       confirmar o regresar sin perderlos.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Vista previa e impresión del listado (Vista, HU-01-17). Conserva los filtros y los libros
-                marcados en el listado ("parametros") para confirmar o regresar sin perderlos.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Vista previa de impresión{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('reportes.listado', **parametros) }}">Listado de libros</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('reportes.mostrar_listado', **parametros) }}">Listado de libros</a>
+{%- endblock %}
 
 {% block contenido %}
-<div class="no-print">
-  {{ ui.page_header("Vista previa de impresión",
-        "Revisa el documento, elige una impresora y confirma. Solo se imprimen los libros que marcaste en el listado.",
-        hus=["HU-01-17 Impresión del listado"], back=url_for("reportes.listado", **parametros), back_label="Listado de libros") }}
+<div class="sin-imprimir">
+    {{ ui.dibujar_encabezado_pagina("Vista previa de impresión",
+                                    "Revisa el documento, elige una impresora y confirma. Solo se "
+                                    "imprimen los libros que marcaste en el listado.",
+                                    hus=["HU-01-17 Impresión del listado"],
+                                    regresar=url_for("reportes.mostrar_listado", **parametros),
+                                    texto_regresar="Listado de libros") }}
 </div>
 
-<div class="layout-aside">
-  {# HU-01-17 · Vista previa de impresión (se imprime solo el documento) #}
-  <article class="doc" {% if imprimir_ahora %}data-auto-print{% endif %}>
-    <header class="doc__header">
-      <div class="doc__brand">
-        {{ ui.logo(56) }}
-        <span><span class="brand__name">Syntra</span><br><span class="brand__sub">{{ cfg.NOMBRE_CLIENTE }}</span></span>
-      </div>
-      <div class="doc__meta">
-        <div class="doc__title">Listado de libros</div>
-        {{ ahora.strftime("%d/%m/%Y %H:%M") }} · {{ libros | length }} registros
-      </div>
-    </header>
-    <p class="small muted mb-4">Filtros: {{ filtros_texto }}</p>
-    {% if libros %}
-    <div class="table-wrap">
-      <table class="table">
-        <thead><tr><th>Clave</th><th>Título</th><th>Autores</th><th>Tema</th><th>Editorial</th><th>Estado</th></tr></thead>
-        <tbody>
-          {% for libro in libros %}
-          <tr>
-            <td class="mono nowrap">{{ libro.clave }}</td>
-            <td class="strong">{{ libro.titulo }}</td>
-            <td>{{ libro.autores }}</td>
-            <td>{{ libro.tema }}</td>
-            <td>{{ libro.editorial }}</td>
-            <td>{{ estado_libro(libro) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-      {{ ui.empty_state("inbox", "Sin registros", "No hay libros marcados que cumplan los filtros. Regresa al listado y marca al menos uno.") }}
-    {% endif %}
-    <footer class="doc__footer">
-      <span>Generado por {{ usuario_actual().nombre }} ({{ usuario_actual().perfil }})</span>
-      <span>Sistema Ducky de Gestión Bibliotecaria</span>
-    </footer>
-  </article>
-
-  {# Envío a impresión: conserva filtros y selección en campos ocultos #}
-  <aside class="card no-print" style="position: sticky; top: 88px">
-    <div class="card__header"><h2 class="card__title">{{ icon("printer", 18) }}Enviar a impresión</h2></div>
-    <form class="card__body stack" method="post" action="{{ url_for('reportes.imprimir') }}" novalidate>
-      {% for clave, valor in filtros.items() %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
-      {% if seleccion is not none %}
-        <input type="hidden" name="seleccion" value="1">
-        {% for libro_id in seleccion | sort %}<input type="hidden" name="libro" value="{{ libro_id }}">{% endfor %}
-      {% endif %}
-
-      {# HU-01-17 · Impresión satisfactoria / Impresora no disponible #}
-      {% if resultado %}{{ ui.alert(resultado[0], text=resultado[1]) }}{% endif %}
-
-      <fieldset class="check-group">
-        <legend>Impresora</legend>
-        <div class="stack" style="gap: 8px">
-          {% for imp in impresoras %}
-            <label class="check">
-              <input type="radio" name="impresora" value="{{ imp.id }}" {% if imp.id == seleccionada %}checked{% endif %}>
-              <span style="flex:1">
-                <span class="check__title">{{ imp.nombre }}</span><br>
-                {{ ui.badge("En línea", "success", dot=True) if imp.disponible else ui.badge("Fuera de línea", "error", dot=True) }}
-              </span>
-            </label>
-          {% endfor %}
+<div class="diseno-lateral">
+    {# HU-01-17 · Vista previa de impresion (se imprime solo el documento). #}
+    <article class="documento" {% if imprimir_ahora %}data-imprimir-al-cargar{% endif %}>
+        <header class="documento-encabezado">
+            <div class="documento-marca">
+                {{ ui.dibujar_logo(56) }}
+                <span><span class="marca-nombre">Syntra</span><br><span
+                    class="marca-subtitulo">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+            </div>
+            <div class="documento-datos">
+                <div class="documento-titulo">Listado de libros</div>
+                {{ ahora.strftime("%d/%m/%Y %H:%M") }} · {{ libros | length }} registros
+            </div>
+        </header>
+        <p class="texto-chico atenuado margen-abajo-4">Filtros: {{ filtros_texto }}</p>
+        {% if libros %}
+        <div class="contenedor-tabla">
+            <table class="tabla">
+                <thead>
+                    <tr>
+                        <th>Clave</th><th>Título</th><th>Autores</th><th>Tema</th><th>Editorial</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for libro in libros %}
+                    <tr>
+                        <td class="monoespaciado sin-salto">{{ libro.clave }}</td>
+                        <td class="resaltado">{{ libro.titulo }}</td>
+                        <td>{{ libro.autores }}</td>
+                        <td>{{ libro.tema }}</td>
+                        <td>{{ libro.editorial }}</td>
+                        <td>{{ obtener_estado_libro(libro) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-      </fieldset>
+        {% else %}
+            {{ ui.dibujar_estado_vacio("inbox", "Sin registros",
+                                       "No hay libros marcados que cumplan los filtros. Regresa al "
+                                       "listado y marca al menos uno.") }}
+        {% endif %}
+        <footer class="documento-pie">
+            <span>Generado por {{ obtener_usuario_actual().nombre }} ({{
+                obtener_usuario_actual().perfil }})</span>
+            <span>Sistema Ducky de Gestión Bibliotecaria</span>
+        </footer>
+    </article>
 
-      {{ ui.btn("Confirmar impresión", "primary", "printer", type="submit", block=True, disabled=not libros) }}
-      {{ ui.btn("Cancelar", "secondary", href=url_for("reportes.listado", **parametros), block=True) }}
-      {% if resultado and resultado[0] == "success" %}
-        {{ ui.btn("Abrir diálogo de impresión otra vez", "ghost", "refresh", block=True, data_print="1") }}
-      {% endif %}
-    </form>
-  </aside>
+    {# Envio a impresion: conserva filtros y seleccion en campos ocultos. #}
+    <aside class="tarjeta sin-imprimir" style="position: sticky; top: 88px">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("printer", 18) }}Enviar a impresión</h2>
+        </div>
+        <form class="tarjeta-cuerpo pila" method="post" action="{{ url_for('reportes.imprimir') }}"
+              novalidate>
+            {% for clave, valor in filtros.items() -%}
+                <input type="hidden" name="{{ clave }}" value="{{ valor }}">
+            {%- endfor %}
+            {% if seleccion is not none %}
+                <input type="hidden" name="seleccion" value="1">
+                {% for libro_id in seleccion | sort -%}
+                    <input type="hidden" name="libro" value="{{ libro_id }}">
+                {%- endfor %}
+            {% endif %}
+
+            {# HU-01-17 · Impresion satisfactoria / Impresora no disponible. #}
+            {% if resultado %}{{ ui.dibujar_alerta(resultado[0], texto=resultado[1]) }}{% endif %}
+
+            <fieldset class="grupo-casillas">
+                <legend>Impresora</legend>
+                <div class="pila" style="gap: 8px">
+                    {% for impresora in impresoras %}
+                        <label class="casilla">
+                            <input type="radio" name="impresora" value="{{ impresora.id }}"
+                                   {% if impresora.id == seleccionada %}checked{% endif %}>
+                            <span style="flex:1">
+                                <span class="casilla-titulo">{{ impresora.nombre }}</span><br>
+                                {% if impresora.disponible %}
+                                    {{ ui.dibujar_etiqueta("En línea", "exito", punto=True) }}
+                                {% else %}
+                                    {{ ui.dibujar_etiqueta("Fuera de línea", "error", punto=True) }}
+                                {% endif %}
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            {{ ui.dibujar_boton("Confirmar impresión", "primario", "printer", tipo="submit",
+                                completo=True, deshabilitado=not libros) }}
+            {{ ui.dibujar_boton("Cancelar", "secundario",
+                                enlace=url_for("reportes.mostrar_listado", **parametros),
+                                completo=True) }}
+            {% if resultado and resultado[0] == "exito" %}
+                {{ ui.dibujar_boton("Abrir diálogo de impresión otra vez", "transparente",
+                                    "refresh",
+                                    completo=True, data_imprimir="1") }}
+            {% endif %}
+        </form>
+    </aside>
 </div>
 {% endblock %}

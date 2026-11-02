@@ -1,102 +1,128 @@
-{# ============================================================
-   Archivo: views/movil/detalle.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/movil/detalle.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       M03 · Ficha del libro y M04 · Ubicacion del ejemplar (Vista). Los
+       datos vienen de catalogo_servicio.obtener_ficha(), el mismo que usa la
+       ficha web (HU-01-12, HU-01-14 y HU-01-15).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: M03 · Ficha del libro y M04 · Ubicación del ejemplar (Vista). Los datos vienen de
-                catalogo_servicio.ficha(), el mismo que usa la ficha web (HU-01-12, HU-01-14 y HU-01-15).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 {% import "movil/componentes.html" as m %}
 
 {% block titulo %}{{ libro.titulo }}{% endblock %}
 
-{% block encabezado %}{{ m.encabezado_regreso("Ficha del libro", libro.clave, url_for("movil.buscar", **volver)) }}{% endblock %}
+{% block encabezado %}
+    {{- m.dibujar_encabezado_regreso("Ficha del libro", libro.clave,
+                                     url_for("movil.buscar", **volver)) }}
+{%- endblock %}
 
 {% block contenido %}
-{# HU-01-12 · Abrir detalle de libro #}
-<section class="m-libro-hero">
-  {{ ui.cover(libro.titulo, "md") }}
-  <div class="m-libro-hero__datos">
-    <h2 class="m-libro-hero__titulo">{{ libro.titulo }}</h2>
-    <p class="m-libro-hero__autores">{{ libro.autores }}</p>
-    <div class="row" style="gap: 6px">{{ ui.badge(libro.clave, "gold") }}{{ m.disponibilidad(libro) }}</div>
-  </div>
+{# HU-01-12 · Abrir detalle de libro. #}
+<section class="m-libro-destacado">
+    {{ ui.dibujar_portada(libro.titulo, "mediana") }}
+    <div class="m-libro-destacado-datos">
+        <h2 class="m-libro-destacado-titulo">{{ libro.titulo }}</h2>
+        <p class="m-libro-destacado-autores">{{ libro.autores }}</p>
+        <div class="fila"
+             style="gap: 6px">{{ ui.dibujar_etiqueta(libro.clave, "dorado") }}{{
+                 m.dibujar_disponibilidad(libro) }}</div>
+    </div>
 </section>
 
 {% if libro.sinopsis %}<p class="m-sinopsis">{{ libro.sinopsis }}</p>{% endif %}
 
-<dl class="m-kv card">
-  <div><dt>Clave</dt><dd class="mono">{{ libro.clave }}</dd></div>
-  <div><dt>Tema</dt><dd>{{ libro.tema }}</dd></div>
-  <div><dt>Editorial</dt><dd>{{ libro.editorial }}</dd></div>
-  <div><dt>Año de publicación</dt><dd>{{ libro.anio or "—" }}</dd></div>
-  {% if libro.edicion %}<div><dt>Edición</dt><dd>{{ libro.edicion }}</dd></div>{% endif %}
-  {% if libro.isbn %}<div><dt>ISBN</dt><dd class="mono">{{ libro.isbn }}</dd></div>{% endif %}
-  <div><dt>Tipo de acceso</dt><dd>{{ libro.tipo_acceso }}</dd></div>
+<dl class="m-clave-valor tarjeta">
+    <div><dt>Clave</dt><dd class="monoespaciado">{{ libro.clave }}</dd></div>
+    <div><dt>Tema</dt><dd>{{ libro.tema }}</dd></div>
+    <div><dt>Editorial</dt><dd>{{ libro.editorial }}</dd></div>
+    <div><dt>Año de publicación</dt><dd>{{ libro.anio or "—" }}</dd></div>
+    {% if libro.edicion %}<div><dt>Edición</dt><dd>{{ libro.edicion }}</dd></div>{% endif %}
+    {% if libro.isbn %}
+        <div><dt>ISBN</dt><dd class="monoespaciado">{{ libro.isbn }}</dd></div>
+    {% endif %}
+    <div><dt>Tipo de acceso</dt><dd>{{ libro.tipo_acceso }}</dd></div>
 </dl>
 
-{# HU-01-14 y HU-01-15: ejemplares con su estado y ubicación #}
+{# HU-01-14 y HU-01-15: ejemplares con su estado y ubicacion. #}
 <div class="m-seccion"><h2>Ejemplares y ubicación</h2></div>
 
 {% if ejemplares %}
-  <div class="m-lista">
-    {% for ej in ejemplares %}
-      <article class="m-ejemplar card">
-        <div class="row-between">
-          <span class="mono strong">{{ ej.codigo }}</span>
-          {{ ui.estado_ejemplar(ej.estado) }}
-        </div>
-        {{ ui.ubicacion(ej) }}
-        {{ ui.btn("Ver ubicación", "secondary", "map-pin", block=True, data_modal_open="ubicacion-" ~ ej.id) }}
-      </article>
-    {% endfor %}
-  </div>
-{# HU-01-15 · Libro sin ejemplares #}
+    <div class="m-lista">
+        {% for ejemplar in ejemplares %}
+            <article class="m-ejemplar tarjeta">
+                <div class="fila-separada">
+                    <span class="monoespaciado resaltado">{{ ejemplar.codigo }}</span>
+                    {{ ui.dibujar_estado_ejemplar(ejemplar.estado) }}
+                </div>
+                {{ ui.dibujar_ubicacion(ejemplar) }}
+                {{ ui.dibujar_boton("Ver ubicación", "secundario", "map-pin", completo=True,
+                                    data_abrir_modal="ubicacion-" ~ ejemplar.id) }}
+            </article>
+        {% endfor %}
+    </div>
+{# HU-01-15 · Libro sin ejemplares. #}
 {% else %}
-  <div class="card">
-    {{ ui.empty_state("package", cfg.MENSAJES.libro_sin_ejemplares,
-          "Existe la ficha bibliográfica, pero todavía no hay copias físicas. Por eso no se muestra disponibilidad.",
-          tone="warning") }}
-  </div>
+    <div class="tarjeta">
+        {{ ui.dibujar_estado_vacio("package", cfg.MENSAJES.libro_sin_ejemplares,
+                                   "Existe la ficha bibliográfica, pero todavía no hay copias "
+                                   "físicas. Por eso no se muestra disponibilidad.",
+                                   tono="advertencia") }}
+    </div>
 {% endif %}
 
-{# M04: hoja inferior con la ubicación de cada ejemplar (usa los modales de syntra.js) #}
-{% for ej in ejemplares %}
-<div class="modal m-hoja" id="ubicacion-{{ ej.id }}" role="dialog" aria-modal="true" aria-labelledby="ubicacion-titulo-{{ ej.id }}">
-  <div class="modal__backdrop" data-modal-close></div>
-  <div class="modal__dialog">
-    <span class="m-hoja__asa" aria-hidden="true"></span>
-    <div class="modal__header">
-      <span class="modal__icon">{{ icon("map-pin", 22) }}</span>
-      <div>
-        <h2 class="modal__title" id="ubicacion-titulo-{{ ej.id }}">Ubicación del ejemplar</h2>
-        <p class="modal__text">{{ ej.codigo }} · {{ libro.titulo }}</p>
-      </div>
+{# M04: hoja inferior con la ubicacion de cada ejemplar (usa los modales de syntra.js). #}
+{% for ejemplar in ejemplares %}
+<div class="modal m-hoja" id="ubicacion-{{ ejemplar.id }}" role="dialog" aria-modal="true"
+     aria-labelledby="ubicacion-titulo-{{ ejemplar.id }}">
+    <div class="modal-fondo" data-cerrar-modal></div>
+    <div class="modal-dialogo">
+        <span class="m-hoja-asa" aria-hidden="true"></span>
+        <div class="modal-encabezado">
+            <span class="modal-icono">{{ dibujar_icono("map-pin", 22) }}</span>
+            <div>
+                <h2 class="modal-titulo"
+                    id="ubicacion-titulo-{{ ejemplar.id }}">Ubicación del ejemplar</h2>
+                <p class="modal-texto">{{ ejemplar.codigo }} · {{ libro.titulo }}</p>
+            </div>
+        </div>
+        <div class="modal-cuerpo pila">
+            {% if ejemplar.estancia %}
+                <dl class="m-clave-valor">
+                    <div><dt>Estancia</dt><dd>{{ ejemplar.estancia }}</dd></div>
+                    <div><dt>Estante</dt><dd>{{ ejemplar.estante }}</dd></div>
+                    <div><dt>Posición</dt><dd>{{ ejemplar.posicion }}</dd></div>
+                    <div><dt>Estado</dt><dd>{{
+                        ui.dibujar_estado_ejemplar(ejemplar.estado) }}</dd></div>
+                </dl>
+            {% else %}
+                {{ ui.dibujar_alerta("advertencia", cfg.MENSAJES.ubicacion_no_registrada,
+                                     "Este ejemplar todavía no tiene estancia, estante y posición "
+                                     "asignados. Pregunta en el mostrador.") }}
+                <div class="fila-separada">
+                    <span class="atenuado texto-chico">Estado actual</span>
+                    {{- ui.dibujar_estado_ejemplar(ejemplar.estado) }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="modal-pie">
+            <button type="button" class="boton boton-primario boton-grande boton-completo"
+                    data-cerrar-modal data-enfocar>Entendido</button>
+        </div>
     </div>
-    <div class="modal__body stack">
-      {% if ej.estancia %}
-        <dl class="m-kv">
-          <div><dt>Estancia</dt><dd>{{ ej.estancia }}</dd></div>
-          <div><dt>Estante</dt><dd>{{ ej.estante }}</dd></div>
-          <div><dt>Posición</dt><dd>{{ ej.posicion }}</dd></div>
-          <div><dt>Estado</dt><dd>{{ ui.estado_ejemplar(ej.estado) }}</dd></div>
-        </dl>
-      {% else %}
-        {{ ui.alert("warning", cfg.MENSAJES.ubicacion_no_registrada,
-              "Este ejemplar todavía no tiene estancia, estante y posición asignados. Pregunta en el mostrador.") }}
-        <div class="row-between"><span class="muted small">Estado actual</span>{{ ui.estado_ejemplar(ej.estado) }}</div>
-      {% endif %}
-    </div>
-    <div class="modal__footer">
-      <button type="button" class="btn btn--primary btn--lg btn--block" data-modal-close data-autofocus>Entendido</button>
-    </div>
-  </div>
 </div>
 {% endfor %}
 {% endblock %}

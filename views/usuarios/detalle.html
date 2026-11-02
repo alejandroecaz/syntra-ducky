@@ -1,97 +1,136 @@
-{# ============================================================
-   Archivo: views/usuarios/detalle.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/usuarios/detalle.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Detalle de una cuenta (Vista, HU-01-05).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Detalle de una cuenta (Vista, HU-01-05).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}{{ usuario.nombre_completo }}{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a href="{{ url_for('usuarios.listar') }}">Usuarios</a>
+{%- endblock %}
 
 {% block contenido %}
-{# Acciones: editar (HU-01-04), asignar perfil (HU-01-08) y habilitar o deshabilitar con confirmación (HU-01-03) #}
-{% call ui.page_header(usuario.nombre_completo, "Identificador " ~ usuario.identificador ~ " · Cuenta " ~ usuario.cuenta,
-      hus=["HU-01-05 Consulta"], back=url_for("usuarios.lista"), back_label="Usuarios") %}
-  {% if tiene_permiso("usuarios.editar") %}
-    {{ ui.btn("Editar datos", "secondary", "edit", href=url_for("usuarios.editar", usuario_id=usuario.id)) }}
-  {% endif %}
-  {% if tiene_permiso("perfiles.asignar") %}
-    {{ ui.btn("Asignar perfil", "secondary", "shield", href=url_for("usuarios.asignar_perfil", usuario_id=usuario.id)) }}
-  {% endif %}
-  {% if tiene_permiso("usuarios.baja") %}
-    {% if usuario.estado == "Habilitada" %}
-      {{ ui.btn("Deshabilitar cuenta", "danger", "user-x",
-                data_confirm="1",
-                data_confirm_title="¿Deshabilitar la cuenta de " ~ usuario.nombre_completo ~ "?",
-                data_confirm_text="La cuenta " ~ usuario.cuenta ~ " ya no podrá iniciar sesión. Sus datos y registros asociados se conservan.",
-                data_confirm_label="Deshabilitar",
-                data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=usuario.id),
-                data_confirm_fields='{"accion": "deshabilitar"}',
-                data_confirm_cancel="La cuenta conserva su estado original.") }}
-    {% else %}
-      {{ ui.btn("Habilitar cuenta", "primary", "user-check",
-                data_confirm="1", data_confirm_tone="primary",
-                data_confirm_title="¿Habilitar la cuenta de " ~ usuario.nombre_completo ~ "?",
-                data_confirm_text="La cuenta podrá volver a iniciar sesión con su perfil actual.",
-                data_confirm_label="Habilitar",
-                data_confirm_action=url_for("usuarios.cambiar_estado", usuario_id=usuario.id),
-                data_confirm_fields='{"accion": "habilitar"}',
-                data_confirm_cancel="La cuenta conserva su estado original.") }}
+{# Acciones: editar (HU-01-04), asignar perfil (HU-01-08) y habilitar o deshabilitar con
+   confirmacion (HU-01-03). #}
+{% call ui.dibujar_encabezado_pagina(usuario.nombre_completo,
+                                     "Identificador " ~ usuario.identificador ~ " · Cuenta "
+                                     ~ usuario.cuenta,
+                                     hus=["HU-01-05 Consulta"], regresar=url_for("usuarios.listar"),
+                                     texto_regresar="Usuarios") %}
+    {% if verificar_permiso("usuarios.editar") %}
+        {{ ui.dibujar_boton("Editar datos", "secundario", "edit",
+                            enlace=url_for("usuarios.editar", usuario_id=usuario.id)) }}
     {% endif %}
-  {% endif %}
+    {% if verificar_permiso("perfiles.asignar") %}
+        {{ ui.dibujar_boton("Asignar perfil", "secundario", "shield",
+                            enlace=url_for("usuarios.asignar_perfil", usuario_id=usuario.id)) }}
+    {% endif %}
+    {% if verificar_permiso("usuarios.baja") %}
+        {% if usuario.estado == "Habilitada" %}
+            {{ ui.dibujar_boton("Deshabilitar cuenta", "peligro", "user-x",
+                                data_confirmar="1",
+                                data_confirmar_titulo="¿Deshabilitar la cuenta de "
+                                ~ usuario.nombre_completo ~ "?",
+                                data_confirmar_texto="La cuenta " ~ usuario.cuenta ~ " ya no podrá "
+                                "iniciar sesión. Sus datos y registros asociados se conservan.",
+                                data_confirmar_etiqueta="Deshabilitar",
+                                data_confirmar_accion=url_for("usuarios.cambiar_estado",
+                                                              usuario_id=usuario.id),
+                                data_confirmar_campos='{"accion": "deshabilitar"}',
+                                data_confirmar_cancelado="La cuenta conserva su estado "
+                                "original.") }}
+        {% else %}
+            {{ ui.dibujar_boton("Habilitar cuenta", "primario", "user-check",
+                                data_confirmar="1", data_confirmar_tono="primario",
+                                data_confirmar_titulo="¿Habilitar la cuenta de "
+                                ~ usuario.nombre_completo ~ "?",
+                                data_confirmar_texto="La cuenta podrá volver a iniciar sesión con "
+                                "su perfil actual.",
+                                data_confirmar_etiqueta="Habilitar",
+                                data_confirmar_accion=url_for("usuarios.cambiar_estado",
+                                                              usuario_id=usuario.id),
+                                data_confirmar_campos='{"accion": "habilitar"}',
+                                data_confirmar_cancelado="La cuenta conserva su estado "
+                                "original.") }}
+        {% endif %}
+    {% endif %}
 {% endcall %}
 
-{# Aviso de cuenta deshabilitada #}
+{# Aviso de cuenta deshabilitada. #}
 {% if usuario.estado != "Habilitada" %}
-  {{ ui.alert("warning", "Cuenta deshabilitada", "Esta cuenta no puede iniciar sesión. Su información e historial se conservan.") }}
-  <div style="height: 20px"></div>
+    {{ ui.dibujar_alerta("advertencia", "Cuenta deshabilitada",
+                         "Esta cuenta no puede iniciar sesión. Su información e historial se "
+                         "conservan.") }}
+    <div style="height: 20px"></div>
 {% endif %}
 
-{# HU-01-05: datos de la cuenta (sin contraseña) y permisos de su perfil #}
-<div class="grid grid-2">
-  <section class="card">
-    <div class="card__header"><h2 class="card__title">{{ icon("user", 18) }}Datos de la cuenta</h2></div>
-    <div class="card__body">
-      <dl class="kv">
-        <dt>Identificador</dt><dd class="mono">{{ usuario.identificador }}</dd>
-        <dt>Nombre</dt><dd>{{ usuario.nombre }}</dd>
-        <dt>Apellidos</dt><dd>{{ usuario.apellido_paterno }} {{ usuario.apellido_materno or "" }}</dd>
-        <dt>Correo</dt><dd>{{ usuario.email or "—" }}</dd>
-        <dt>Teléfono</dt><dd>{{ usuario.telefono or "—" }}</dd>
-        <dt>Cuenta</dt><dd class="mono">{{ usuario.cuenta }}</dd>
-        <dt>Contraseña</dt><dd><span class="muted" style="font-weight:500">No visible por seguridad</span></dd>
-        <dt>Estado</dt><dd>{{ ui.estado_cuenta(usuario.estado) }}</dd>
-        <dt>Registrado</dt><dd>{{ usuario.fecha_registro | fecha }}</dd>
-        <dt>Última actualización</dt><dd>{{ usuario.fecha_actualizacion | fecha("%d/%m/%Y %H:%M") }}</dd>
-      </dl>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="card__header">
-      <h2 class="card__title">{{ icon("shield", 18) }}Perfil de usuario</h2>
-      {{ ui.badge(usuario.perfil_nombre or "Sin perfil", "navy" if usuario.perfil_nombre else "warning") }}
-    </div>
-    <div class="card__body stack">
-      {% if permisos %}
-        <p class="small muted">Permisos que otorga este perfil:</p>
-        <div class="perm-list">
-          {% for permiso in permisos %}{{ ui.badge(descripciones.get(permiso, permiso), "neutral") }}{% endfor %}
+{# HU-01-05: datos de la cuenta (sin contrasena) y permisos de su perfil. #}
+<div class="rejilla rejilla-2">
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("user", 18) }}Datos de la cuenta</h2>
         </div>
-        {% if "sistema.acceder" not in permisos %}
-          {{ ui.alert("warning", text="Este perfil no incluye “Acceder al sistema”: la cuenta no podrá iniciar sesión.") }}
-        {% endif %}
-      {% else %}
-        {{ ui.alert("warning", text="La cuenta no tiene un perfil asignado y no podrá iniciar sesión.") }}
-      {% endif %}
-    </div>
-  </section>
+        <div class="tarjeta-cuerpo">
+            <dl class="clave-valor">
+                <dt>Identificador</dt><dd class="monoespaciado">{{ usuario.identificador }}</dd>
+                <dt>Nombre</dt><dd>{{ usuario.nombre }}</dd>
+                <dt>Apellidos</dt><dd>{{ usuario.apellido_paterno }} {{
+                    usuario.apellido_materno or "" }}</dd>
+                <dt>Correo</dt><dd>{{ usuario.email or "—" }}</dd>
+                <dt>Teléfono</dt><dd>{{ usuario.telefono or "—" }}</dd>
+                <dt>Cuenta</dt><dd class="monoespaciado">{{ usuario.cuenta }}</dd>
+                <dt>Contraseña</dt><dd><span class="atenuado"
+                                             style="font-weight:500">No visible por
+                                             seguridad</span></dd>
+                <dt>Estado</dt><dd>{{ ui.dibujar_estado_cuenta(usuario.estado) }}</dd>
+                <dt>Registrado</dt><dd>{{ usuario.fecha_registro |formatear_fecha }}</dd>
+                <dt>Última actualización</dt><dd>{{
+                    usuario.fecha_actualizacion |formatear_fecha("%d/%m/%Y %H:%M") }}</dd>
+            </dl>
+        </div>
+    </section>
+
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("shield", 18) }}Perfil de usuario</h2>
+            {{ ui.dibujar_etiqueta(usuario.perfil_nombre or "Sin perfil",
+                                   "azul" if usuario.perfil_nombre else "advertencia") }}
+        </div>
+        <div class="tarjeta-cuerpo pila">
+            {% if permisos %}
+                <p class="texto-chico atenuado">Permisos que otorga este perfil:</p>
+                <div class="lista-permisos">
+                    {% for permiso in permisos -%}
+                        {{ ui.dibujar_etiqueta(descripciones.get(permiso, permiso), "neutro") }}
+                    {%- endfor %}
+                </div>
+                {% if "sistema.acceder" not in permisos %}
+                    {{ ui.dibujar_alerta("advertencia",
+                                         texto="Este perfil no incluye “Acceder al sistema”: la "
+                                         "cuenta no podrá iniciar sesión.") }}
+                {% endif %}
+            {% else %}
+                {{ ui.dibujar_alerta("advertencia",
+                                     texto="La cuenta no tiene un perfil asignado y no podrá "
+                                     "iniciar sesión.") }}
+            {% endif %}
+        </div>
+    </section>
 </div>
 {% endblock %}

@@ -1,224 +1,322 @@
-{# ============================================================
-   Archivo: views/components/ui.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/components/ui.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Macros del sistema de diseno (Vista): botones, campos, etiquetas de
+       estado, ubicacion... Los importan la web y el portal movil.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Macros del design system (Vista): botones, campos, badges, ubicación... Los importan la web y el
-                portal móvil.
-   ============================================================ -#}
-{# Logos: en logo() se da la altura y en logo_syntra() el ancho #}
-{% macro logo(size=44) -%}
-<img class="brand__mark" src="{{ url_for('static', filename='img/ducky-libreria.png') }}"
-     width="{{ (size * 440 / 510) | round | int }}" height="{{ size }}"
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+
+   ============================================================
+   Contenido del listado:
+       Logos y marca
+           dibujar_logo(), dibujar_logo_syntra(), dibujar_marca()
+       Botones
+           _dibujar_atributos(), dibujar_boton()
+       Etiquetas de estado
+           dibujar_etiqueta(), dibujar_estado_ejemplar(), dibujar_estado_cuenta(),
+           dibujar_estado_libro(), dibujar_disponibilidad(), dibujar_ubicacion()
+       Bloques de pagina
+           dibujar_portada(), dibujar_alerta(), dibujar_encabezado_pagina(),
+           dibujar_estado_vacio(), dibujar_indicador()
+       Campos de formulario
+           _dibujar_etiqueta_campo(), _dibujar_mensaje_campo(), dibujar_campo(),
+           dibujar_campo_contrasena(), dibujar_campo_seleccion(),
+           dibujar_campo_texto_largo()
+   ============================================================
+-#}
+
+{# ============================================================
+   LOGOS Y MARCA
+   En dibujar_logo() se da la altura y en dibujar_logo_syntra() el ancho.
+   ============================================================ #}
+{% macro dibujar_logo(tamano=44) -%}
+<img class="marca-escudo" src="{{ url_for('static', filename='img/ducky-libreria.png') }}"
+     width="{{ (tamano * 440 / 510) | round | int }}" height="{{ tamano }}"
      alt="Escudo de Ducky Librería, Universidad Ducky">
 {%- endmacro %}
 
-{% macro logo_syntra(width=120) -%}
+{% macro dibujar_logo_syntra(ancho=120) -%}
 <img class="logo-syntra" src="{{ url_for('static', filename='img/syntra-technologies.png') }}"
-     width="{{ width }}" height="{{ (width * 578 / 560) | round | int }}"
+     width="{{ ancho }}" height="{{ (ancho * 578 / 560) | round | int }}"
      alt="Syntra Technologies">
 {%- endmacro %}
 
-{# Logo con el nombre de la biblioteca (enlace al inicio si se da href) #}
-{% macro brand(href=None, name="Biblioteca Universidad Ducky", size=44) -%}
+{# Logo con el nombre de la biblioteca; es enlace al inicio si se da enlace. #}
+{% macro dibujar_marca(enlace=None, nombre="Biblioteca Universidad Ducky", tamano=44) -%}
 {%- set contenido -%}
-  {{ logo(size) }}
-  <span class="brand__name">{{ name }}</span>
+    {{ dibujar_logo(tamano) }}
+    <span class="marca-nombre">{{ nombre }}</span>
 {%- endset -%}
-{% if href %}<a href="{{ href }}" class="brand" aria-label="{{ name }}, ir al inicio">{{ contenido }}</a>
-{% else %}<div class="brand">{{ contenido }}</div>{% endif %}
+{% if enlace %}<a href="{{ enlace }}" class="marca" aria-label="{{ nombre }}, ir al inicio">{{
+    contenido }}</a>
+{% else %}<div class="marca">{{ contenido }}</div>{% endif %}
 {%- endmacro %}
 
-{# Atributos extra: data_x="1" -> data-x="1" #}
-{% macro _attrs(extra) -%}
+{# ============================================================
+   BOTONES
+   Boton o enlace con estilo de boton; los argumentos extra se vuelven
+   atributos, por ejemplo data_abrir_modal="x" -> data-abrir-modal="x".
+   ============================================================ #}
+{% macro _dibujar_atributos(extra) -%}
 {% for clave, valor in extra.items() %} {{ clave | replace('_', '-') }}="{{ valor }}"{% endfor %}
 {%- endmacro %}
 
-{# Botón o enlace con estilo de botón; kwargs se vuelven atributos data-* #}
-{% macro btn(label, variant="primary", icon_name=None, href=None, type="button", size=None, block=False,
-             disabled=False, icon_only=False) -%}
-{%- set clases = "btn btn--" ~ variant ~ (" btn--" ~ size if size else "") ~ (" btn--block" if block else "")
-                 ~ (" btn--icon" if icon_only else "") ~ (" is-disabled" if disabled and href else "") -%}
-{%- if href -%}
-<a href="{{ href }}" class="{{ clases }}"{% if icon_only %} aria-label="{{ label }}" title="{{ label }}"{% endif %}{% if disabled %} aria-disabled="true" tabindex="-1"{% endif %}{{ _attrs(kwargs) }}>
-  {%- if icon_name %}{{ icon(icon_name, 16 if size == "sm" else 18) }}{% endif %}{% if not icon_only %}<span>{{ label }}</span>{% endif -%}
+{% macro dibujar_boton(texto, variante="primario", icono=None, enlace=None, tipo="button",
+                       tamano=None, completo=False, deshabilitado=False, solo_icono=False) -%}
+{%- set clases = "boton boton-" ~ variante ~ (" boton-" ~ tamano if tamano else "")
+                 ~ (" boton-completo" if completo else "")
+                 ~ (" boton-solo-icono" if solo_icono else "")
+                 ~ (" deshabilitado" if deshabilitado and enlace else "") -%}
+{%- set tamano_icono = 16 if tamano == "chico" else 18 -%}
+{%- if enlace -%}
+<a href="{{ enlace }}" class="{{ clases }}"
+   {%- if solo_icono %} aria-label="{{ texto }}" title="{{ texto }}"{% endif %}
+   {%- if deshabilitado %} aria-disabled="true" tabindex="-1"{% endif %}
+   {{- _dibujar_atributos(kwargs) }}>
+    {%- if icono %}{{ dibujar_icono(icono, tamano_icono) }}{% endif %}
+    {%- if not solo_icono %}<span>{{ texto }}</span>{% endif -%}
 </a>
 {%- else -%}
-<button type="{{ type }}" class="{{ clases }}"{% if icon_only %} aria-label="{{ label }}" title="{{ label }}"{% endif %}{% if disabled %} disabled{% endif %}{{ _attrs(kwargs) }}>
-  {%- if icon_name %}{{ icon(icon_name, 16 if size == "sm" else 18) }}{% endif %}{% if not icon_only %}<span>{{ label }}</span>{% endif -%}
+<button type="{{ tipo }}" class="{{ clases }}"
+        {%- if solo_icono %} aria-label="{{ texto }}" title="{{ texto }}"{% endif %}
+        {%- if deshabilitado %} disabled{% endif %}
+        {{- _dibujar_atributos(kwargs) }}>
+    {%- if icono %}{{ dibujar_icono(icono, tamano_icono) }}{% endif %}
+    {%- if not solo_icono %}<span>{{ texto }}</span>{% endif -%}
 </button>
 {%- endif -%}
 {%- endmacro %}
 
-{# Etiquetas de estado #}
-{% macro badge(text, tone="neutral", dot=False) -%}
-<span class="badge badge--{{ tone }}{{ ' badge--dot' if dot }}">{{ text }}</span>
+{# ============================================================
+   ETIQUETAS DE ESTADO
+   Etiquetas de color para cuentas, libros y ejemplares, y los bloques de
+   disponibilidad y ubicacion.
+   ============================================================ #}
+{% macro dibujar_etiqueta(texto, tono="neutro", punto=False) -%}
+<span class="etiqueta etiqueta-{{ tono }}{{ ' etiqueta-punto' if punto }}">{{ texto }}</span>
 {%- endmacro %}
 
-{% macro estado_ejemplar(estado) -%}
-{%- set tonos = {"Disponible": "success", "Prestado": "info", "Reservado": "warning",
-                 "Perdido": "error", "Dañado": "error", "Fuera de servicio": "neutral"} -%}
-{{ badge(estado, tonos.get(estado, "neutral"), dot=True) }}
+{% macro dibujar_estado_ejemplar(estado) -%}
+{%- set tonos = {"Disponible": "exito", "Prestado": "informacion", "Reservado": "advertencia",
+                 "Perdido": "error", "Dañado": "error", "Fuera de servicio": "neutro"} -%}
+{{ dibujar_etiqueta(estado, tonos.get(estado, "neutro"), punto=True) }}
 {%- endmacro %}
 
-{% macro estado_cuenta(estado) -%}
-{{ badge(estado, "success" if estado == "Habilitada" else "error", dot=True) }}
+{% macro dibujar_estado_cuenta(estado) -%}
+{{ dibujar_etiqueta(estado, "exito" if estado == "Habilitada" else "error", punto=True) }}
 {%- endmacro %}
 
-{% macro estado_libro_badge(libro) -%}
-{%- if not libro.activo -%}{{ badge("Dado de baja", "neutral", dot=True) }}
-{%- elif libro.total_ejemplares == 0 -%}{{ badge("Sin ejemplares", "warning", dot=True) }}
-{%- elif libro.disponibles == 0 -%}{{ badge("No disponible", "error", dot=True) }}
-{%- else -%}{{ badge("Disponible", "success", dot=True) }}{%- endif -%}
+{% macro dibujar_estado_libro(libro) -%}
+{%- if not libro.activo -%}{{ dibujar_etiqueta("Dado de baja", "neutro", punto=True) }}
+{%- elif libro.total_ejemplares == 0 -%}
+    {{- dibujar_etiqueta("Sin ejemplares", "advertencia", punto=True) }}
+{%- elif libro.disponibles == 0 -%}{{ dibujar_etiqueta("No disponible", "error", punto=True) }}
+{%- else -%}{{ dibujar_etiqueta("Disponible", "exito", punto=True) }}{%- endif -%}
 {%- endmacro %}
 
-{# HU-01-15: barra de ejemplares disponibles #}
-{% macro disponibilidad(libro) -%}
+{# HU-01-15: barra de ejemplares disponibles. #}
+{% macro dibujar_disponibilidad(libro) -%}
 {% if libro.total_ejemplares == 0 or libro.disponibles == 0 or not libro.activo %}
-  {{ estado_libro_badge(libro) }}
+    {{ dibujar_estado_libro(libro) }}
 {% else %}
-  <div class="avail" title="{{ libro.disponibles }} de {{ libro.total_ejemplares }} ejemplares disponibles">
-    <span class="xsmall"><strong class="strong">{{ libro.disponibles }}</strong> de {{ libro.total_ejemplares }} disponibles</span>
-    <div class="avail__bar"><div class="avail__fill" style="width: {{ (100 * libro.disponibles / libro.total_ejemplares) | round }}%"></div></div>
-  </div>
+    {% set porcentaje = (100 * libro.disponibles / libro.total_ejemplares) | round %}
+    <div class="disponibilidad"
+         title="{{ libro.disponibles }} de {{ libro.total_ejemplares }} ejemplares disponibles">
+        <span class="texto-muy-chico"><strong
+                                              class="resaltado">{{
+                                                  libro.disponibles }}</strong> de {{
+                                                      libro.total_ejemplares }} disponibles</span>
+        <div class="disponibilidad-barra">
+            <div class="disponibilidad-relleno" style="width: {{ porcentaje }}%"></div>
+        </div>
+    </div>
 {% endif %}
 {%- endmacro %}
 
-{# HU-01-14 · Ubicación registrada / Ubicación pendiente #}
-{% macro ubicacion(ej) -%}
-{% if ej.estancia %}
-  <span class="loc">{{ icon("map-pin", 15) }}{{ ej.estancia }} · Estante {{ ej.estante }} · Posición {{ ej.posicion }}</span>
+{# HU-01-14 · Ubicacion registrada / Ubicacion pendiente. #}
+{% macro dibujar_ubicacion(ejemplar) -%}
+{% if ejemplar.estancia %}
+    <span class="ubicacion">{{ dibujar_icono("map-pin", 15) }}{{ ejemplar.estancia }} · Estante {{
+        ejemplar.estante }} · Posición {{ ejemplar.posicion }}</span>
 {% else %}
-  <span class="loc loc--missing">{{ icon("map-pin", 15) }}Ubicación no registrada</span>
+    <span class="ubicacion ubicacion-pendiente">{{
+        dibujar_icono("map-pin", 15) }}Ubicación no registrada</span>
 {% endif %}
 {%- endmacro %}
 
-{# Portada generada con el título del libro #}
-{% macro cover(titulo, size=None, gray=False) -%}
-<div class="cover{{ ' cover--' ~ size if size }}{{ ' cover--gray' if gray }}" aria-hidden="true">
-  {%- if size == "sm" -%}{{ titulo[:2] | upper }}{%- else -%}{{ titulo | truncate(48) }}{%- endif -%}
+{# ============================================================
+   BLOQUES DE PAGINA
+   Portada, alerta, encabezado de pagina, estado vacio e indicador.
+   ============================================================ #}
+
+{# Portada generada con el titulo del libro. #}
+{% macro dibujar_portada(titulo, tamano=None, gris=False) -%}
+<div class="portada{{ ' portada-' ~ tamano if tamano }}{{ ' portada-gris' if gris }}"
+     aria-hidden="true">
+    {%- if tamano == "chica" -%}{{ titulo[:2] | upper }}{%- else -%}{{ titulo | truncate(48) }}
+    {%- endif -%}
 </div>
 {%- endmacro %}
 
-{# Alerta con ícono según el tono #}
-{% macro alert(tone, title=None, text=None) -%}
-{%- set iconos = {"success": "check-circle", "error": "alert-circle", "warning": "alert-triangle", "info": "info"} -%}
-<div class="alert alert--{{ tone }}" role="{{ 'alert' if tone in ('error', 'warning') else 'status' }}">
-  {{ icon(iconos[tone], 20) }}
-  <div class="alert__body">
-    {% if title %}<strong class="alert__title">{{ title }}</strong>{% endif %}
-    {% if text %}{{ text }}{% endif %}
-    {% if caller is defined %}{{ caller() }}{% endif %}
-  </div>
+{# Alerta con icono segun el tono. #}
+{% macro dibujar_alerta(tono, titulo=None, texto=None) -%}
+{%- set iconos = {"exito": "check-circle", "error": "alert-circle",
+                  "advertencia": "alert-triangle", "informacion": "info"} -%}
+<div class="alerta alerta-{{ tono }}"
+     role="{{ 'alert' if tono in ('error', 'advertencia') else 'status' }}">
+    {{ dibujar_icono(iconos[tono], 20) }}
+    <div class="alerta-cuerpo">
+        {% if titulo %}<strong class="alerta-titulo">{{ titulo }}</strong>{% endif %}
+        {% if texto %}{{ texto }}{% endif %}
+        {% if caller is defined %}{{ caller() }}{% endif %}
+    </div>
 </div>
 {%- endmacro %}
 
-{# "hus" solo sirve para documentar las HU de cada pantalla, no se muestra #}
-{% macro page_header(title, subtitle=None, hus=[], back=None, back_label="Regresar") -%}
-<header class="page-header">
-  <div class="page-header__text">
-    {% if back %}<a class="back-link" href="{{ back }}">{{ icon("arrow-left", 16) }}{{ back_label }}</a>{% endif %}
-    <h1>{{ title }}</h1>
-    {% if subtitle %}<p class="page-header__sub">{{ subtitle }}</p>{% endif %}
-  </div>
-  {% if caller is defined %}<div class="page-header__actions">{{ caller() }}</div>{% endif %}
+{# "hus" solo sirve para documentar las HU de cada pantalla, no se muestra. #}
+{% macro dibujar_encabezado_pagina(titulo, subtitulo=None, hus=[], regresar=None,
+                                   texto_regresar="Regresar") -%}
+<header class="encabezado-pagina">
+    <div class="encabezado-pagina-texto">
+        {% if regresar %}
+            <a class="enlace-regresar" href="{{ regresar }}">{{ dibujar_icono("arrow-left", 16) }}{{
+                texto_regresar }}</a>
+        {% endif %}
+        <h1>{{ titulo }}</h1>
+        {% if subtitulo %}<p class="encabezado-pagina-subtitulo">{{ subtitulo }}</p>{% endif %}
+    </div>
+    {% if caller is defined %}
+        <div class="encabezado-pagina-acciones">{{ caller() }}</div>
+    {% endif %}
 </header>
 {%- endmacro %}
 
-{# Estado vacío: sin resultados, sin registros, etc. #}
-{% macro empty_state(icon_name, title, text, tone=None) -%}
-<div class="empty" role="status">
-  <span class="empty__icon{{ ' empty__icon--' ~ tone if tone }}">{{ icon(icon_name, 28) }}</span>
-  <p class="empty__title">{{ title }}</p>
-  <p class="empty__text">{{ text }}</p>
-  {% if caller is defined %}<div class="row">{{ caller() }}</div>{% endif %}
+{# Estado vacio: sin resultados, sin registros, etc. #}
+{% macro dibujar_estado_vacio(icono, titulo, texto, tono=None) -%}
+<div class="vacio" role="status">
+    <span class="vacio-icono{{ ' vacio-icono-' ~ tono if tono }}">{{
+        dibujar_icono(icono, 28) }}</span>
+    <p class="vacio-titulo">{{ titulo }}</p>
+    <p class="vacio-texto">{{ texto }}</p>
+    {% if caller is defined %}<div class="fila">{{ caller() }}</div>{% endif %}
 </div>
 {%- endmacro %}
 
-{# Indicador del panel de inicio #}
-{% macro stat(icon_name, label, value, href=None) -%}
+{# Indicador del panel de inicio. #}
+{% macro dibujar_indicador(icono, etiqueta, valor, enlace=None) -%}
 {%- set contenido -%}
-  <span class="stat__icon">{{ icon(icon_name, 22) }}</span>
-  <span>
-    <span class="stat__value">{{ value }}</span><br>
-    <span class="stat__label">{{ label }}</span>
-  </span>
+    <span class="indicador-icono">{{ dibujar_icono(icono, 22) }}</span>
+    <span>
+        <span class="indicador-valor">{{ valor }}</span><br>
+        <span class="indicador-etiqueta">{{ etiqueta }}</span>
+    </span>
 {%- endset -%}
-{% if href %}<a href="{{ href }}" class="card stat">{{ contenido }}</a>
-{% else %}<div class="card stat">{{ contenido }}</div>{% endif %}
+{% if enlace %}<a href="{{ enlace }}" class="tarjeta indicador">{{ contenido }}</a>
+{% else %}<div class="tarjeta indicador">{{ contenido }}</div>{% endif %}
 {%- endmacro %}
 
-{# Piezas internas de los campos: etiqueta y mensaje de error o ayuda #}
-{% macro _label(name, label, required, optional=False) -%}
-<label class="label" for="{{ name }}">{{ label }}{% if required %}<span class="req" aria-hidden="true">*</span>{% elif optional %}<span class="opt">(opcional)</span>{% endif %}</label>
+{# ============================================================
+   CAMPOS DE FORMULARIO
+   Campos con su etiqueta, su mensaje de error por campo y su ayuda.
+   ============================================================ #}
+
+{# Piezas internas de los campos: etiqueta y mensaje de error o ayuda. #}
+{% macro _dibujar_etiqueta_campo(nombre, etiqueta, obligatorio, opcional=False) -%}
+<label class="etiqueta-campo" for="{{ nombre }}">{{ etiqueta }}
+    {%- if obligatorio %}<span class="obligatorio" aria-hidden="true">*</span>
+    {%- elif opcional %}<span class="opcional">(opcional)</span>{% endif %}</label>
 {%- endmacro %}
 
-{% macro _feedback(name, error, help) -%}
+{% macro _dibujar_mensaje_campo(nombre, error, ayuda) -%}
 {% if error %}
-  <span class="error-text" id="{{ name }}-error">{{ icon("alert-circle", 14) }}{{ error }}</span>
-{% elif help %}
-  <span class="help" id="{{ name }}-help">{{ help }}</span>
+    <span class="texto-error" id="{{ nombre }}-error">{{ dibujar_icono("alert-circle", 14) }}{{
+        error }}</span>
+{% elif ayuda %}
+    <span class="ayuda" id="{{ nombre }}-help">{{ ayuda }}</span>
 {% endif %}
 {%- endmacro %}
 
-{# Campos de formulario con su etiqueta, error por campo y ayuda #}
-{% macro field(name, label, value="", error=None, type="text", required=False, optional=False, placeholder="",
-               help=None, readonly=False, disabled=False, autocomplete="off", icon_name=None, span=False, id=None) -%}
-{%- set fid = id or name -%}
-<div class="field{{ ' span-2' if span }}">
-  {{ _label(fid, label, required, optional) }}
-  {% if icon_name %}<div class="input-icon">{{ icon(icon_name, 17) }}{% endif %}
-  <input class="input{{ ' is-invalid' if error }}" id="{{ fid }}" name="{{ name }}" type="{{ type }}"
-         value="{{ value if value is not none }}" placeholder="{{ placeholder }}" autocomplete="{{ autocomplete }}"
-         {% if required %}aria-required="true"{% endif %} {% if error %}aria-invalid="true" aria-describedby="{{ fid }}-error"{% elif help %}aria-describedby="{{ fid }}-help"{% endif %}
-         {% if readonly %}readonly{% endif %} {% if disabled %}disabled{% endif %}{{ _attrs(kwargs) }}>
-  {% if icon_name %}</div>{% endif %}
-  {{ _feedback(fid, error, help) }}
+{% macro dibujar_campo(nombre, etiqueta, valor="", error=None, tipo="text", obligatorio=False,
+                       opcional=False, sugerencia="", ayuda=None, solo_lectura=False,
+                       deshabilitado=False, autocompletar="off", icono=None, doble_ancho=False,
+                       identificador=None) -%}
+{%- set id_campo = identificador or nombre -%}
+<div class="campo{{ ' doble-ancho' if doble_ancho }}">
+    {{ _dibujar_etiqueta_campo(id_campo, etiqueta, obligatorio, opcional) }}
+    {% if icono %}<div class="entrada-con-icono">{{ dibujar_icono(icono, 17) }}{% endif %}
+    <input class="entrada{{ ' invalido' if error }}" id="{{ id_campo }}" name="{{ nombre }}"
+           type="{{ tipo }}" value="{{ valor if valor is not none }}" placeholder="{{ sugerencia }}"
+           autocomplete="{{ autocompletar }}"
+           {% if obligatorio %}aria-required="true"{% endif %}
+           {% if error %}aria-invalid="true" aria-describedby="{{ id_campo }}-error"
+           {%- elif ayuda %}aria-describedby="{{ id_campo }}-help"{% endif %}
+           {% if solo_lectura %}readonly{% endif %} {% if deshabilitado %}disabled{% endif %}
+           {{- _dibujar_atributos(kwargs) }}>
+    {% if icono %}</div>{% endif %}
+    {{ _dibujar_mensaje_campo(id_campo, error, ayuda) }}
 </div>
 {%- endmacro %}
 
-{% macro password_field(name, label, error=None, required=True, autocomplete="current-password", help=None, placeholder="••••••••") -%}
-<div class="field">
-  {{ _label(name, label, required) }}
-  <div class="input-icon">
-    {{ icon("lock", 17) }}
-    <input class="input{{ ' is-invalid' if error }}" id="{{ name }}" name="{{ name }}" type="password"
-           autocomplete="{{ autocomplete }}" placeholder="{{ placeholder }}"
-           {% if error %}aria-invalid="true" aria-describedby="{{ name }}-error"{% elif help %}aria-describedby="{{ name }}-help"{% endif %}>
-    <button type="button" class="input-action" data-toggle-password="{{ name }}" aria-label="Mostrar contraseña" aria-pressed="false">{{ icon("eye", 17) }}</button>
-  </div>
-  {{ _feedback(name, error, help) }}
+{% macro dibujar_campo_contrasena(nombre, etiqueta, error=None, obligatorio=True,
+                                  autocompletar="current-password", ayuda=None,
+                                  sugerencia="••••••••") -%}
+<div class="campo">
+    {{ _dibujar_etiqueta_campo(nombre, etiqueta, obligatorio) }}
+    <div class="entrada-con-icono">
+        {{ dibujar_icono("lock", 17) }}
+        <input class="entrada{{ ' invalido' if error }}" id="{{ nombre }}" name="{{ nombre }}"
+               type="password" autocomplete="{{ autocompletar }}" placeholder="{{ sugerencia }}"
+               {% if error %}aria-invalid="true" aria-describedby="{{ nombre }}-error"
+               {%- elif ayuda %}aria-describedby="{{ nombre }}-help"{% endif %}>
+        <button type="button" class="entrada-accion" data-alternar-contrasena="{{ nombre }}"
+                aria-label="Mostrar contraseña" aria-pressed="false">{{
+                    dibujar_icono("eye", 17) }}</button>
+    </div>
+    {{ _dibujar_mensaje_campo(nombre, error, ayuda) }}
 </div>
 {%- endmacro %}
 
-{# options: (valor, etiqueta) o (valor, etiqueta, deshabilitado) #}
-{% macro select_field(name, label, options, selected="", error=None, required=False, placeholder=None, help=None,
-                      span=False, disabled=False, id=None) -%}
-{%- set fid = id or name -%}
-<div class="field{{ ' span-2' if span }}">
-  {{ _label(fid, label, required) }}
-  <select class="select{{ ' is-invalid' if error }}" id="{{ fid }}" name="{{ name }}"
-          {% if error %}aria-invalid="true" aria-describedby="{{ fid }}-error"{% elif help %}aria-describedby="{{ fid }}-help"{% endif %}
-          {% if disabled %}disabled{% endif %}{{ _attrs(kwargs) }}>
-    {% if placeholder %}<option value="">{{ placeholder }}</option>{% endif %}
-    {% for opcion in options %}
-      <option value="{{ opcion[0] }}" {% if opcion[0] | string == selected | string %}selected{% endif %}
-              {% if opcion | length > 2 and opcion[2] %}disabled{% endif %}>{{ opcion[1] }}</option>
-    {% endfor %}
-  </select>
-  {{ _feedback(fid, error, help) }}
+{# opciones: (valor, etiqueta) o (valor, etiqueta, deshabilitado). #}
+{% macro dibujar_campo_seleccion(nombre, etiqueta, opciones, seleccionado="", error=None,
+                                 obligatorio=False, sugerencia=None, ayuda=None,
+                                 doble_ancho=False, deshabilitado=False, identificador=None) -%}
+{%- set id_campo = identificador or nombre -%}
+<div class="campo{{ ' doble-ancho' if doble_ancho }}">
+    {{ _dibujar_etiqueta_campo(id_campo, etiqueta, obligatorio) }}
+    <select class="seleccion{{ ' invalido' if error }}" id="{{ id_campo }}" name="{{ nombre }}"
+            {% if error %}aria-invalid="true" aria-describedby="{{ id_campo }}-error"
+            {%- elif ayuda %}aria-describedby="{{ id_campo }}-help"{% endif %}
+            {% if deshabilitado %}disabled{% endif %}{{ _dibujar_atributos(kwargs) }}>
+        {% if sugerencia %}<option value="">{{ sugerencia }}</option>{% endif %}
+        {% for opcion in opciones %}
+            <option value="{{ opcion[0] }}"
+                    {% if opcion[0] | string == seleccionado | string %}selected{% endif %}
+                    {% if opcion | length > 2 and opcion[2] %}disabled{% endif %}>{{
+                        opcion[1] }}</option>
+        {% endfor %}
+    </select>
+    {{ _dibujar_mensaje_campo(id_campo, error, ayuda) }}
 </div>
 {%- endmacro %}
 
-{% macro textarea_field(name, label, value="", error=None, placeholder="", help=None, optional=True, span=False, rows=3) -%}
-<div class="field{{ ' span-2' if span }}">
-  {{ _label(name, label, False, optional) }}
-  <textarea class="textarea{{ ' is-invalid' if error }}" id="{{ name }}" name="{{ name }}" rows="{{ rows }}"
-            placeholder="{{ placeholder }}">{{ value or "" }}</textarea>
-  {{ _feedback(name, error, help) }}
+{% macro dibujar_campo_texto_largo(nombre, etiqueta, valor="", error=None, sugerencia="",
+                                   ayuda=None, opcional=True, doble_ancho=False, renglones=3) -%}
+<div class="campo{{ ' doble-ancho' if doble_ancho }}">
+    {{ _dibujar_etiqueta_campo(nombre, etiqueta, False, opcional) }}
+    <textarea class="texto-largo{{ ' invalido' if error }}" id="{{ nombre }}" name="{{ nombre }}"
+              rows="{{ renglones }}" placeholder="{{ sugerencia }}">{{ valor or "" }}</textarea>
+    {{ _dibujar_mensaje_campo(nombre, error, ayuda) }}
 </div>
 {%- endmacro %}

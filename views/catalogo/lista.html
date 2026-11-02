@@ -1,15 +1,23 @@
-{# ============================================================
-   Archivo: views/catalogo/lista.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/catalogo/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Catalogo y busqueda web (Vista, HU-01-12 y HU-01-13). Recibe lo que
+       regresa catalogo_servicio.buscar_libros().
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Catálogo y búsqueda web (Vista, HU-01-12 y HU-01-13). Recibe lo que regresa
-                catalogo_servicio.buscar_libros().
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
@@ -17,102 +25,143 @@
 
 {% block contenido %}
 {% set etiquetas = dict(cfg.CAMPOS_BUSQUEDA) %}
-{# Encabezado con acciones según los permisos del perfil #}
-{% call ui.page_header("Catálogo de libros",
-      "Busca por título, autor, tema, editorial o clave y abre un libro para ver la ubicación y disponibilidad de sus ejemplares.",
-      hus=["HU-01-12 Consulta", "HU-01-13 Búsqueda"] + (["HU-01-09 Alta"] if tiene_permiso("libros.alta") else [])) %}
-  {% if tiene_permiso("reportes.pdf", "reportes.imprimir") %}
-    {{ ui.btn("Listado / PDF", "secondary", "file", href=url_for("reportes.listado")) }}
-  {% endif %}
-  {% if tiene_permiso("libros.alta") %}
-    {{ ui.btn("Registrar libro", "primary", "plus", href=url_for("catalogo.nuevo")) }}
-  {% endif %}
+{# Encabezado con acciones segun los permisos del perfil. #}
+{% set hus = ["HU-01-12 Consulta", "HU-01-13 Búsqueda"] %}
+{% if verificar_permiso("libros.alta") %}{% set hus = hus + ["HU-01-09 Alta"] %}{% endif %}
+{% call ui.dibujar_encabezado_pagina("Catálogo de libros",
+                                     "Busca por título, autor, tema, editorial o clave y abre un "
+                                     "libro para ver la ubicación y disponibilidad de sus "
+                                     "ejemplares.",
+                                     hus=hus) %}
+    {% if verificar_permiso("reportes.pdf", "reportes.imprimir") %}
+        {{ ui.dibujar_boton("Listado / PDF", "secundario", "file",
+                            enlace=url_for("reportes.mostrar_listado")) }}
+    {% endif %}
+    {% if verificar_permiso("libros.alta") %}
+        {{ ui.dibujar_boton("Registrar libro", "primario", "plus",
+                            enlace=url_for("catalogo.registrar")) }}
+    {% endif %}
 {% endcall %}
 
-<div class="card">
-  {# HU-01-13: buscador por título, autor, tema, editorial o clave #}
-  <form class="card__body" method="get" action="{{ url_for('catalogo.lista') }}" role="search" novalidate>
-    <input type="hidden" name="buscar" value="1">
-    <input type="hidden" name="ver" value="{{ vista }}">
-    <div class="searchbar">
-      {{ ui.select_field("campo", "Buscar por", cfg.CAMPOS_BUSQUEDA, campo) }}
-      {{ ui.field("q", "Texto de búsqueda", texto, error_busqueda, placeholder="Ej. García Márquez, Literatura o LIB-001",
-                  icon_name="search", help="La clave busca coincidencia exacta; los demás campos, cualquier parte del texto.") }}
-      <div class="field"><span class="label" aria-hidden="true">&nbsp;</span>{{ ui.btn("Buscar", "primary", "search", type="submit") }}</div>
-      <div class="field"><span class="label" aria-hidden="true">&nbsp;</span>{{ ui.btn("Limpiar", "secondary", href=url_for("catalogo.lista", ver=vista), disabled=not buscando) }}</div>
-    </div>
-  </form>
+<div class="tarjeta">
+    {# HU-01-13: buscador por titulo, autor, tema, editorial o clave. #}
+    <form class="tarjeta-cuerpo" method="get" action="{{ url_for('catalogo.listar') }}"
+          role="search"
+          novalidate>
+        <input type="hidden" name="buscar" value="1">
+        <input type="hidden" name="ver" value="{{ vista }}">
+        <div class="barra-busqueda">
+            {{ ui.dibujar_campo_seleccion("campo", "Buscar por", cfg.CAMPOS_BUSQUEDA, campo) }}
+            {{ ui.dibujar_campo("q", "Texto de búsqueda", texto, error_busqueda,
+                                sugerencia="Ej. García Márquez, Literatura o LIB-001",
+                                icono="search",
+                                ayuda="La clave busca coincidencia exacta; los demás campos, "
+                                "cualquier parte del texto.") }}
+            <div class="campo"><span class="etiqueta-campo" aria-hidden="true">&nbsp;</span>{{
+                ui.dibujar_boton("Buscar", "primario", "search", tipo="submit") }}</div>
+            <div class="campo"><span class="etiqueta-campo" aria-hidden="true">&nbsp;</span>{{
+                ui.dibujar_boton("Limpiar", "secundario",
+                                 enlace=url_for("catalogo.listar", ver=vista),
+                                 deshabilitado=not buscando) }}</div>
+        </div>
+    </form>
 
-  {# Resumen de resultados y, para el personal, selector de activos / dados de baja #}
-  <div class="table-meta">
-    {% if buscando and not error_busqueda %}
-      <span>{{ libros | length }} resultado{{ 's' if libros | length != 1 }} para <strong class="strong">“{{ texto }}”</strong> en {{ etiquetas.get(campo, campo) | lower }}</span>
-    {% elif not buscando %}
-      <span>{{ libros | length }} libro{{ 's' if libros | length != 1 }} {{ {"activos": "en el catálogo", "baja": "dados de baja", "todos": "registrados (incluye bajas)"}[vista] }}</span>
-    {% else %}
-      <span>Sin búsqueda activa</span>
-    {% endif %}
-    {% if es_personal %}
-      <div class="seg" role="group" aria-label="Libros a mostrar">
-        {% for valor, etiqueta in [("activos", "Activos"), ("baja", "Dados de baja"), ("todos", "Todos")] %}
-          <a href="{{ url_for('catalogo.lista', ver=valor) }}" class="btn btn--sm {{ 'btn--primary' if vista == valor else 'btn--ghost' }}" style="border-radius:0"
-             aria-current="{{ 'true' if vista == valor else 'false' }}">{{ etiqueta }}</a>
-        {% endfor %}
-      </div>
-    {% endif %}
-  </div>
-
-  {# HU-01-12 · Mostrar catálogo: tabla de libros con su disponibilidad #}
-  {% if libros %}
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col">Clave</th>
-          <th scope="col">Título</th>
-          <th scope="col">Autores</th>
-          <th scope="col">Tema</th>
-          <th scope="col">Editorial</th>
-          <th scope="col">Disponibilidad</th>
-          <th scope="col" class="t-right"><span class="sr-only">Acciones</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for libro in libros %}
-        <tr class="{{ 'is-muted' if not libro.activo }}" data-href="{{ url_for('catalogo.detalle', libro_id=libro.id) }}">
-          <td class="mono strong nowrap">{{ libro.clave }}</td>
-          <td>
-            <div class="row" style="gap: 12px; flex-wrap: nowrap">
-              {{ ui.cover(libro.titulo, "sm", gray=not libro.activo) }}
-              <a class="cell-title" href="{{ url_for('catalogo.detalle', libro_id=libro.id) }}">{{ libro.titulo }}</a>
+    {# Resumen de resultados y, para el personal, selector de activos / dados de baja. #}
+    <div class="resumen-tabla">
+        {% if buscando and not error_busqueda %}
+            <span>{{ libros | length }} resultado{{ 's' if libros | length != 1 }} para <strong
+                class="resaltado">“{{ texto }}”</strong> en {{
+                    etiquetas.get(campo, campo) | lower }}</span>
+        {% elif not buscando %}
+            {% set descripciones = {"activos": "en el catálogo", "baja": "dados de baja",
+                                    "todos": "registrados (incluye bajas)"} %}
+            <span>{{ libros | length }} libro{{ 's' if libros | length != 1 }} {{
+                descripciones[vista] }}</span>
+        {% else %}
+            <span>Sin búsqueda activa</span>
+        {% endif %}
+        {% if es_personal %}
+            <div class="segmentado" role="group" aria-label="Libros a mostrar">
+                {% for valor, etiqueta in [("activos", "Activos"), ("baja", "Dados de baja"),
+                                           ("todos", "Todos")] %}
+                    <a href="{{ url_for('catalogo.listar', ver=valor) }}"
+                       class="boton boton-chico {{ 'boton-primario' if vista == valor
+                                                   else 'boton-transparente' }}"
+                       style="border-radius:0"
+                       aria-current="{{ 'true' if vista == valor else 'false' }}">{{ etiqueta }}</a>
+                {% endfor %}
             </div>
-          </td>
-          <td>{{ libro.autores }}</td>
-          <td>{{ ui.badge(libro.tema, "navy") }}</td>
-          <td>{{ libro.editorial }}</td>
-          <td>{{ ui.disponibilidad(libro) }}</td>
-          <td class="t-right">{{ ui.btn("Ver ejemplares", "secondary", "eye", href=url_for("catalogo.detalle", libro_id=libro.id), size="sm") }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {# HU-01-13 · Criterio vacío #}
-  {% elif error_busqueda %}
-    {{ ui.empty_state("search", "Captura un criterio de búsqueda", "Escribe el texto que quieres buscar y presiona Buscar. El formulario se mantiene para que lo corrijas.") }}
-  {# HU-01-12 · Catálogo vacío #}
-  {% elif not hay_catalogo %}
-    {% call ui.empty_state("library", "No hay libros registrados", "El catálogo todavía no tiene libros. Cuando el personal de biblioteca registre uno, aparecerá aquí.") %}
-      {% if tiene_permiso("libros.alta") %}{{ ui.btn("Registrar el primer libro", "primary", "plus", href=url_for("catalogo.nuevo")) }}{% endif %}
-    {% endcall %}
-  {# HU-01-13 · Sin coincidencias #}
-  {% elif buscando %}
-    {% call ui.empty_state("search", "No se encontraron libros",
-          "Ningún libro activo coincide con “" ~ texto ~ "” en " ~ etiquetas.get(campo, campo) | lower ~ ". Prueba con otro campo o revisa la ortografía.") %}
-      {{ ui.btn("Ver todo el catálogo", "secondary", href=url_for("catalogo.lista", ver=vista)) }}
-    {% endcall %}
-  {% else %}
-    {{ ui.empty_state("archive", "Sin libros en esta vista", "No hay libros dados de baja por ahora.") }}
-  {% endif %}
+        {% endif %}
+    </div>
+
+    {# HU-01-12 · Mostrar catalogo: tabla de libros con su disponibilidad. #}
+    {% if libros %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Clave</th>
+                    <th scope="col">Título</th>
+                    <th scope="col">Autores</th>
+                    <th scope="col">Tema</th>
+                    <th scope="col">Editorial</th>
+                    <th scope="col">Disponibilidad</th>
+                    <th scope="col" class="alinear-derecha"><span
+                        class="solo-lector">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for libro in libros %}
+                <tr class="{{ 'apagado' if not libro.activo }}"
+                    data-enlace="{{ url_for('catalogo.mostrar_detalle', libro_id=libro.id) }}">
+                    <td class="monoespaciado resaltado sin-salto">{{ libro.clave }}</td>
+                    <td>
+                        <div class="fila" style="gap: 12px; flex-wrap: nowrap">
+                            {{ ui.dibujar_portada(libro.titulo, "chica", gris=not libro.activo) }}
+                            <a class="celda-titulo" href="{{
+                                url_for('catalogo.mostrar_detalle', libro_id=libro.id) }}">{{
+                                libro.titulo }}</a>
+                        </div>
+                    </td>
+                    <td>{{ libro.autores }}</td>
+                    <td>{{ ui.dibujar_etiqueta(libro.tema, "azul") }}</td>
+                    <td>{{ libro.editorial }}</td>
+                    <td>{{ ui.dibujar_disponibilidad(libro) }}</td>
+                    <td class="alinear-derecha">{{ ui.dibujar_boton(
+                        "Ver ejemplares", "secundario", "eye",
+                        enlace=url_for("catalogo.mostrar_detalle", libro_id=libro.id),
+                        tamano="chico") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {# HU-01-13 · Criterio vacio. #}
+    {% elif error_busqueda %}
+        {{ ui.dibujar_estado_vacio("search", "Captura un criterio de búsqueda",
+                                   "Escribe el texto que quieres buscar y presiona Buscar. El "
+                                   "formulario se mantiene para que lo corrijas.") }}
+    {# HU-01-12 · Catalogo vacio. #}
+    {% elif not hay_catalogo %}
+        {% call ui.dibujar_estado_vacio("library", "No hay libros registrados",
+                                        "El catálogo todavía no tiene libros. Cuando el personal "
+                                        "de biblioteca registre uno, aparecerá aquí.") %}
+            {% if verificar_permiso("libros.alta") %}{{
+                ui.dibujar_boton("Registrar el primer libro", "primario", "plus",
+                                 enlace=url_for("catalogo.registrar")) }}{% endif %}
+        {% endcall %}
+    {# HU-01-13 · Sin coincidencias. #}
+    {% elif buscando %}
+        {% call ui.dibujar_estado_vacio("search", "No se encontraron libros",
+                                        "Ningún libro activo coincide con “" ~ texto ~ "” en "
+                                        ~ etiquetas.get(campo, campo) | lower
+                                        ~ ". Prueba con otro campo o revisa la ortografía.") %}
+            {{ ui.dibujar_boton("Ver todo el catálogo", "secundario",
+                                enlace=url_for("catalogo.listar", ver=vista)) }}
+        {% endcall %}
+    {% else %}
+        {{ ui.dibujar_estado_vacio("archive", "Sin libros en esta vista",
+                                   "No hay libros dados de baja por ahora.") }}
+    {% endif %}
 </div>
 {% endblock %}

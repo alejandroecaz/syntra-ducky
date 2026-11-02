@@ -1,62 +1,79 @@
-{# ============================================================
-   Archivo: views/inicio.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/inicio.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Panel de inicio web (Vista): funciones e indicadores que manda
+       inicio_controller segun los permisos del perfil.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Panel de inicio web (Vista): funciones e indicadores que manda inicio_controller según los
-                permisos del perfil.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Inicio{% endblock %}
 
 {% block contenido %}
-{% set usuario = usuario_actual() %}
-{# HU-01-01: saludo con el perfil y búsqueda rápida por título #}
-<section class="welcome">
-  <div>
-    <h1>Hola, {{ usuario.nombre.split()[0] }}</h1>
-    <p>Iniciaste sesión como <strong style="color:#fff">{{ usuario.perfil }}</strong>. Aquí tienes únicamente las funciones autorizadas para tu perfil.</p>
-  </div>
-  {% if tiene_permiso("catalogo.consultar") %}
-    <form action="{{ url_for('catalogo.lista') }}" method="get" class="row" role="search" style="min-width: min(420px, 100%); flex: 1; max-width: 520px">
-      <input type="hidden" name="campo" value="titulo">
-      <input type="hidden" name="buscar" value="1">
-      <div class="input-icon" style="flex:1; min-width: 0">
-        {{ icon("search", 17) }}
-        <input class="input" name="q" placeholder="Buscar un libro por título…" aria-label="Buscar un libro por título">
-      </div>
-      {{ ui.btn("Buscar", "accent", type="submit") }}
-    </form>
-  {% endif %}
+{% set usuario = obtener_usuario_actual() %}
+{# HU-01-01: saludo con el perfil y busqueda rapida por titulo. #}
+<section class="bienvenida">
+    <div>
+        <h1>Hola, {{ usuario.nombre.split()[0] }}</h1>
+        <p>Iniciaste sesión como <strong
+                                         style="color:#fff">{{ usuario.perfil }}</strong>. Aquí
+                                         tienes
+                                                                          únicamente las funciones
+                                                                          autorizadas para tu
+                                                                          perfil.</p>
+    </div>
+    {% if verificar_permiso("catalogo.consultar") %}
+        <form action="{{ url_for('catalogo.listar') }}" method="get" class="fila" role="search"
+              style="min-width: min(420px, 100%); flex: 1; max-width: 520px">
+            <input type="hidden" name="campo" value="titulo">
+            <input type="hidden" name="buscar" value="1">
+            <div class="entrada-con-icono" style="flex:1; min-width: 0">
+                {{ dibujar_icono("search", 17) }}
+                <input class="entrada" name="q" placeholder="Buscar un libro por título…"
+                       aria-label="Buscar un libro por título">
+            </div>
+            {{ ui.dibujar_boton("Buscar", "acento", tipo="submit") }}
+        </form>
+    {% endif %}
 </section>
 
-{# Indicadores según los permisos del perfil #}
+{# Indicadores segun los permisos del perfil. #}
 {% if indicadores %}
-<div class="grid grid-4 mb-4" style="margin-bottom: 24px">
-  {% for icono, etiqueta, valor, destino in indicadores %}
-    {{ ui.stat(icono, etiqueta, valor, href=url_for(destino)) }}
-  {% endfor %}
+<div class="rejilla rejilla-4 margen-abajo-4" style="margin-bottom: 24px">
+    {% for icono, etiqueta, valor, destino in indicadores %}
+        {{ ui.dibujar_indicador(icono, etiqueta, valor, enlace=url_for(destino)) }}
+    {% endfor %}
 </div>
 {% endif %}
 
-{# HU-01-01 · Inicio de sesión exitoso: solo las funciones del perfil #}
-<div class="row-between" style="margin-bottom: 14px">
-  <h2>Tus funciones</h2>
-  <span class="muted small">{{ acciones | length }} disponibles para el perfil {{ usuario.perfil }}</span>
+{# HU-01-01 · Inicio de sesion exitoso: solo las funciones del perfil. #}
+<div class="fila-separada" style="margin-bottom: 14px">
+    <h2>Tus funciones</h2>
+    <span class="atenuado texto-chico">{{ acciones | length }} disponibles para el perfil {{
+        usuario.perfil }}</span>
 </div>
-<div class="grid grid-auto">
-  {% for _, icono, titulo, descripcion, destino in acciones %}
-    <a class="action-card" href="{{ url_for(destino) }}">
-      <span class="action-card__icon">{{ icon(icono, 20) }}</span>
-      <span class="action-card__title">{{ titulo }}{{ icon("chevron-right", 18) }}</span>
-      <span class="action-card__text">{{ descripcion }}</span>
-    </a>
-  {% endfor %}
+<div class="rejilla rejilla-auto">
+    {% for _, icono, titulo, descripcion, destino in acciones %}
+        <a class="tarjeta-accion" href="{{ url_for(destino) }}">
+            <span class="tarjeta-accion-icono">{{ dibujar_icono(icono, 20) }}</span>
+            <span class="tarjeta-accion-titulo">{{ titulo }}{{
+                dibujar_icono("chevron-right", 18) }}</span>
+            <span class="tarjeta-accion-texto">{{ descripcion }}</span>
+        </a>
+    {% endfor %}
 </div>
 {% endblock %}

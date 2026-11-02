@@ -1,65 +1,83 @@
-{# ============================================================
-   Archivo: views/components/sidebar.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/components/sidebar.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Menu lateral (Vista): solo muestra las secciones que permiten los
+       permisos de la sesion.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Menú lateral (Vista): solo muestra las secciones que permiten los permisos de la sesión.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% import "components/ui.html" as ui %}
 {% set seccion = request.endpoint.split('.')[0] if request.endpoint else '' %}
 
-{# Enlace del menú; se marca activo según la sección actual #}
-{% macro enlace(endpoint, icono, texto, activo) -%}
-<a class="nav__link{{ ' is-active' if activo }}" href="{{ url_for(endpoint) }}"{% if activo %} aria-current="page"{% endif %}>
-  {{ icon(icono, 18) }}<span>{{ texto }}</span>
+{# Enlace del menu; se marca activo segun la seccion actual. #}
+{% macro dibujar_enlace(vista, icono, texto, activo) -%}
+<a class="navegacion-enlace{{ ' activo' if activo }}" href="{{ url_for(vista) }}"{% if activo %}
+   aria-current="page"{% endif %}>
+    {{ dibujar_icono(icono, 18) }}<span>{{ texto }}</span>
 </a>
 {%- endmacro %}
 
-<aside class="sidebar" id="sidebar" aria-label="Navegación principal">
-  {{ ui.brand(href=url_for("inicio.panel"), size=52) }}
+<aside class="menu-lateral" id="menu-lateral" aria-label="Navegación principal">
+    {{ ui.dibujar_marca(enlace=url_for("inicio.mostrar_panel"), tamano=52) }}
 
-  <nav class="nav">
-    {# Inicio (siempre visible) #}
-    {{ enlace("inicio.panel", "home", "Inicio", seccion == "inicio") }}
+    <nav class="navegacion">
+        {# Inicio (siempre visible). #}
+        {{ dibujar_enlace("inicio.mostrar_panel", "home", "Inicio", seccion == "inicio") }}
 
-    {# Biblioteca: catálogo, listado y compras #}
-    {% if tiene_permiso("catalogo.consultar", "libros.alta", "reportes.pdf", "reportes.imprimir", "compras.orden") %}
-      <div class="nav__section">Biblioteca</div>
-      {% if tiene_permiso("catalogo.consultar") %}
-        {{ enlace("catalogo.lista", "library", "Catálogo", seccion == "catalogo") }}
-      {% endif %}
-      {% if tiene_permiso("reportes.pdf", "reportes.imprimir") %}
-        {{ enlace("reportes.listado", "file", "Listado de libros", seccion == "reportes") }}
-      {% endif %}
-      {% if tiene_permiso("compras.orden") %}
-        {{ enlace("compras.lista", "cart", "Órdenes de compra", seccion == "compras") }}
-      {% endif %}
-    {% endif %}
+        {# Biblioteca: catalogo, listado y compras. #}
+        {% if verificar_permiso("catalogo.consultar", "libros.alta", "reportes.pdf",
+                                "reportes.imprimir", "compras.orden") %}
+            <div class="navegacion-seccion">Biblioteca</div>
+            {% if verificar_permiso("catalogo.consultar") %}
+                {{ dibujar_enlace("catalogo.listar", "library", "Catálogo",
+                                  seccion == "catalogo") }}
+            {% endif %}
+            {% if verificar_permiso("reportes.pdf", "reportes.imprimir") %}
+                {{ dibujar_enlace("reportes.mostrar_listado", "file", "Listado de libros",
+                                  seccion == "reportes") }}
+            {% endif %}
+            {% if verificar_permiso("compras.orden") %}
+                {{ dibujar_enlace("compras.listar", "cart", "Órdenes de compra",
+                                  seccion == "compras") }}
+            {% endif %}
+        {% endif %}
 
-    {# Administración: usuarios y perfiles #}
-    {% if tiene_permiso("usuarios.consultar", "perfiles.crear", "perfiles.asignar") %}
-      <div class="nav__section">Administración</div>
-      {% if tiene_permiso("usuarios.consultar") %}
-        {{ enlace("usuarios.lista", "users", "Usuarios", seccion == "usuarios") }}
-      {% endif %}
-      {% if tiene_permiso("perfiles.crear", "perfiles.asignar") %}
-        {{ enlace("perfiles.lista", "shield", "Perfiles y permisos", seccion == "perfiles") }}
-      {% endif %}
-    {% endif %}
+        {# Administracion: usuarios y perfiles. #}
+        {% if verificar_permiso("usuarios.consultar", "perfiles.crear", "perfiles.asignar") %}
+            <div class="navegacion-seccion">Administración</div>
+            {% if verificar_permiso("usuarios.consultar") %}
+                {{ dibujar_enlace("usuarios.listar", "users", "Usuarios", seccion == "usuarios") }}
+            {% endif %}
+            {% if verificar_permiso("perfiles.crear", "perfiles.asignar") %}
+                {{ dibujar_enlace("perfiles.listar", "shield", "Perfiles y permisos",
+                                  seccion == "perfiles") }}
+            {% endif %}
+        {% endif %}
 
-    {# Mi cuenta: cambio de contraseña (HU-01-06) #}
-    {% if tiene_permiso("cuenta.contrasena") %}
-      <div class="nav__section">Mi cuenta</div>
-      {{ enlace("cuenta.contrasena", "key", "Cambiar contraseña", seccion == "cuenta") }}
-    {% endif %}
-  </nav>
+        {# Mi cuenta: cambio de contrasena (HU-01-06). #}
+        {% if verificar_permiso("cuenta.contrasena") %}
+            <div class="navegacion-seccion">Mi cuenta</div>
+            {{ dibujar_enlace("cuenta.cambiar_contrasena", "key", "Cambiar contraseña",
+                              seccion == "cuenta") }}
+        {% endif %}
+    </nav>
 
-  {# Cerrar sesión #}
-  <div class="sidebar__footer">
-    <a class="nav__link" href="{{ url_for('auth.logout') }}">{{ icon("logout", 18) }}<span>Cerrar sesión</span></a>
-  </div>
+    {# Cerrar sesion. #}
+    <div class="menu-lateral-pie">
+        <a class="navegacion-enlace"
+           href="{{ url_for('auth.salir') }}">{{
+               dibujar_icono("logout", 18) }}<span>Cerrar sesión</span></a>
+    </div>
 </aside>

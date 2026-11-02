@@ -1,104 +1,157 @@
-{# ============================================================
-   Archivo: views/catalogo/form_libro.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/catalogo/form_libro.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Alta y edicion de libros (Vista, HU-01-09 y HU-01-11). Las
+       validaciones estan en catalogo_servicio.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Alta y edición de libros (Vista, HU-01-09 y HU-01-11). Las validaciones están en
-                catalogo_servicio.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% set es_nuevo = modo == "nuevo" %}
 {% block titulo %}{{ "Registrar libro" if modo == "nuevo" else "Editar libro" }}{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('catalogo.lista') }}">Catálogo</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a href="{{ url_for('catalogo.listar') }}">Catálogo</a>
+{%- endblock %}
 
 {% block contenido %}
-{# Encabezado: alta (HU-01-09) o edición (HU-01-11) #}
+{# Encabezado: alta (HU-01-09) o edicion (HU-01-11). #}
 {% if es_nuevo %}
-  {{ ui.page_header("Registrar libro",
-        "Captura la ficha bibliográfica. Las copias físicas (ejemplares) se agregan después desde la ficha del libro.",
-        hus=["HU-01-09 Alta de libros"], back=url_for("catalogo.lista"), back_label="Catálogo") }}
+    {{ ui.dibujar_encabezado_pagina("Registrar libro",
+                                    "Captura la ficha bibliográfica. Las copias físicas "
+                                    "(ejemplares) se agregan después desde la ficha del libro.",
+                                    hus=["HU-01-09 Alta de libros"],
+                                    regresar=url_for("catalogo.listar"),
+                                    texto_regresar="Catálogo") }}
 {% else %}
-  {{ ui.page_header("Editar “" ~ libro.titulo ~ "”",
-        "Actualiza los datos bibliográficos. La clave y la relación con sus " ~ libro.total_ejemplares ~ " ejemplares se conservan.",
-        hus=["HU-01-11 Actualización de libros"], back=url_for("catalogo.detalle", libro_id=libro.id), back_label="Ficha del libro") }}
+    {{ ui.dibujar_encabezado_pagina("Editar “" ~ libro.titulo ~ "”",
+                                    "Actualiza los datos bibliográficos. La clave y la relación "
+                                    "con sus " ~ libro.total_ejemplares ~ " ejemplares se "
+                                    "conservan.",
+                                    hus=["HU-01-11 Actualización de libros"],
+                                    regresar=url_for("catalogo.mostrar_detalle", libro_id=libro.id),
+                                    texto_regresar="Ficha del libro") }}
 {% endif %}
 
-{% set destino_cancelar = url_for("catalogo.lista") if es_nuevo else url_for("catalogo.detalle", libro_id=libro.id) %}
+{% set destino_cancelar = url_for("catalogo.listar") if es_nuevo
+       else url_for("catalogo.mostrar_detalle", libro_id=libro.id) %}
 
-<div class="layout-aside">
-  {# Formulario de la ficha bibliográfica; en edición avisa si hay cambios sin guardar #}
-  <form class="card" method="post" novalidate {% if not es_nuevo %}data-track-changes{% endif %}>
-    <div class="card__body stack-lg">
-      {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+<div class="diseno-lateral">
+    {# Formulario de la ficha bibliografica; en edicion avisa si hay cambios sin guardar. #}
+    <form class="tarjeta" method="post" novalidate
+          {% if not es_nuevo %}data-vigilar-cambios{% endif %}>
+        <div class="tarjeta-cuerpo pila-amplia">
+            {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
 
-      {# HU-01-09 · Datos bibliográficos incompletos / HU-01-11 · Edición incompleta: los errores se marcan por campo #}
-      <div class="form-grid">
-        {{ ui.field("clave", "Clave", valores.get("clave"), errores.get("clave"), required=es_nuevo,
-                    placeholder="Ej. LIB-015", readonly=not es_nuevo,
-                    help="Identificador único del libro." if es_nuevo else "La clave no se modifica.") }}
-        {{ ui.field("anio", "Año de publicación", valores.get("anio"), errores.get("anio"), optional=True,
-                    placeholder="Ej. 2021", inputmode="numeric") }}
-        {{ ui.field("titulo", "Título", valores.get("titulo"), errores.get("titulo"), required=True,
-                    placeholder="Título completo del libro", span=True) }}
-        {{ ui.field("autores", "Autores", valores.get("autores"), errores.get("autores"), required=True,
-                    placeholder="Ej. Brian W. Kernighan; Dennis M. Ritchie", span=True,
-                    help="Si son varios, sepáralos con punto y coma (;) en el orden en que aparecen en la portada.") }}
-        {{ ui.field("tema", "Tema", valores.get("tema"), errores.get("tema"), required=True,
-                    placeholder="Ej. Programación", list="temas-sugeridos") }}
-        {{ ui.field("editorial", "Editorial", valores.get("editorial"), errores.get("editorial"), required=True,
-                    placeholder="Ej. McGraw-Hill", list="editoriales-sugeridas") }}
-        {# Temas y editoriales registrados; si se escribe uno nuevo se agrega al catálogo #}
-        <datalist id="temas-sugeridos">
-          {% for t in temas %}<option value="{{ t }}">{% endfor %}
-        </datalist>
-        <datalist id="editoriales-sugeridas">
-          {% for e in editoriales %}<option value="{{ e }}">{% endfor %}
-        </datalist>
-        {{ ui.field("edicion", "Edición", valores.get("edicion"), errores.get("edicion"), optional=True,
-                    placeholder="Ej. 3.ª ed.") }}
-        {{ ui.field("isbn", "ISBN", valores.get("isbn"), errores.get("isbn"), optional=True,
-                    placeholder="10 o 13 dígitos", inputmode="numeric") }}
-        {% set opciones_acceso = [] %}{% for t in tipos_acceso %}{% set _ = opciones_acceso.append((t, t)) %}{% endfor %}
-        {{ ui.select_field("tipo_acceso", "Tipo de acceso", opciones_acceso, valores.get("tipo_acceso", ""),
-                           errores.get("tipo_acceso"), span=True) }}
-        {{ ui.textarea_field("sinopsis", "Sinopsis", valores.get("sinopsis"), placeholder="Breve descripción del contenido",
-                             span=True) }}
-      </div>
+            {# HU-01-09 · Datos bibliograficos incompletos / HU-01-11 · Edicion incompleta: los
+               errores se
+               marcan por campo. #}
+            <div class="rejilla-formulario">
+                {{ ui.dibujar_campo("clave", "Clave", valores.get("clave"), errores.get("clave"),
+                                    obligatorio=es_nuevo,
+                                    sugerencia="Ej. LIB-015", solo_lectura=not es_nuevo,
+                                    ayuda="Identificador único del libro." if es_nuevo else "La "
+                                    "clave no se modifica.") }}
+                {{ ui.dibujar_campo("anio", "Año de publicación", valores.get("anio"),
+                                    errores.get("anio"),
+                                    opcional=True,
+                                    sugerencia="Ej. 2021", inputmode="numeric") }}
+                {{ ui.dibujar_campo("titulo", "Título", valores.get("titulo"),
+                                    errores.get("titulo"),
+                                    obligatorio=True,
+                                    sugerencia="Título completo del libro", doble_ancho=True) }}
+                {{ ui.dibujar_campo("autores", "Autores", valores.get("autores"),
+                                    errores.get("autores"),
+                                    obligatorio=True,
+                                    sugerencia="Ej. Brian W. Kernighan; Dennis M. Ritchie",
+                                    doble_ancho=True,
+                                    ayuda="Si son varios, sepáralos con punto y coma (;) en el "
+                                    "orden en que aparecen en la portada.") }}
+                {{ ui.dibujar_campo("tema", "Tema", valores.get("tema"), errores.get("tema"),
+                                    obligatorio=True,
+                                    sugerencia="Ej. Programación", list="temas-sugeridos") }}
+                {{ ui.dibujar_campo("editorial", "Editorial", valores.get("editorial"),
+                                    errores.get("editorial"), obligatorio=True,
+                                    sugerencia="Ej. McGraw-Hill", list="editoriales-sugeridas") }}
+                {# Temas y editoriales registrados; si se escribe uno nuevo se agrega al catalogo.
+                   #}
+                <datalist id="temas-sugeridos">
+                    {% for tema in temas %}<option value="{{ tema }}">{% endfor %}
+                </datalist>
+                <datalist id="editoriales-sugeridas">
+                    {% for editorial in editoriales %}<option value="{{ editorial }}">{% endfor %}
+                </datalist>
+                {{ ui.dibujar_campo("edicion", "Edición", valores.get("edicion"),
+                                    errores.get("edicion"),
+                                    opcional=True,
+                                    sugerencia="Ej. 3.ª ed.") }}
+                {{ ui.dibujar_campo("isbn", "ISBN", valores.get("isbn"), errores.get("isbn"),
+                                    opcional=True,
+                                    sugerencia="10 o 13 dígitos", inputmode="numeric") }}
+                {% set opciones_acceso = [] %}{% for tipo in tipos_acceso %}
+                {%- set _ = opciones_acceso.append((tipo, tipo)) %}{% endfor %}
+                {{ ui.dibujar_campo_seleccion("tipo_acceso", "Tipo de acceso", opciones_acceso,
+                                              valores.get("tipo_acceso", ""),
+                                              errores.get("tipo_acceso"), doble_ancho=True) }}
+                {{ ui.dibujar_campo_texto_largo("sinopsis", "Sinopsis", valores.get("sinopsis"),
+                                                sugerencia="Breve descripción del contenido",
+                                                doble_ancho=True) }}
+            </div>
 
-      {# HU-01-11 · Cancelar edición: pide confirmar si hay cambios #}
-      <div class="form-actions" style="margin-top: 0">
-        {% if es_nuevo %}
-          {{ ui.btn("Cancelar", "secondary", href=destino_cancelar) }}
-          {{ ui.btn("Guardar", "primary", "check", type="submit") }}
-        {% else %}
-          {{ ui.btn("Cancelar", "secondary", href=destino_cancelar, data_cancel_edit="1",
-                    data_discard_href=url_for("catalogo.detalle", libro_id=libro.id, cancelado=1)) }}
-          {{ ui.btn("Guardar cambios", "primary", "check", type="submit") }}
-        {% endif %}
-      </div>
-    </div>
-  </form>
+            {# HU-01-11 · Cancelar edicion: pide confirmar si hay cambios. #}
+            <div class="acciones-formulario" style="margin-top: 0">
+                {% if es_nuevo %}
+                    {{ ui.dibujar_boton("Cancelar", "secundario", enlace=destino_cancelar) }}
+                    {{ ui.dibujar_boton("Guardar", "primario", "check", tipo="submit") }}
+                {% else %}
+                    {{ ui.dibujar_boton(
+                        "Cancelar", "secundario", enlace=destino_cancelar,
+                        data_cancelar_edicion="1",
+                        data_enlace_descartar=url_for("catalogo.mostrar_detalle",
+                                                      libro_id=libro.id, cancelado=1)) }}
+                    {{ ui.dibujar_boton("Guardar cambios", "primario", "check", tipo="submit") }}
+                {% endif %}
+            </div>
+        </div>
+    </form>
 
-  {# Reglas de validación para quien captura #}
-  <aside class="card">
-    <div class="card__header"><h2 class="card__title">{{ icon("info", 18) }}Antes de guardar</h2></div>
-    <div class="card__body stack small">
-      <p>• Clave, título, al menos un autor, tema y editorial son <strong>obligatorios</strong>; si falta alguno se señala y se conserva lo capturado.</p>
-      <p>• Si escribes un tema, editorial o autor nuevo, se agrega al catálogo; si ya existe se reutiliza.</p>
-      {% if es_nuevo %}
-        <p>• Si la clave ya existe, se muestra “La clave del libro ya existe” sin duplicar ni sobrescribir el registro.</p>
-        <p>• Registrar el libro <strong>no crea ejemplares</strong> automáticamente.</p>
-        <p class="muted">Para probar el duplicado usa <code>LIB-001</code>.</p>
-      {% else %}
-        <p>• Si presionas <strong>Cancelar</strong> con cambios sin guardar, se pide confirmar antes de descartarlos.</p>
-      {% endif %}
-    </div>
-  </aside>
+    {# Reglas de validacion para quien captura. #}
+    <aside class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("info", 18) }}Antes de guardar</h2>
+        </div>
+        <div class="tarjeta-cuerpo pila texto-chico">
+            <p>• Clave, título, al menos un autor, tema y editorial son
+            <strong>obligatorios</strong>; si
+            falta alguno se señala y se conserva lo capturado.</p>
+            <p>• Si escribes un tema, editorial o autor nuevo, se agrega al catálogo; si ya existe
+            se
+            reutiliza.</p>
+            {% if es_nuevo %}
+                <p>• Si la clave ya existe, se muestra “La clave del libro ya existe” sin duplicar
+                ni
+                sobrescribir el registro.</p>
+                <p>• Registrar el libro <strong>no crea ejemplares</strong> automáticamente.</p>
+                <p class="atenuado">Para probar el duplicado usa <code>LIB-001</code>.</p>
+            {% else %}
+                <p>• Si presionas <strong>Cancelar</strong> con cambios sin guardar, se pide
+                confirmar antes
+                de descartarlos.</p>
+            {% endif %}
+        </div>
+    </aside>
 </div>
 {% endblock %}

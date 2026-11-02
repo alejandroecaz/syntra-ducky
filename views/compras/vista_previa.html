@@ -1,43 +1,58 @@
-{# ============================================================
-   Archivo: views/compras/vista_previa.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/compras/vista_previa.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Vista previa antes de confirmar la orden (Vista, HU-01-18).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Vista previa antes de confirmar la orden (Vista, HU-01-18).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Vista previa de la orden{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('compras.listar') }}">Órdenes de compra</a>
+{%- endblock %}
 
 {% block contenido %}
-{# HU-01-18: aviso de que la orden aún no está registrada #}
-<div class="no-print">
-  {% call ui.page_header("Vista previa de la orden",
-        "Revisa la información. Puedes modificar los libros y cantidades o confirmar para registrar la orden.",
-        hus=["HU-01-18 Orden de compra"]) %}
-    {{ ui.btn("Imprimir vista previa", "ghost", "printer", data_print="1") }}
-  {% endcall %}
-  {{ ui.alert("info", "La orden aún no está registrada", "El folio se asigna al confirmar.") }}
-  <div style="height: 20px"></div>
+{# HU-01-18: aviso de que la orden aun no esta registrada. #}
+<div class="sin-imprimir">
+    {% call ui.dibujar_encabezado_pagina("Vista previa de la orden",
+                                         "Revisa la información. Puedes modificar los libros y "
+                                         "cantidades o confirmar para registrar la orden.",
+                                         hus=["HU-01-18 Orden de compra"]) %}
+        {{ ui.dibujar_boton("Imprimir vista previa", "transparente",
+                            "printer", data_imprimir="1") }}
+    {% endcall %}
+    {{ ui.dibujar_alerta("informacion", "La orden aún no está registrada",
+                         "El folio se asigna al confirmar.") }}
+    <div style="height: 20px"></div>
 </div>
 
-{# El folio se asigna hasta confirmar #}
+{# El folio se asigna hasta confirmar. #}
 {% set folio = "Pendiente de asignar" %}
 {% set fecha_doc = hoy.strftime("%d/%m/%Y") %}
-{% set solicitante = usuario_actual().nombre %}
+{% set solicitante = obtener_usuario_actual().nombre %}
 {% include "compras/_documento.html" %}
 
-{# HU-01-18 · Modificación de la orden / Orden de compra (confirmar) #}
-<div class="form-actions no-print">
-  {{ ui.btn("Modificar orden", "secondary", "edit", href=url_for("compras.nueva", modificar=1)) }}
-  <form method="post" action="{{ url_for('compras.confirmar') }}" style="display:inline">
-    {{ ui.btn("Confirmar y registrar orden", "primary", "check", type="submit") }}
-  </form>
+{# HU-01-18 · Modificacion de la orden / Orden de compra (confirmar). #}
+<div class="acciones-formulario sin-imprimir">
+    {{ ui.dibujar_boton("Modificar orden", "secundario", "edit",
+                        enlace=url_for("compras.registrar", modificar=1)) }}
+    <form method="post" action="{{ url_for('compras.confirmar') }}" style="display:inline">
+        {{ ui.dibujar_boton("Confirmar y registrar orden", "primario", "check", tipo="submit") }}
+    </form>
 </div>
 {% endblock %}

@@ -1,41 +1,56 @@
-{# ============================================================
-   Archivo: views/components/topbar.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/components/topbar.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Menu del usuario en sesion (Vista).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Menú del usuario en sesión (Vista).
-   ============================================================ -#}
-{% set usuario = usuario_actual() %}
-  <div class="topbar__right">
-    {% if usuario %}
-    <div class="user-menu">
-      {# Botón con iniciales, nombre y perfil #}
-      <button type="button" class="user-chip" data-menu-toggle="menu-usuario" aria-haspopup="true" aria-expanded="false">
-        <span class="avatar">{{ usuario.nombre.split()[0][0] }}{{ usuario.nombre.split()[1][0] if usuario.nombre.split() | length > 1 }}</span>
-        <span class="user-chip__text">
-          <span class="user-chip__name">{{ usuario.nombre.split()[0] }}</span>
-          <span class="user-chip__role">{{ usuario.perfil }}</span>
-        </span>
-        {{ icon("chevron-down", 16, "muted") }}
-      </button>
-      {# Menú desplegable: datos de la cuenta, cambiar contraseña y cerrar sesión #}
-      <div class="menu" id="menu-usuario" role="menu">
-        <div class="menu__item" style="cursor: default">
-          <span>
-            <strong class="strong">{{ usuario.nombre }}</strong><br>
-            <span class="xsmall muted">Cuenta: {{ usuario.cuenta }} · {{ usuario.perfil }}</span>
-          </span>
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
+{% set usuario = obtener_usuario_actual() %}
+    <div class="barra-superior-derecha">
+        {% if usuario %}
+        <div class="menu-usuario">
+            {# Boton con iniciales, nombre y perfil. #}
+            <button type="button" class="ficha-usuario" data-alternar-menu="menu-usuario"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="avatar">{{ usuario.nombre.split()[0][0] }}{{
+                    usuario.nombre.split()[1][0] if usuario.nombre.split() | length > 1 }}</span>
+                <span class="ficha-usuario-texto">
+                    <span class="ficha-usuario-nombre">{{ usuario.nombre.split()[0] }}</span>
+                    <span class="ficha-usuario-perfil">{{ usuario.perfil }}</span>
+                </span>
+                {{ dibujar_icono("chevron-down", 16, "atenuado") }}
+            </button>
+            {# Menu desplegable: datos de la cuenta, cambiar contrasena y cerrar sesion. #}
+            <div class="menu" id="menu-usuario" role="menu">
+                <div class="menu-opcion" style="cursor: default">
+                    <span>
+                        <strong class="resaltado">{{ usuario.nombre }}</strong><br>
+                        <span class="texto-muy-chico atenuado">Cuenta: {{ usuario.cuenta }} · {{
+                            usuario.perfil }}</span>
+                    </span>
+                </div>
+                <hr class="divisor" style="margin: 6px 0">
+                {% if verificar_permiso("cuenta.contrasena") %}
+                    <a class="menu-opcion" role="menuitem"
+                       href="{{ url_for('cuenta.cambiar_contrasena') }}">{{
+                           dibujar_icono("key", 16) }}Cambiar contraseña</a>
+                {% endif %}
+                <a class="menu-opcion menu-opcion-peligro" role="menuitem"
+                   href="{{ url_for('auth.salir') }}">{{
+                       dibujar_icono("logout", 16) }}Cerrar sesión</a>
+            </div>
         </div>
-        <hr class="divider" style="margin: 6px 0">
-        {% if tiene_permiso("cuenta.contrasena") %}
-          <a class="menu__item" role="menuitem" href="{{ url_for('cuenta.contrasena') }}">{{ icon("key", 16) }}Cambiar contraseña</a>
         {% endif %}
-        <a class="menu__item menu__item--danger" role="menuitem" href="{{ url_for('auth.logout') }}">{{ icon("logout", 16) }}Cerrar sesión</a>
-      </div>
     </div>
-    {% endif %}
-  </div>

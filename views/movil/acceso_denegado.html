@@ -1,37 +1,50 @@
-{# ============================================================
-   Archivo: views/movil/acceso_denegado.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/movil/acceso_denegado.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Vista 403 del portal movil: alguien con sesion pero sin el permiso
+       movil.acceder (por ejemplo un profesor que entro por la web y abrio
+       /movil).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Vista 403 del portal móvil: alguien con sesión pero sin el permiso movil.acceder (por ejemplo un
-                profesor que entró por la web y abrió /movil).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Acceso no autorizado{% endblock %}
 
 {% block contenido %}
-{# Marca del portal #}
+{# Marca del portal. #}
 <section class="m-marca">
-  {{ ui.logo(64) }}
-  <p class="m-marca__nombre">Biblioteca Ducky</p>
-  <p class="m-marca__sub">Portal móvil para alumnos</p>
+    {{ ui.dibujar_logo(64) }}
+    <p class="m-marca-nombre">Biblioteca Ducky</p>
+    <p class="m-marca-subtitulo">Portal móvil para alumnos</p>
 </section>
 
-{# HU-01-01 (móvil) · Acceso sin autorización: solo alumnos #}
-<div class="card">
-  {% call ui.empty_state("lock", "Acceso no autorizado", mensaje ~ ".", tone="warning") %}
-    <div class="stack" style="width: 100%">
-      {{ ui.btn("Entrar con otra cuenta", "primary", "logout", href=url_for("movil.logout"), size="lg", block=True) }}
-      {% if tiene_permiso(cfg.PERMISO_SISTEMA) %}
-        {{ ui.btn("Ir a la versión web", "secondary", "home", href=url_for("inicio.panel"), size="lg", block=True) }}
-      {% endif %}
-    </div>
-  {% endcall %}
+{# HU-01-01 (movil) · Acceso sin autorizacion: solo alumnos. #}
+<div class="tarjeta">
+    {% call ui.dibujar_estado_vacio("lock", "Acceso no autorizado",
+                                    mensaje ~ ".", tono="advertencia") %}
+        <div class="pila" style="width: 100%">
+            {{ ui.dibujar_boton("Entrar con otra cuenta", "primario", "logout",
+                                enlace=url_for("movil.salir"), tamano="grande", completo=True) }}
+            {% if verificar_permiso(cfg.PERMISO_SISTEMA) %}
+                {{ ui.dibujar_boton("Ir a la versión web", "secundario", "home",
+                                    enlace=url_for("inicio.mostrar_panel"),
+                                    tamano="grande", completo=True) }}
+            {% endif %}
+        </div>
+    {% endcall %}
 </div>
 {% endblock %}

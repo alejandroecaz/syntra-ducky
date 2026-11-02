@@ -1,64 +1,91 @@
-{# ============================================================
-   Archivo: views/perfiles/lista.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/perfiles/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Perfiles y sus permisos (Vista, HU-01-07 y HU-01-08). Aqui se ve el
+       permiso del portal movil.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Perfiles y sus permisos (Vista, HU-01-07 y HU-01-08). Aquí se ve el permiso del portal móvil.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Perfiles y permisos{% endblock %}
 
 {% block contenido %}
-{% call ui.page_header("Perfiles y permisos",
-      "Cada perfil agrupa los permisos que definen a qué funciones del sistema accede una cuenta.",
-      hus=["HU-01-07 Creación de perfiles", "HU-01-08 Asignación"]) %}
-  {% if tiene_permiso("usuarios.consultar") and tiene_permiso("perfiles.asignar") %}
-    {{ ui.btn("Asignar a un usuario", "secondary", "users", href=url_for("usuarios.lista")) }}
-  {% endif %}
-  {% if tiene_permiso("perfiles.crear") %}
-    {{ ui.btn("Crear perfil", "primary", "plus", href=url_for("perfiles.nuevo")) }}
-  {% endif %}
+{% call ui.dibujar_encabezado_pagina("Perfiles y permisos",
+                                     "Cada perfil agrupa los permisos que definen a qué funciones "
+                                     "del sistema accede una cuenta.",
+                                     hus=["HU-01-07 Creación de perfiles",
+                                          "HU-01-08 Asignación"]) %}
+    {% if verificar_permiso("usuarios.consultar") and verificar_permiso("perfiles.asignar") %}
+        {{ ui.dibujar_boton("Asignar a un usuario", "secundario", "users",
+                            enlace=url_for("usuarios.listar")) }}
+    {% endif %}
+    {% if verificar_permiso("perfiles.crear") %}
+        {{ ui.dibujar_boton("Crear perfil", "primario", "plus",
+                            enlace=url_for("perfiles.registrar")) }}
+    {% endif %}
 {% endcall %}
 
-{# HU-01-07: perfiles con sus permisos, cuentas y disponibilidad #}
-<div class="card">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col">Perfil</th>
-          <th scope="col">Permisos</th>
-          <th scope="col" class="t-center">Cuentas</th>
-          <th scope="col">Disponibilidad</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in perfiles %}
-        {% set lista_permisos = permisos.get(p.id, []) %}
-        <tr class="{{ 'is-highlight' if p.id == resaltar }}{{ ' is-muted' if not p.disponible }}">
-          <td style="min-width: 220px">
-            <span class="cell-title">{{ p.nombre }}</span><br>
-            <span class="cell-sub">{{ p.descripcion or "Sin descripción" }}</span>
-          </td>
-          <td>
-            <div class="perm-list">
-              {% for permiso in lista_permisos[:4] %}{{ ui.badge(descripciones.get(permiso, permiso), "neutral") }}{% endfor %}
-              {% if lista_permisos | length > 4 %}{{ ui.badge("+" ~ (lista_permisos | length - 4) ~ " más", "navy") }}{% endif %}
-              {% if "sistema.acceder" not in lista_permisos %}{{ ui.badge("Sin acceso al sistema", "warning") }}{% endif %}
-            </div>
-          </td>
-          <td class="t-center strong">{{ p.total_usuarios }}</td>
-          <td>{{ ui.badge("Disponible", "success", dot=True) if p.disponible else ui.badge("No disponible", "error", dot=True) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+{# HU-01-07: perfiles con sus permisos, cuentas y disponibilidad. #}
+<div class="tarjeta">
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Perfil</th>
+                    <th scope="col">Permisos</th>
+                    <th scope="col" class="alinear-centro">Cuentas</th>
+                    <th scope="col">Disponibilidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for perfil in perfiles %}
+                {% set lista_permisos = permisos.get(perfil.id, []) %}
+                <tr class="{{ 'destacado' if perfil.id == resaltar }}{{ ' '
+                    'apagado' if not perfil.disponible }}">
+                    <td style="min-width: 220px">
+                        <span class="celda-titulo">{{ perfil.nombre }}</span><br>
+                        <span class="celda-subtitulo">{{ perfil.descripcion or "Sin "
+                            "descripción" }}</span>
+                    </td>
+                    <td>
+                        <div class="lista-permisos">
+                            {% for permiso in lista_permisos[:4] -%}
+                                {{ ui.dibujar_etiqueta(descripciones.get(permiso, permiso),
+                                                       "neutro") }}
+                            {%- endfor %}
+                            {% if lista_permisos | length > 4 %}{{
+                                ui.dibujar_etiqueta("+" ~ (lista_permisos | length - 4) ~ " más",
+                                                    "azul") }}{% endif %}
+                            {% if "sistema.acceder" not in lista_permisos %}{{
+                                ui.dibujar_etiqueta("Sin acceso al sistema",
+                                                    "advertencia") }}{% endif %}
+                        </div>
+                    </td>
+                    <td class="alinear-centro resaltado">{{ perfil.total_usuarios }}</td>
+                    <td>
+                        {%- if perfil.disponible %}
+                            {{- ui.dibujar_etiqueta("Disponible", "exito", punto=True) }}
+                        {%- else %}
+                            {{- ui.dibujar_etiqueta("No disponible", "error", punto=True) }}
+                        {%- endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

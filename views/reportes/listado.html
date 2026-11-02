@@ -1,108 +1,151 @@
-{# ============================================================
-   Archivo: views/reportes/listado.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/reportes/listado.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Listado de libros con filtros, PDF e impresion (Vista, HU-01-16 y
+       HU-01-17). Las casillas de la tabla pertenecen al formulario
+       "formulario-seleccion": Imprimir y Generar PDF mandan solo los libros
+       marcados.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Listado de libros con filtros, PDF e impresión (Vista, HU-01-16 y HU-01-17). Las casillas de la
-                tabla pertenecen al formulario "form-seleccion": Imprimir y Generar PDF mandan solo los libros
-                marcados.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Listado de libros{% endblock %}
 
 {% block contenido %}
-{% set es_personal = tiene_permiso("libros.alta", "libros.editar", "libros.baja") %}
-{# Acciones: imprimir (HU-01-17) y generar PDF (HU-01-16) con los libros marcados #}
-{% call ui.page_header("Listado de libros",
-      "Aplica filtros, marca los libros que quieres incluir y genera el PDF o envíalo a impresión. Ambos documentos incluyen solo los libros marcados.",
-      hus=["HU-01-16 PDF", "HU-01-17 Impresión"]) %}
-  {% if tiene_permiso("reportes.imprimir") %}
-    {{ ui.btn("Imprimir", "secondary", "printer", type="submit", form="form-seleccion",
-              formaction=url_for("reportes.imprimir"), formmethod="get", data_requiere_seleccion="1") }}
-  {% endif %}
-  {% if tiene_permiso("reportes.pdf") %}
-    {{ ui.btn("Generar PDF", "primary", "download", data_pdf_url=url_for("reportes.pdf"),
-              data_pdf_form="form-seleccion", data_pdf_result="#resultado-pdf", data_requiere_seleccion="1") }}
-  {% endif %}
+{% set es_personal = verificar_permiso("libros.alta", "libros.editar", "libros.baja") %}
+{# Acciones: imprimir (HU-01-17) y generar PDF (HU-01-16) con los libros marcados. #}
+{% call ui.dibujar_encabezado_pagina("Listado de libros",
+                                     "Aplica filtros, marca los libros que quieres incluir y "
+                                     "genera el PDF o envíalo a impresión. Ambos documentos "
+                                     "incluyen solo los libros marcados.",
+                                     hus=["HU-01-16 PDF", "HU-01-17 Impresión"]) %}
+    {% if verificar_permiso("reportes.imprimir") %}
+        {{ ui.dibujar_boton("Imprimir", "secundario", "printer", tipo="submit",
+                            form="formulario-seleccion",
+                            formaction=url_for("reportes.imprimir"), formmethod="get",
+                            data_requiere_seleccion="1") }}
+    {% endif %}
+    {% if verificar_permiso("reportes.pdf") %}
+        {{ ui.dibujar_boton("Generar PDF", "primario", "download",
+                            data_url_pdf=url_for("reportes.descargar_pdf"),
+                            data_formulario_pdf="formulario-seleccion",
+                            data_resultado_pdf="#resultado-pdf", data_requiere_seleccion="1") }}
+    {% endif %}
 {% endcall %}
 
-<div id="resultado-pdf" class="mb-4" aria-live="polite"></div>
+<div id="resultado-pdf" class="margen-abajo-4" aria-live="polite"></div>
 
-<div class="card">
-  {# HU-01-16 y HU-01-17 · con filtros: texto, tema, editorial y estado #}
-  <form class="card__body" method="get" action="{{ url_for('reportes.listado') }}" novalidate>
-    <div class="form-grid" style="grid-template-columns: repeat({{ 5 if es_personal else 4 }}, minmax(0, 1fr))">
-      {{ ui.select_field("campo", "Buscar en", cfg.CAMPOS_BUSQUEDA, filtros.campo) }}
-      {{ ui.field("q", "Texto", filtros.q, placeholder="Opcional", icon_name="search") }}
-      {% set opciones_tema = [] %}{% for t in temas %}{% set _ = opciones_tema.append((t, t)) %}{% endfor %}
-      {{ ui.select_field("tema", "Tema", opciones_tema, filtros.tema, placeholder="Todos los temas") }}
-      {% set opciones_editorial = [] %}{% for e in editoriales %}{% set _ = opciones_editorial.append((e, e)) %}{% endfor %}
-      {{ ui.select_field("editorial", "Editorial", opciones_editorial, filtros.editorial, placeholder="Todas las editoriales") }}
-      {% if es_personal %}
-        {{ ui.select_field("estado", "Estado", [("activos", "Activos"), ("baja", "Dados de baja"), ("todos", "Todos")], filtros.estado) }}
-      {% endif %}
+<div class="tarjeta">
+    {# HU-01-16 y HU-01-17 · con filtros: texto, tema, editorial y estado. #}
+    <form class="tarjeta-cuerpo" method="get" action="{{ url_for('reportes.mostrar_listado') }}"
+          novalidate>
+        <div class="rejilla-formulario"
+             style="grid-template-columns: repeat({{ 5 if es_personal else 4 }}, minmax(0, 1fr))">
+            {{ ui.dibujar_campo_seleccion("campo", "Buscar en",
+                                          cfg.CAMPOS_BUSQUEDA, filtros.campo) }}
+            {{ ui.dibujar_campo("q", "Texto", filtros.q, sugerencia="Opcional", icono="search") }}
+            {% set opciones_tema = [] %}{% for tema in temas %}
+            {%- set _ = opciones_tema.append((tema, tema)) %}{% endfor %}
+            {{ ui.dibujar_campo_seleccion("tema", "Tema", opciones_tema, filtros.tema,
+                                          sugerencia="Todos los temas") }}
+            {% set opciones_editorial = [] %}{% for editorial in editoriales %}
+            {%- set _ = opciones_editorial.append((editorial, editorial)) %}{% endfor %}
+            {{ ui.dibujar_campo_seleccion("editorial", "Editorial", opciones_editorial,
+                                          filtros.editorial,
+                                          sugerencia="Todas las editoriales") }}
+            {% if es_personal %}
+                {{ ui.dibujar_campo_seleccion("estado", "Estado",
+                                              [("activos", "Activos"), ("baja", "Dados de baja"),
+                                               ("todos", "Todos")], filtros.estado) }}
+            {% endif %}
+        </div>
+        <div class="fila margen-arriba-4">
+            {{ ui.dibujar_boton("Aplicar filtros", "primario", "filter", tipo="submit") }}
+            {{ ui.dibujar_boton("Limpiar", "transparente",
+                                enlace=url_for("reportes.mostrar_listado")) }}
+        </div>
+    </form>
+
+    {# Lleva los filtros y los libros marcados a la impresion y al PDF. #}
+    <form id="formulario-seleccion" method="get" action="{{ url_for('reportes.imprimir') }}">
+        {% for clave, valor in filtros.items() -%}
+            <input type="hidden" name="{{ clave }}" value="{{ valor }}">
+        {%- endfor %}
+        {% if libros %}<input type="hidden" name="seleccion" value="1">{% endif %}
+    </form>
+
+    <div class="resumen-tabla">
+        <span><strong
+                      class="resaltado">{{ libros | length }}</strong> registro{{
+                          's' if libros | length != 1 }} · {{ filtros_texto }}</span>
+        {% if libros %}<span data-seleccion-resumen aria-live="polite"></span>{% endif %}
     </div>
-    <div class="row mt-4">
-      {{ ui.btn("Aplicar filtros", "primary", "filter", type="submit") }}
-      {{ ui.btn("Limpiar", "ghost", href=url_for("reportes.listado")) }}
+
+    {# Tabla con casillas para elegir que libros entran al documento. #}
+    {% if libros %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col" class="celda-casilla">
+                        <input type="checkbox" data-seleccion-todos
+                               aria-label="Seleccionar todos los libros"
+                               checked>
+                    </th>
+                    <th scope="col">Clave</th><th scope="col">Título</th><th
+                        scope="col">Autores</th>
+                    <th scope="col">Tema</th><th scope="col">Editorial</th><th
+                        scope="col">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for libro in libros %}
+                <tr class="{{ 'apagado' if not libro.activo }}">
+                    <td class="celda-casilla">
+                        <input type="checkbox" name="libro" value="{{ libro.id }}"
+                               form="formulario-seleccion"
+                               data-seleccion-libro
+                               aria-label="Incluir {{ libro.clave }} · {{ libro.titulo }}"
+                               {% if seleccion is none or libro.id in seleccion -%}
+                                   checked
+                               {%- endif %}>
+                    </td>
+                    <td class="monoespaciado resaltado sin-salto">{{ libro.clave }}</td>
+                    <td class="celda-titulo">{{ libro.titulo }}</td>
+                    <td>{{ libro.autores }}</td>
+                    <td>{{ libro.tema }}</td>
+                    <td>{{ libro.editorial }}</td>
+                    <td>{{ ui.dibujar_estado_libro(libro) }} <span
+                        class="texto-muy-chico atenuado sin-salto">{{ libro.disponibles }}/{{
+                            libro.total_ejemplares }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-  </form>
-
-  {# Lleva los filtros y los libros marcados a la impresión y al PDF #}
-  <form id="form-seleccion" method="get" action="{{ url_for('reportes.imprimir') }}">
-    {% for clave, valor in filtros.items() %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endfor %}
-    {% if libros %}<input type="hidden" name="seleccion" value="1">{% endif %}
-  </form>
-
-  <div class="table-meta">
-    <span><strong class="strong">{{ libros | length }}</strong> registro{{ 's' if libros | length != 1 }} · {{ filtros_texto }}</span>
-    {% if libros %}<span data-seleccion-resumen aria-live="polite"></span>{% endif %}
-  </div>
-
-  {# Tabla con casillas para elegir qué libros entran al documento #}
-  {% if libros %}
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col" class="check-cell">
-            <input type="checkbox" data-seleccion-todos aria-label="Seleccionar todos los libros" checked>
-          </th>
-          <th scope="col">Clave</th><th scope="col">Título</th><th scope="col">Autores</th>
-          <th scope="col">Tema</th><th scope="col">Editorial</th><th scope="col">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for libro in libros %}
-        <tr class="{{ 'is-muted' if not libro.activo }}">
-          <td class="check-cell">
-            <input type="checkbox" name="libro" value="{{ libro.id }}" form="form-seleccion" data-seleccion-libro
-                   aria-label="Incluir {{ libro.clave }} · {{ libro.titulo }}"
-                   {% if seleccion is none or libro.id in seleccion %}checked{% endif %}>
-          </td>
-          <td class="mono strong nowrap">{{ libro.clave }}</td>
-          <td class="cell-title">{{ libro.titulo }}</td>
-          <td>{{ libro.autores }}</td>
-          <td>{{ libro.tema }}</td>
-          <td>{{ libro.editorial }}</td>
-          <td>{{ ui.estado_libro_badge(libro) }} <span class="xsmall muted nowrap">{{ libro.disponibles }}/{{ libro.total_ejemplares }}</span></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {# HU-01-16 · Catálogo sin registros #}
-  {% else %}
-    {% call ui.empty_state("inbox", "No hay libros con estos filtros",
-          "No existen registros disponibles para el listado. Si intentas generar el PDF, el sistema lo indicará y no creará un documento vacío.") %}
-      {{ ui.btn("Quitar filtros", "secondary", href=url_for("reportes.listado")) }}
-    {% endcall %}
-  {% endif %}
+    {# HU-01-16 · Catalogo sin registros. #}
+    {% else %}
+        {% call ui.dibujar_estado_vacio("inbox", "No hay libros con estos filtros",
+                                        "No existen registros disponibles para el listado. Si "
+                                        "intentas generar el PDF, el sistema lo indicará y no "
+                                        "creará un documento vacío.") %}
+            {{ ui.dibujar_boton("Quitar filtros", "secundario",
+                                enlace=url_for("reportes.mostrar_listado")) }}
+        {% endcall %}
+    {% endif %}
 </div>
 {% endblock %}

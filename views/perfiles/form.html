@@ -1,69 +1,94 @@
-{# ============================================================
-   Archivo: views/perfiles/form.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/perfiles/form.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Crear perfil con sus permisos (Vista, HU-01-07). Los permisos vienen
+       de la tabla permisos.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Crear perfil con sus permisos (Vista, HU-01-07). Los permisos vienen de la tabla permisos.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Crear perfil{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('perfiles.lista') }}">Perfiles y permisos</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('perfiles.listar') }}">Perfiles y permisos</a>
+{%- endblock %}
 
 {% block contenido %}
-{{ ui.page_header("Crear perfil de usuario",
-      "Captura el nombre del perfil y elige al menos un permiso. El perfil quedará disponible para asignarse a las cuentas.",
-      hus=["HU-01-07 Creación de perfiles"], back=url_for("perfiles.lista"), back_label="Perfiles y permisos") }}
+{{ ui.dibujar_encabezado_pagina("Crear perfil de usuario",
+                                "Captura el nombre del perfil y elige al menos un permiso. El "
+                                "perfil quedará disponible para asignarse a las cuentas.",
+                                hus=["HU-01-07 Creación de perfiles"],
+                                regresar=url_for("perfiles.listar"),
+                                texto_regresar="Perfiles y permisos") }}
 
-<form class="card" method="post" novalidate>
-  <div class="card__body stack-lg">
-    {# HU-01-07 · Nombre duplicado / Perfil incompleto #}
-    {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+<form class="tarjeta" method="post" novalidate>
+    <div class="tarjeta-cuerpo pila-amplia">
+        {# HU-01-07 · Nombre duplicado / Perfil incompleto. #}
+        {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
 
-    {# Nombre y descripción del perfil #}
-    <div class="form-grid">
-      {{ ui.field("nombre", "Nombre del perfil", valores.get("nombre"), errores.get("nombre"), required=True,
-                  placeholder="Ej. Servicio social", help="Debe ser único. Prueba “Alumno” para ver el aviso de duplicado.") }}
-      {{ ui.field("descripcion", "Descripción", valores.get("descripcion"), optional=True,
-                  placeholder="¿Para quién es este perfil?") }}
-    </div>
+        {# Nombre y descripcion del perfil. #}
+        <div class="rejilla-formulario">
+            {{ ui.dibujar_campo("nombre", "Nombre del perfil", valores.get("nombre"),
+                                errores.get("nombre"), obligatorio=True,
+                                sugerencia="Ej. Servicio social",
+                                ayuda="Debe ser único. Prueba “Alumno” para ver el aviso de "
+                                "duplicado.") }}
+            {{ ui.dibujar_campo("descripcion", "Descripción", valores.get("descripcion"),
+                                opcional=True,
+                                sugerencia="¿Para quién es este perfil?") }}
+        </div>
 
-    {# Permisos agrupados (al menos uno) #}
-    <div class="stack">
-      <div class="row-between">
-        <span class="label">Permisos<span class="req" aria-hidden="true">*</span></span>
-        <span class="xsmall muted">Incluye “Acceder al sistema” para que la cuenta pueda iniciar sesión.</span>
-      </div>
-      {% for grupo, opciones in grupos.items() %}
-        <fieldset class="check-group{{ ' is-invalid' if errores.get('permisos') }}">
-          <legend>{{ grupo }}</legend>
-          <div class="check-grid">
-            {% for codigo, descripcion in opciones %}
-              <label class="check">
-                <input type="checkbox" name="permisos" value="{{ codigo }}" {% if codigo in seleccionados %}checked{% endif %}>
-                <span>
-                  <span class="check__title">{{ descripcion }}</span><br>
-                  <span class="check__desc mono">{{ codigo }}</span>
-                </span>
-              </label>
+        {# Permisos agrupados (al menos uno). #}
+        <div class="pila">
+            <div class="fila-separada">
+                <span class="etiqueta-campo">Permisos<span class="obligatorio"
+                                                           aria-hidden="true">*</span></span>
+                <span class="texto-muy-chico atenuado">Incluye “Acceder al sistema” para que la
+                cuenta pueda
+                iniciar sesión.</span>
+            </div>
+            {% for grupo, opciones in grupos.items() %}
+                <fieldset class="grupo-casillas{{ ' invalido' if errores.get('permisos') }}">
+                    <legend>{{ grupo }}</legend>
+                    <div class="rejilla-casillas">
+                        {% for codigo, descripcion in opciones %}
+                            <label class="casilla">
+                                <input type="checkbox" name="permisos" value="{{ codigo }}"
+                                       {% if codigo in seleccionados %}checked{% endif %}>
+                                <span>
+                                    <span class="casilla-titulo">{{ descripcion }}</span><br>
+                                    <span class="casilla-descripcion monoespaciado">{{
+                                        codigo }}</span>
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
             {% endfor %}
-          </div>
-        </fieldset>
-      {% endfor %}
-      {% if errores.get("permisos") %}
-        <span class="error-text">{{ icon("alert-circle", 14) }}{{ errores.get("permisos") }}</span>
-      {% endif %}
-    </div>
+            {% if errores.get("permisos") %}
+                <span class="texto-error">{{ dibujar_icono("alert-circle", 14) }}{{
+                    errores.get("permisos") }}</span>
+            {% endif %}
+        </div>
 
-    <div class="form-actions" style="margin-top: 0">
-      {{ ui.btn("Cancelar", "secondary", href=url_for("perfiles.lista")) }}
-      {{ ui.btn("Guardar", "primary", "check", type="submit") }}
+        <div class="acciones-formulario" style="margin-top: 0">
+            {{ ui.dibujar_boton("Cancelar", "secundario", enlace=url_for("perfiles.listar")) }}
+            {{ ui.dibujar_boton("Guardar", "primario", "check", tipo="submit") }}
+        </div>
     </div>
-  </div>
 </form>
 {% endblock %}

@@ -1,97 +1,160 @@
-{# ============================================================
-   Archivo: views/usuarios/form.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/usuarios/form.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Registro y edicion de usuarios (Vista, HU-01-02 y HU-01-04).
+       usuario_servicio valida.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Registro y edición de usuarios (Vista, HU-01-02 y HU-01-04). usuario_servicio valida.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% set es_nuevo = modo == "nuevo" %}
 {% block titulo %}{{ "Registrar usuario" if modo == "nuevo" else "Editar usuario" }}{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a href="{{ url_for('usuarios.listar') }}">Usuarios</a>
+{%- endblock %}
 
 {% block contenido %}
-{# Encabezado: registro (HU-01-02) o edición (HU-01-04) #}
+{# Encabezado: registro (HU-01-02) o edicion (HU-01-04). #}
 {% if es_nuevo %}
-  {{ ui.page_header("Registrar usuario",
-        "Crea la cuenta única de un alumno, profesor o personal autorizado. Los campos con * son obligatorios.",
-        hus=["HU-01-02 Registro de usuarios"], back=url_for("usuarios.lista"), back_label="Usuarios") }}
+    {{ ui.dibujar_encabezado_pagina("Registrar usuario",
+                                    "Crea la cuenta única de un alumno, profesor o personal "
+                                    "autorizado. Los campos con * son obligatorios.",
+                                    hus=["HU-01-02 Registro de usuarios"],
+                                    regresar=url_for("usuarios.listar"),
+                                    texto_regresar="Usuarios") }}
 {% else %}
-  {{ ui.page_header("Editar datos de " ~ usuario.nombre_completo,
-        "Se modifican el nombre, la cuenta y los datos de contacto. El identificador, el perfil, el estado y los registros asociados se conservan.",
-        hus=["HU-01-04 Actualización de datos"], back=url_for("usuarios.detalle", usuario_id=usuario.id), back_label="Detalle del usuario") }}
+    {{ ui.dibujar_encabezado_pagina("Editar datos de " ~ usuario.nombre_completo,
+                                    "Se modifican el nombre, la cuenta y los datos de contacto. El "
+                                    "identificador, el perfil, el estado y los registros asociados "
+                                    "se conservan.",
+                                    hus=["HU-01-04 Actualización de datos"],
+                                    regresar=url_for("usuarios.mostrar_detalle",
+                                                     usuario_id=usuario.id),
+                                    texto_regresar="Detalle del usuario") }}
 {% endif %}
 
-<div class="layout-aside">
-  <form class="card" method="post" novalidate>
-    <div class="card__body stack-lg">
-      {# HU-01-02 · Usuario duplicado / Registro incompleto; HU-01-04 · Cuenta asignada a otra persona #}
-      {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+<div class="diseno-lateral">
+    <form class="tarjeta" method="post" novalidate>
+        <div class="tarjeta-cuerpo pila-amplia">
+            {# HU-01-02 · Usuario duplicado / Registro incompleto; HU-01-04 · Cuenta asignada a otra
+               persona. #}
+            {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
 
-      {# Campos de la cuenta; en edición identificador, perfil y estado no se modifican #}
-      <div class="form-grid">
-        {% if es_nuevo %}
-          {{ ui.field("identificador", "Identificador institucional", valores.get("identificador"), errores.get("identificador"),
-                      required=True, placeholder="Matrícula o número de nómina", help="Ej. 600120 (alumno) o N20999 (personal).") }}
-        {% else %}
-          {{ ui.field("identificador_ro", "Identificador institucional", usuario.identificador, readonly=True,
-                      help="No se puede modificar.") }}
-        {% endif %}
-        {{ ui.field("nombre", "Nombre(s)", valores.get("nombre"), errores.get("nombre"), required=True,
-                    placeholder="Ej. Mariana") }}
-        {{ ui.field("apellido_paterno", "Apellido paterno", valores.get("apellido_paterno"), errores.get("apellido_paterno"),
-                    required=True, placeholder="Ej. López") }}
-        {{ ui.field("apellido_materno", "Apellido materno", valores.get("apellido_materno"), errores.get("apellido_materno"),
-                    optional=True, placeholder="Ej. Hernández") }}
-        {{ ui.field("cuenta", "Cuenta", valores.get("cuenta"), errores.get("cuenta"), required=True,
-                    placeholder="Ej. mlopez", help="Con esta cuenta la persona inicia sesión.", icon_name="user") }}
-        {{ ui.field("email", "Correo electrónico", valores.get("email"), errores.get("email"), optional=True, type="email",
-                    placeholder="nombre@ducky.edu.mx", autocomplete="email") }}
-        {{ ui.field("telefono", "Teléfono", valores.get("telefono"), errores.get("telefono"), optional=True, type="tel",
-                    placeholder="Ej. 81 1234 5678", autocomplete="tel") }}
-        {% if es_nuevo %}
-          {{ ui.password_field("contrasena", "Contraseña inicial", errores.get("contrasena"), autocomplete="new-password",
-                               help="Mínimo 6 caracteres. La persona podrá cambiarla después.") }}
-          {% set opciones = [] %}
-          {% for p in perfiles %}{% set _ = opciones.append((p.id, p.nombre ~ ("" if p.disponible else " (no disponible)"), not p.disponible)) %}{% endfor %}
-          {{ ui.select_field("perfil_id", "Perfil de usuario", opciones, valores.get("perfil_id", ""), errores.get("perfil_id"),
-                             required=True, placeholder="Selecciona un perfil", span=True,
-                             help="Define a qué funciones tendrá acceso la cuenta.") }}
-        {% else %}
-          {{ ui.field("perfil_ro", "Perfil de usuario", usuario.perfil_nombre or "Sin perfil", readonly=True,
-                      help="Se cambia desde “Asignar perfil”.") }}
-          {{ ui.field("estado_ro", "Estado", usuario.estado, readonly=True) }}
-        {% endif %}
-      </div>
+            {# Campos de la cuenta; en edicion identificador, perfil y estado no se modifican. #}
+            <div class="rejilla-formulario">
+                {% if es_nuevo %}
+                    {{ ui.dibujar_campo("identificador", "Identificador institucional",
+                                        valores.get("identificador"), errores.get("identificador"),
+                                        obligatorio=True, sugerencia="Matrícula o número de nómina",
+                                        ayuda="Ej. 600120 (alumno) o N20999 (personal).") }}
+                {% else %}
+                    {{ ui.dibujar_campo("identificador_ro", "Identificador institucional",
+                                        usuario.identificador, solo_lectura=True,
+                                        ayuda="No se puede modificar.") }}
+                {% endif %}
+                {{ ui.dibujar_campo("nombre", "Nombre(s)", valores.get("nombre"),
+                                    errores.get("nombre"),
+                                    obligatorio=True,
+                                    sugerencia="Ej. Mariana") }}
+                {{ ui.dibujar_campo("apellido_paterno", "Apellido paterno",
+                                    valores.get("apellido_paterno"),
+                                    errores.get("apellido_paterno"),
+                                    obligatorio=True, sugerencia="Ej. López") }}
+                {{ ui.dibujar_campo("apellido_materno", "Apellido materno",
+                                    valores.get("apellido_materno"),
+                                    errores.get("apellido_materno"),
+                                    opcional=True, sugerencia="Ej. Hernández") }}
+                {{ ui.dibujar_campo("cuenta", "Cuenta", valores.get("cuenta"),
+                                    errores.get("cuenta"),
+                                    obligatorio=True,
+                                    sugerencia="Ej. mlopez",
+                                    ayuda="Con esta cuenta la persona inicia "
+                                    "sesión.", icono="user") }}
+                {{ ui.dibujar_campo("email", "Correo electrónico", valores.get("email"),
+                                    errores.get("email"), opcional=True, tipo="email",
+                                    sugerencia="nombre@ducky.edu.mx", autocompletar="email") }}
+                {{ ui.dibujar_campo("telefono", "Teléfono", valores.get("telefono"),
+                                    errores.get("telefono"), opcional=True, tipo="tel",
+                                    sugerencia="Ej. 81 1234 5678", autocompletar="tel") }}
+                {% if es_nuevo %}
+                    {{ ui.dibujar_campo_contrasena("contrasena", "Contraseña inicial",
+                                                   errores.get("contrasena"),
+                                                   autocompletar="new-password",
+                                                   ayuda="Mínimo 6 caracteres. La persona podrá "
+                                                   "cambiarla después.") }}
+                    {% set opciones = [] %}
+                    {% for perfil in perfiles %}
+                    {%- set nombre_perfil = perfil.nombre
+                                            ~ ("" if perfil.disponible else " (no disponible)") %}
+                    {%- set _ = opciones.append((perfil.id, nombre_perfil,
+                                                 not perfil.disponible)) %}
+                    {%- endfor %}
+                    {{ ui.dibujar_campo_seleccion("perfil_id", "Perfil de usuario", opciones,
+                                                  valores.get("perfil_id", ""),
+                                                  errores.get("perfil_id"),
+                                                  obligatorio=True,
+                                                  sugerencia="Selecciona un perfil",
+                                                  doble_ancho=True,
+                                                  ayuda="Define a qué funciones tendrá acceso la "
+                                                  "cuenta.") }}
+                {% else %}
+                    {{ ui.dibujar_campo("perfil_ro", "Perfil de usuario",
+                                        usuario.perfil_nombre or "Sin perfil", solo_lectura=True,
+                                        ayuda="Se cambia desde “Asignar perfil”.") }}
+                    {{ ui.dibujar_campo("estado_ro", "Estado", usuario.estado, solo_lectura=True) }}
+                {% endif %}
+            </div>
 
-      <div class="form-actions" style="margin-top: 0">
-        {{ ui.btn("Cancelar", "secondary", href=url_for("usuarios.lista") if es_nuevo else url_for("usuarios.detalle", usuario_id=usuario.id)) }}
-        {{ ui.btn("Guardar" if es_nuevo else "Guardar cambios", "primary", "check", type="submit") }}
-      </div>
-    </div>
-  </form>
+            <div class="acciones-formulario" style="margin-top: 0">
+                {% set destino_cancelar = url_for("usuarios.listar") if es_nuevo
+                       else url_for("usuarios.mostrar_detalle", usuario_id=usuario.id) %}
+                {{ ui.dibujar_boton("Cancelar", "secundario", enlace=destino_cancelar) }}
+                {{ ui.dibujar_boton("Guardar" if es_nuevo else "Guardar cambios", "primario",
+                                    "check", tipo="submit") }}
+            </div>
+        </div>
+    </form>
 
-  {# Reglas de validación para quien captura #}
-  <aside class="card">
-    <div class="card__header"><h2 class="card__title">{{ icon("info", 18) }}Reglas de validación</h2></div>
-    <div class="card__body stack small">
-      {% if es_nuevo %}
-        <p>• El <strong>identificador</strong>, la <strong>cuenta</strong> y el <strong>correo</strong> deben ser únicos; si ya existen, el sistema avisa y no crea un duplicado.</p>
-        <p>• Si falta un campo obligatorio, se señala y se conserva lo capturado.</p>
-        <p>• Al guardar, el usuario aparece en la consulta y se confirma “Usuario registrado”.</p>
-        <p class="muted">Para probar un duplicado usa la cuenta <code>alumno</code> o el identificador <code>600101</code>.</p>
-      {% else %}
-        <p>• El <strong>nombre</strong> y el <strong>apellido paterno</strong> son obligatorios.</p>
-        <p>• Si la nueva cuenta pertenece a otra persona, se muestra “La cuenta ya está en uso” y no se guarda.</p>
-        <p class="muted">Para probarlo escribe la cuenta <code>admin</code> o <code>biblio</code>.</p>
-      {% endif %}
-    </div>
-  </aside>
+    {# Reglas de validacion para quien captura. #}
+    <aside class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("info", 18) }}Reglas de validación</h2>
+        </div>
+        <div class="tarjeta-cuerpo pila texto-chico">
+            {% if es_nuevo %}
+                <p>• El <strong>identificador</strong>, la <strong>cuenta</strong> y el
+                <strong>correo</strong> deben ser únicos; si ya existen, el sistema avisa y no crea
+                un
+                duplicado.</p>
+                <p>• Si falta un campo obligatorio, se señala y se conserva lo capturado.</p>
+                <p>• Al guardar, el usuario aparece en la consulta y se confirma “Usuario
+                registrado”.</p>
+                <p class="atenuado">Para probar un duplicado usa la cuenta <code>alumno</code> o el
+                identificador <code>600101</code>.</p>
+            {% else %}
+                <p>• El <strong>nombre</strong> y el <strong>apellido paterno</strong> son
+                obligatorios.</p>
+                <p>• Si la nueva cuenta pertenece a otra persona, se muestra “La cuenta ya está en
+                uso” y no
+                se guarda.</p>
+                <p class="atenuado">Para probarlo escribe la cuenta <code>admin</code> o
+                <code>biblio</code>.</p>
+            {% endif %}
+        </div>
+    </aside>
 </div>
 {% endblock %}

@@ -1,97 +1,141 @@
-{# ============================================================
-   Archivo: views/compras/form.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/compras/form.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Captura de la orden de compra (Vista, HU-01-18). compra_servicio
+       valida y regresa los errores.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Captura de la orden de compra (Vista, HU-01-18). compra_servicio valida y regresa los errores.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Nueva orden de compra{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('compras.listar') }}">Órdenes de compra</a>
+{%- endblock %}
 
-{# Renglón de la orden: libro, cantidad y botón para quitarlo #}
-{% macro renglon(item={}) -%}
-<div class="order-row">
-  <select class="select" name="libro_id" aria-label="Libro">
-    <option value="">Selecciona un libro…</option>
-    {% for libro in libros %}
-      <option value="{{ libro.id }}" {% if item.get("libro_id") | string == libro.id | string %}selected{% endif %}>{{ libro.clave }} · {{ libro.titulo }}</option>
-    {% endfor %}
-  </select>
-  <input class="input" type="number" name="cantidad" min="1" max="500" value="{{ item.get('cantidad', '1') }}" aria-label="Cantidad">
-  <button type="button" class="btn btn--ghost btn--icon" data-remove-row aria-label="Quitar renglón" title="Quitar renglón">{{ icon("trash", 17) }}</button>
+{# Renglon de la orden: libro, cantidad y boton para quitarlo. #}
+{% macro dibujar_renglon(item={}) -%}
+<div class="renglon-orden">
+    <select class="seleccion" name="libro_id" aria-label="Libro">
+        <option value="">Selecciona un libro…</option>
+        {% for libro in libros %}
+            <option value="{{ libro.id }}"
+                    {% if item.get("libro_id") | string == libro.id | string -%}
+                        selected
+                    {%- endif %}>{{ libro.clave }} · {{ libro.titulo }}</option>
+        {% endfor %}
+    </select>
+    <input class="entrada" type="number" name="cantidad" min="1" max="500"
+           value="{{ item.get('cantidad', '1') }}" aria-label="Cantidad">
+    <button type="button" class="boton boton-transparente boton-solo-icono" data-quitar-renglon
+            aria-label="Quitar renglón"
+                title="Quitar renglón">{{ dibujar_icono("trash", 17) }}</button>
 </div>
 {%- endmacro %}
 
 {% block contenido %}
-{{ ui.page_header("Nueva orden de compra",
-      "Selecciona los libros, indica cuántos ejemplares necesitas y completa los datos de la solicitud. Antes de registrarla verás una vista previa.",
-      hus=["HU-01-18 Orden de compra"], back=url_for("compras.lista"), back_label="Órdenes de compra") }}
+{{ ui.dibujar_encabezado_pagina("Nueva orden de compra",
+                                "Selecciona los libros, indica cuántos ejemplares necesitas y "
+                                "completa los datos de la solicitud. Antes de registrarla verás "
+                                "una vista previa.",
+                                hus=["HU-01-18 Orden de compra"],
+                                regresar=url_for("compras.listar"),
+                                texto_regresar="Órdenes de compra") }}
 
 <form method="post" novalidate>
-  <div class="layout-aside">
-    <div class="stack-lg">
-      {# HU-01-18 · Datos incompletos de la orden #}
-      {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+    <div class="diseno-lateral">
+        <div class="pila-amplia">
+            {# HU-01-18 · Datos incompletos de la orden. #}
+            {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
 
-      {# Datos de la solicitud: proveedor, fecha requerida y justificación #}
-      <section class="card">
-        <div class="card__header"><h2 class="card__title">{{ icon("clipboard", 18) }}Datos de la solicitud</h2></div>
-        <div class="card__body form-grid">
-          {{ ui.field("proveedor", "Proveedor", valores.get("proveedor"), errores.get("proveedor"), required=True,
-                      placeholder="Ej. Librería Universitaria del Norte", list="proveedores-registrados",
-                      help="Elige uno registrado o escribe uno nuevo.") }}
-          <datalist id="proveedores-registrados">
-            {% for p in proveedores %}<option value="{{ p }}">{% endfor %}
-          </datalist>
-          {{ ui.field("fecha_requerida", "Fecha requerida", valores.get("fecha_requerida"), errores.get("fecha_requerida"),
-                      type="date", required=True, min=hoy) }}
-          {{ ui.textarea_field("justificacion", "Justificación", valores.get("justificacion"),
-                               placeholder="Ej. Alta demanda en el curso de Ingeniería de Software", span=True) }}
-        </div>
-      </section>
+            {# Datos de la solicitud: proveedor, fecha requerida y justificacion. #}
+            <section class="tarjeta">
+                <div class="tarjeta-encabezado">
+                    <h2 class="tarjeta-titulo">{{
+                        dibujar_icono("clipboard", 18) }}Datos de la solicitud</h2>
+                </div>
+                <div class="tarjeta-cuerpo rejilla-formulario">
+                    {{ ui.dibujar_campo("proveedor", "Proveedor", valores.get("proveedor"),
+                                        errores.get("proveedor"), obligatorio=True,
+                                        sugerencia="Ej. Librería Universitaria del Norte",
+                                        list="proveedores-registrados",
+                                        ayuda="Elige uno registrado o escribe uno nuevo.") }}
+                    <datalist id="proveedores-registrados">
+                        {% for proveedor in proveedores %}<option
+                            value="{{ proveedor }}">{% endfor %}
+                    </datalist>
+                    {{ ui.dibujar_campo("fecha_requerida", "Fecha requerida",
+                                        valores.get("fecha_requerida"),
+                                        errores.get("fecha_requerida"),
+                                        tipo="date", obligatorio=True, min=hoy) }}
+                    {{ ui.dibujar_campo_texto_largo("justificacion", "Justificación",
+                                                    valores.get("justificacion"),
+                                                    sugerencia="Ej. Alta demanda en el curso de "
+                                                    "Ingeniería de Software", doble_ancho=True) }}
+                </div>
+            </section>
 
-      {# Libros a adquirir; la plantilla se clona con syntra.js al agregar un renglón #}
-      <section class="card">
-        <div class="card__header">
-          <h2 class="card__title">{{ icon("library", 18) }}Libros a adquirir</h2>
-          {{ ui.btn("Agregar libro", "secondary", "plus", size="sm", data_add_row="1") }}
+            {# Libros a adquirir; la plantilla se clona con syntra.js al agregar un renglon. #}
+            <section class="tarjeta">
+                <div class="tarjeta-encabezado">
+                    <h2 class="tarjeta-titulo">{{
+                        dibujar_icono("library", 18) }}Libros a adquirir</h2>
+                    {{ ui.dibujar_boton("Agregar libro", "secundario", "plus", tamano="chico",
+                                        data_agregar_renglon="1") }}
+                </div>
+                <div class="tarjeta-cuerpo pila">
+                    <div class="encabezado-orden">
+                        <span>Libro</span><span>Cantidad</span><span></span>
+                    </div>
+                    <div class="renglones-orden" data-renglones-orden>
+                        {% for item in items %}{{ dibujar_renglon(item) }}{% endfor %}
+                    </div>
+                    {% if errores.get("items") %}
+                        <span class="texto-error">{{ dibujar_icono("alert-circle", 14) }}{{
+                            errores.get("items") }}</span>
+                    {% endif %}
+                    <template id="plantilla-renglon">{{ dibujar_renglon() }}</template>
+                </div>
+            </section>
         </div>
-        <div class="card__body stack">
-          <div class="order-head"><span>Libro</span><span>Cantidad</span><span></span></div>
-          <div class="order-rows" data-order-rows>
-            {% for item in items %}{{ renglon(item) }}{% endfor %}
-          </div>
-          {% if errores.get("items") %}
-            <span class="error-text">{{ icon("alert-circle", 14) }}{{ errores.get("items") }}</span>
-          {% endif %}
-          <template id="plantilla-renglon">{{ renglon() }}</template>
-        </div>
-      </section>
+
+        {# Resumen que syntra.js actualiza al cambiar libros o cantidades. #}
+        <aside class="tarjeta" style="position: sticky; top: 88px">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("cart", 18) }}Resumen de la orden</h2>
+            </div>
+            <div class="tarjeta-cuerpo resumen">
+                <div class="resumen-renglon"><span class="atenuado">Renglones</span><strong
+                    data-total-renglones>0</strong></div>
+                <div class="resumen-renglon"><span class="atenuado">Títulos distintos</span><strong
+                    data-total-titulos>0</strong></div>
+                <hr class="divisor" style="margin: 4px 0">
+                <span class="atenuado texto-chico">Total de ejemplares</span>
+                <span class="resumen-total" data-total-ejemplares>0</span>
+                <p class="texto-muy-chico atenuado">El resumen se actualiza al modificar libros o
+                cantidades. Si repites un libro, sus cantidades se suman.</p>
+            </div>
+            <div class="tarjeta-pie pila" style="gap: 8px">
+                {{ ui.dibujar_boton("Generar orden de compra", "primario", "file",
+                                    tipo="submit", completo=True) }}
+                {{ ui.dibujar_boton("Cancelar", "secundario",
+                                    enlace=url_for("compras.listar"), completo=True) }}
+            </div>
+        </aside>
     </div>
-
-    {# Resumen que syntra.js actualiza al cambiar libros o cantidades #}
-    <aside class="card" style="position: sticky; top: 88px">
-      <div class="card__header"><h2 class="card__title">{{ icon("cart", 18) }}Resumen de la orden</h2></div>
-      <div class="card__body summary">
-        <div class="summary__row"><span class="muted">Renglones</span><strong data-sum-renglones>0</strong></div>
-        <div class="summary__row"><span class="muted">Títulos distintos</span><strong data-sum-titulos>0</strong></div>
-        <hr class="divider" style="margin: 4px 0">
-        <span class="muted small">Total de ejemplares</span>
-        <span class="summary__total" data-sum-ejemplares>0</span>
-        <p class="xsmall muted">El resumen se actualiza al modificar libros o cantidades. Si repites un libro, sus cantidades se suman.</p>
-      </div>
-      <div class="card__footer stack" style="gap: 8px">
-        {{ ui.btn("Generar orden de compra", "primary", "file", type="submit", block=True) }}
-        {{ ui.btn("Cancelar", "secondary", href=url_for("compras.lista"), block=True) }}
-      </div>
-    </aside>
-  </div>
 </form>
 {% endblock %}

@@ -1,62 +1,74 @@
-{# ============================================================
-   Archivo: views/compras/_documento.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/compras/_documento.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Documento de la orden de compra (Vista parcial) que comparten la vista
+       previa y el detalle.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Documento de la orden de compra (Vista parcial) que comparten la vista previa y el detalle.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% import "components/ui.html" as ui %}
-<article class="doc">
-  {# Encabezado con logo, folio y fecha #}
-  <header class="doc__header">
-    <div class="doc__brand">
-      {{ ui.logo(56) }}
-      <span><span class="brand__name">Syntra</span><br><span class="brand__sub">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+<article class="documento">
+    {# Encabezado con logo, folio y fecha. #}
+    <header class="documento-encabezado">
+        <div class="documento-marca">
+            {{ ui.dibujar_logo(56) }}
+            <span><span class="marca-nombre">Syntra</span><br><span
+                class="marca-subtitulo">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+        </div>
+        <div class="documento-datos">
+            <div class="documento-titulo">Orden de compra</div>
+            Folio: <strong class="resaltado monoespaciado">{{ folio }}</strong><br>
+            Fecha: {{ fecha_doc }}
+        </div>
+    </header>
+
+    {# Datos generales de la orden. #}
+    <dl class="clave-valor margen-abajo-4">
+        <dt>Proveedor</dt><dd>{{ orden.proveedor }}</dd>
+        <dt>Fecha requerida</dt><dd>{{ orden.fecha_requerida |formatear_fecha }}</dd>
+        <dt>Solicitante</dt><dd>{{ solicitante }}</dd>
+        <dt>Justificación</dt><dd style="font-weight: 500">{{ orden.justificacion or "—" }}</dd>
+    </dl>
+
+    {# Renglones de la orden con el total de ejemplares. #}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead><tr><th>#</th><th>Clave</th><th>Título</th><th>Autores</th><th>Editorial</th><th
+                class="alinear-derecha">Cantidad</th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="monoespaciado sin-salto">{{ item.clave }}</td>
+                    <td class="resaltado">{{ item.titulo }}</td>
+                    <td>{{ item.autores }}</td>
+                    <td>{{ item.editorial }}</td>
+                    <td class="alinear-derecha resaltado">{{ item.cantidad }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="5" class="alinear-derecha resaltado">Total de ejemplares</td>
+                    <td class="alinear-derecha resaltado"
+                        style="font-size: 1.1rem">{{ items | sum(attribute="cantidad") }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
-    <div class="doc__meta">
-      <div class="doc__title">Orden de compra</div>
-      Folio: <strong class="strong mono">{{ folio }}</strong><br>
-      Fecha: {{ fecha_doc }}
-    </div>
-  </header>
 
-  {# Datos generales de la orden #}
-  <dl class="kv mb-4">
-    <dt>Proveedor</dt><dd>{{ orden.proveedor }}</dd>
-    <dt>Fecha requerida</dt><dd>{{ orden.fecha_requerida | fecha }}</dd>
-    <dt>Solicitante</dt><dd>{{ solicitante }}</dd>
-    <dt>Justificación</dt><dd style="font-weight: 500">{{ orden.justificacion or "—" }}</dd>
-  </dl>
-
-  {# Renglones de la orden con el total de ejemplares #}
-  <div class="table-wrap">
-    <table class="table">
-      <thead><tr><th>#</th><th>Clave</th><th>Título</th><th>Autores</th><th>Editorial</th><th class="t-right">Cantidad</th></tr></thead>
-      <tbody>
-        {% for item in items %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td class="mono nowrap">{{ item.clave }}</td>
-          <td class="strong">{{ item.titulo }}</td>
-          <td>{{ item.autores }}</td>
-          <td>{{ item.editorial }}</td>
-          <td class="t-right strong">{{ item.cantidad }}</td>
-        </tr>
-        {% endfor %}
-        <tr>
-          <td colspan="5" class="t-right strong">Total de ejemplares</td>
-          <td class="t-right strong" style="font-size: 1.1rem">{{ items | sum(attribute="cantidad") }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <footer class="doc__footer">
-    <span>{{ items | length }} título{{ 's' if items | length != 1 }} solicitados</span>
-    <span class="signature">Firma de autorización</span>
-  </footer>
+    <footer class="documento-pie">
+        <span>{{ items | length }} título{{ 's' if items | length != 1 }} solicitados</span>
+        <span class="firma">Firma de autorización</span>
+    </footer>
 </article>

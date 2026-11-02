@@ -1,51 +1,67 @@
-{# ============================================================
-   Archivo: views/base.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/base.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Documento base (Vista): head, avisos flotantes, modales comunes y
+       syntra.js. Todas las paginas heredan de aqui.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Documento base (Vista): head, avisos flotantes, modales comunes y syntra.js. Todas las páginas
-                heredan de aquí.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 <!DOCTYPE html>
 <html lang="es">
-  {# Metadatos, fuente Plus Jakarta Sans y hoja de estilos del design system #}
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block titulo %}Inicio{% endblock %} · Syntra</title>
-    <link rel="icon" href="{{ url_for('static', filename='img/syntra.svg') }}" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/syntra.css') }}">
-    {% block head %}{% endblock %}
-  </head>
-  <body class="{% block body_class %}{% endblock %}">
-    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    {# Metadatos, fuente Plus Jakarta Sans y hoja de estilos del sistema de diseno. #}
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block titulo %}Inicio{% endblock %} · Syntra</title>
+        <link rel="icon" type="image/svg+xml"
+              href="{{ url_for('static', filename='img/syntra.svg') }}">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        {% set fuente = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans"
+                        ~ ":wght@400;500;600;700;800&display=swap" %}
+        <link rel="stylesheet" href="{{ fuente }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/syntra.css') }}">
+        {% block recursos_cabecera %}{% endblock %}
+    </head>
+    <body class="{% block clase_cuerpo %}{% endblock %}">
+        <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
 
-    {# Avisos flotantes con los mensajes flash de los controladores #}
-    <div class="toast-stack" aria-live="polite">
-      {% set titulos = {"success": "Listo", "error": "No se pudo completar", "warning": "Atención", "info": "Aviso"} %}
-      {% set iconos = {"success": "check-circle", "error": "alert-circle", "warning": "alert-triangle", "info": "info"} %}
-      {% for categoria, mensaje in get_flashed_messages(with_categories=true) %}
-        <div class="toast toast--{{ categoria }}" role="{{ 'alert' if categoria == 'error' else 'status' }}">
-          {{ icon(iconos.get(categoria, 'info'), 20) }}
-          <div class="toast__body"><strong class="toast__title">{{ titulos.get(categoria, 'Aviso') }}</strong>{{ mensaje }}</div>
-          <button type="button" class="toast__close" aria-label="Cerrar aviso">{{ icon("x", 16) }}</button>
+        {# Avisos flotantes con los mensajes flash de los controladores. #}
+        <div class="pila-avisos" aria-live="polite">
+            {% set titulos = {"exito": "Listo", "error": "No se pudo completar",
+                              "advertencia": "Atención", "informacion": "Aviso"} %}
+            {% set iconos = {"exito": "check-circle", "error": "alert-circle",
+                             "advertencia": "alert-triangle", "informacion": "info"} %}
+            {% for categoria, mensaje in get_flashed_messages(with_categories=true) %}
+                <div class="aviso aviso-{{ categoria }}"
+                     role="{{ 'alert' if categoria == 'error' else 'status' }}">
+                    {{ dibujar_icono(iconos.get(categoria, 'info'), 20) }}
+                    <div class="aviso-cuerpo"><strong class="aviso-titulo">{{
+                        titulos.get(categoria, 'Aviso') }}</strong>{{ mensaje }}</div>
+                    <button type="button" class="aviso-cerrar" aria-label="Cerrar aviso">{{
+                        dibujar_icono("x", 16) }}</button>
+                </div>
+            {% endfor %}
         </div>
-      {% endfor %}
-    </div>
 
-    {# Contenido de cada layout (app, móvil o público) #}
-    {% block body %}{% endblock %}
+        {# Contenido de cada layout (app, movil o publico). #}
+        {% block cuerpo %}{% endblock %}
 
-    {# Modales comunes y comportamiento de la interfaz #}
-    {% include "components/modales.html" %}
-    <script src="{{ url_for('static', filename='js/syntra.js') }}"></script>
-    {% block scripts %}{% endblock %}
-  </body>
+        {# Modales comunes y comportamiento de la interfaz. #}
+        {% include "components/modales.html" %}
+        <script src="{{ url_for('static', filename='js/syntra.js') }}"></script>
+        {% block codigo_js %}{% endblock %}
+    </body>
 </html>

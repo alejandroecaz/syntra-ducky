@@ -1,26 +1,37 @@
-{# ============================================================
-   Archivo: views/errores/500.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/errores/500.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Error inesperado: se muestra un mensaje amable y nunca la traza del
+       error
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Error inesperado: se muestra un mensaje amable y nunca la traza del error
-   ============================================================ -#}
-{% extends "layouts/app.html" if usuario_actual() else "layouts/publico.html" %}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" if obtener_usuario_actual() else "layouts/publico.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Error del sistema{% endblock %}
 
 {% block contenido %}
-{# Mensaje amable sin detalles técnicos #}
-<div class="card">
-  {% call ui.empty_state("alert-triangle", "Ocurrió un error inesperado",
-        "No se pudo completar la operación. Intenta de nuevo; si el problema continúa, avisa al administrador de la biblioteca.",
-        tone="warning") %}
-    {{ ui.btn("Ir al inicio", "primary", "home", href=url_for("auth.raiz")) }}
-  {% endcall %}
+{# Mensaje amable sin detalles tecnicos. #}
+<div class="tarjeta">
+    {% call ui.dibujar_estado_vacio("alert-triangle", "Ocurrió un error inesperado",
+                                    "No se pudo completar la operación. Intenta de nuevo; si el "
+                                    "problema continúa, avisa al administrador de la biblioteca.",
+                                    tono="advertencia") %}
+        {{ ui.dibujar_boton("Ir al inicio", "primario", "home",
+                            enlace=url_for("auth.redirigir_raiz")) }}
+    {% endcall %}
 </div>
 {% endblock %}

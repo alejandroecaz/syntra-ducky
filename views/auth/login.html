@@ -1,68 +1,93 @@
-{# ============================================================
-   Archivo: views/auth/login.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/auth/login.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Inicio de sesion web (Vista, HU-01-01): auth_controller muestra aqui
+       los mensajes de auth_servicio.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Inicio de sesión web (Vista, HU-01-01): auth_controller muestra aquí los mensajes de
-                auth_servicio.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "base.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Iniciar sesión{% endblock %}
 
-{% block body %}
-<div class="auth">
-  {# Panel izquierdo: marca del sistema y lo que ofrece #}
-  <section class="auth__brand">
-    <div class="auth__system">
-      <span class="auth__dev-tile">{{ ui.logo_syntra(64) }}</span>
-      <span class="auth__system-name">Sistema Ducky de Gestión Bibliotecaria</span>
-    </div>
-    <div class="auth__pitch">
-      <h2 class="auth__headline">La biblioteca de la Universidad Ducky, <span>en un solo lugar.</span></h2>
-      <p class="auth__lead">Consulta el catálogo, conoce la ubicación y disponibilidad de cada ejemplar y administra usuarios y libros con la seguridad de tu perfil.</p>
-      <ul class="auth__features">
-        <li>{{ icon("search", 20) }}Búsqueda por título, autor, tema, clave o editorial</li>
-        <li>{{ icon("map-pin", 20) }}Ubicación física y estado de cada ejemplar</li>
-        <li>{{ icon("shield", 20) }}Acceso según tu perfil de usuario</li>
-      </ul>
-    </div>
-  </section>
-
-  {# Panel derecho: formulario de acceso #}
-  <section class="auth__form-wrap" id="contenido">
-    <div class="auth__card stack-lg">
-      <div class="stack" style="gap: 6px">
-        <div class="auth__crest">{{ ui.logo(150) }}</div>
-        <h1>Iniciar sesión</h1>
-        <p class="muted">Ingresa con la cuenta y contraseña que te asignó la biblioteca.</p>
-      </div>
-
-      {# HU-01-01 · Credenciales incorrectas / Campos vacíos / Cuenta deshabilitada / Perfil sin acceso #}
-      {% if error_general %}
-        {{ ui.alert("error", text=error_general) }}
-      {% endif %}
-
-      {# HU-01-01: cuenta y contraseña; "siguiente" recuerda a dónde se quería entrar #}
-      <form class="card" method="post" action="{{ url_for('auth.login') }}" novalidate>
-        <div class="card__body stack">
-          <input type="hidden" name="siguiente" value="{{ siguiente or request.args.get('siguiente', '') }}">
-          {{ ui.field("cuenta", "Cuenta", valores.get("cuenta", ""), errores.get("cuenta"), required=True,
-                      placeholder="Ej. alumno", autocomplete="username", icon_name="user", autofocus="autofocus") }}
-          {{ ui.password_field("contrasena", "Contraseña", errores.get("contrasena")) }}
-          {{ ui.btn("Iniciar sesión", "primary", type="submit", size="lg", block=True) }}
+{% block cuerpo %}
+<div class="acceso">
+    {# Panel izquierdo: marca del sistema y lo que ofrece. #}
+    <section class="acceso-marca">
+        <div class="acceso-sistema">
+            <span class="acceso-logo-empresa">{{ ui.dibujar_logo_syntra(64) }}</span>
+            <span class="acceso-sistema-nombre">Sistema Ducky de Gestión Bibliotecaria</span>
         </div>
-      </form>
+        <div class="acceso-presentacion">
+            <h2 class="acceso-titular">La biblioteca de la Universidad Ducky, <span>en un solo
+            lugar.</span></h2>
+            <p class="acceso-entrada">Consulta el catálogo, conoce la ubicación y disponibilidad de
+            cada
+            ejemplar y administra usuarios y libros con la seguridad de tu perfil.</p>
+            <ul class="acceso-funciones">
+                <li>{{ dibujar_icono("search", 20) }}Búsqueda por título, autor, tema, clave o
+                editorial</li>
+                <li>{{ dibujar_icono("map-pin", 20) }}Ubicación física y estado de cada
+                ejemplar</li>
+                <li>{{ dibujar_icono("shield", 20) }}Acceso según tu perfil de usuario</li>
+            </ul>
+        </div>
+    </section>
 
-      {# Enlace al portal móvil para alumnos #}
-      <p class="small muted" style="text-align: center">¿Eres alumno y estás en tu celular? <a href="{{ url_for('movil.login') }}">Abre el portal móvil</a></p>
+    {# Panel derecho: formulario de acceso. #}
+    <section class="acceso-formulario" id="contenido">
+        <div class="acceso-tarjeta pila-amplia">
+            <div class="pila" style="gap: 6px">
+                <div class="acceso-escudo">{{ ui.dibujar_logo(150) }}</div>
+                <h1>Iniciar sesión</h1>
+                <p class="atenuado">Ingresa con la cuenta y contraseña que te asignó la
+                biblioteca.</p>
+            </div>
 
-    </div>
-  </section>
+            {# HU-01-01 · Credenciales incorrectas / Campos vacios / Cuenta deshabilitada / Perfil
+               sin
+               acceso. #}
+            {% if error_general %}
+                {{ ui.dibujar_alerta("error", texto=error_general) }}
+            {% endif %}
+
+            {# HU-01-01: cuenta y contrasena; "siguiente" recuerda a donde se queria entrar. #}
+            <form class="tarjeta" method="post" action="{{ url_for('auth.ingresar') }}" novalidate>
+                <div class="tarjeta-cuerpo pila">
+                    <input type="hidden" name="siguiente"
+                           value="{{ siguiente or request.args.get('siguiente', '') }}">
+                    {{ ui.dibujar_campo("cuenta", "Cuenta", valores.get("cuenta", ""),
+                                        errores.get("cuenta"),
+                                        obligatorio=True,
+                                        sugerencia="Ej. alumno", autocompletar="username",
+                                        icono="user",
+                                        autofocus="autofocus") }}
+                    {{ ui.dibujar_campo_contrasena("contrasena", "Contraseña",
+                                                   errores.get("contrasena")) }}
+                    {{ ui.dibujar_boton("Iniciar sesión", "primario", tipo="submit",
+                                        tamano="grande", completo=True) }}
+                </div>
+            </form>
+
+            {# Enlace al portal movil para alumnos. #}
+            <p class="texto-chico atenuado"
+               style="text-align: center">¿Eres alumno y estás en tu celular? <a
+                   href="{{ url_for('movil.ingresar') }}">Abre el portal móvil</a></p>
+
+        </div>
+    </section>
 </div>
 {% endblock %}

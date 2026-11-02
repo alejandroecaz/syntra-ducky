@@ -1,29 +1,38 @@
-{# ============================================================
-   Archivo: views/layouts/publico.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/layouts/publico.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Layout de las paginas sin sesion (Vista).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Layout de las páginas sin sesión (Vista).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "base.html" %}
 {% import "components/ui.html" as ui %}
 
-{% block body %}
-{# Barra con la marca y el botón para iniciar sesión #}
-<header class="topbar" style="padding: 0 24px">
-  <div class="brand-light" style="display:flex;align-items:center;gap:10px">
-    {{ ui.logo(32) }}<strong class="strong">Syntra</strong>
-    <span class="muted small">· {{ self.titulo() }}</span>
-  </div>
-  <div class="topbar__right">
-    {{ ui.btn("Iniciar sesión", "primary", "user", href=url_for("auth.login"), size="sm") }}
-  </div>
+{% block cuerpo %}
+{# Barra con la marca y el boton para iniciar sesion. #}
+<header class="barra-superior" style="padding: 0 24px">
+    <div class="marca-clara" style="display:flex;align-items:center;gap:10px">
+        {{ ui.dibujar_logo(32) }}<strong class="resaltado">Syntra</strong>
+        <span class="atenuado texto-chico">· {{ self.titulo() }}</span>
+    </div>
+    <div class="barra-superior-derecha">
+        {{ ui.dibujar_boton("Iniciar sesión", "primario", "user",
+                            enlace=url_for("auth.ingresar"), tamano="chico") }}
+    </div>
 </header>
-<main class="content" id="contenido" tabindex="-1">
-  {% block contenido %}{% endblock %}
+<main class="contenido" id="contenido" tabindex="-1">
+    {% block contenido %}{% endblock %}
 </main>
 {% endblock %}

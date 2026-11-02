@@ -1,59 +1,76 @@
-{# ============================================================
-   Archivo: views/movil/componentes.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/movil/componentes.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Macros del portal movil: encabezados y tarjeta de libro. Usan los
+       macros de ui.html para etiquetas, portadas y ubicacion, asi la web y
+       el movil muestran lo mismo de la misma forma.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Macros del portal móvil: encabezados y tarjeta de libro. Usan los macros de ui.html para badges,
-                portadas y ubicación, así la web y el móvil muestran lo mismo de la misma forma.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% import "components/ui.html" as ui %}
 
-{# M01: saludo con el nombre del alumno #}
-{% macro encabezado_saludo(usuario) -%}
+{# M01: saludo con el nombre del alumno. #}
+{% macro dibujar_encabezado_saludo(usuario) -%}
 {%- set partes = usuario.nombre.split() -%}
-<header class="m-header">
-  <div class="m-header__texto">
-    <h1 class="m-header__titulo">Hola, {{ partes[0] }}</h1>
-    <p class="m-header__sub">{{ cfg.NOMBRE_CLIENTE }} · {{ usuario.perfil }}</p>
-  </div>
-  <span class="avatar m-header__avatar" aria-hidden="true">{{ partes[0][0] }}{{ partes[1][0] if partes | length > 1 }}</span>
-  <a class="m-icon-btn" href="{{ url_for('movil.logout') }}" aria-label="Cerrar sesión" title="Cerrar sesión">{{ icon("logout", 22) }}</a>
+<header class="m-encabezado">
+    <div class="m-encabezado-texto">
+        <h1 class="m-encabezado-titulo">Hola, {{ partes[0] }}</h1>
+        <p class="m-encabezado-subtitulo">{{ cfg.NOMBRE_CLIENTE }} · {{ usuario.perfil }}</p>
+    </div>
+    <span class="avatar m-encabezado-avatar" aria-hidden="true">{{ partes[0][0] }}{{
+        partes[1][0] if partes | length > 1 }}</span>
+    <a class="m-boton-icono" href="{{ url_for('movil.salir') }}" aria-label="Cerrar sesión"
+       title="Cerrar sesión">{{ dibujar_icono("logout", 22) }}</a>
 </header>
 {%- endmacro %}
 
-{# M02 y M03: botón para regresar y título de la pantalla #}
-{% macro encabezado_regreso(titulo, subtitulo, regresar) -%}
-<header class="m-header">
-  <a class="m-icon-btn" href="{{ regresar }}" aria-label="Volver" title="Volver">{{ icon("arrow-left", 22) }}</a>
-  <div class="m-header__texto">
-    <h1 class="m-header__titulo">{{ titulo }}</h1>
-    {% if subtitulo %}<p class="m-header__sub">{{ subtitulo }}</p>{% endif %}
-  </div>
+{# M02 y M03: boton para regresar y titulo de la pantalla. #}
+{% macro dibujar_encabezado_regreso(titulo, subtitulo, regresar) -%}
+<header class="m-encabezado">
+    <a class="m-boton-icono" href="{{ regresar }}" aria-label="Volver" title="Volver">{{
+        dibujar_icono("arrow-left", 22) }}</a>
+    <div class="m-encabezado-texto">
+        <h1 class="m-encabezado-titulo">{{ titulo }}</h1>
+        {% if subtitulo %}<p class="m-encabezado-subtitulo">{{ subtitulo }}</p>{% endif %}
+    </div>
 </header>
 {%- endmacro %}
 
-{# Disponibilidad del libro: ningún libro sin copias disponibles se muestra como "Disponible" #}
-{% macro disponibilidad(libro) -%}
-{%- if libro.total_ejemplares == 0 -%}{{ ui.badge("Sin ejemplares", "warning", dot=True) }}
-{%- elif libro.disponibles == 0 -%}{{ ui.badge("No disponible", "error", dot=True) }}
-{%- else -%}{{ ui.badge(libro.disponibles ~ " de " ~ libro.total_ejemplares ~ " disponibles", "success", dot=True) }}
+{# Disponibilidad del libro: ningun libro sin copias disponibles se muestra como Disponible. #}
+{% macro dibujar_disponibilidad(libro) -%}
+{%- if libro.total_ejemplares == 0 -%}
+    {{- ui.dibujar_etiqueta("Sin ejemplares", "advertencia", punto=True) }}
+{%- elif libro.disponibles == 0 -%}
+    {{- ui.dibujar_etiqueta("No disponible", "error", punto=True) }}
+{%- else -%}
+    {{- ui.dibujar_etiqueta(libro.disponibles ~ " de " ~ libro.total_ejemplares ~ " disponibles",
+                            "exito", punto=True) }}
 {%- endif -%}
 {%- endmacro %}
 
-{# Tarjeta de resultado: clave, título, autores, editorial y disponibles #}
-{% macro tarjeta_libro(libro, volver={}) -%}
-<a class="m-libro" href="{{ url_for('movil.detalle', libro_id=libro.id, **volver) }}">
-  {{ ui.cover(libro.titulo, "m") }}
-  <span class="m-libro__datos">
-    <span class="m-libro__titulo">{{ libro.titulo }}</span>
-    <span class="m-libro__autores">{{ libro.autores }}</span>
-    <span class="m-libro__meta"><span class="mono">{{ libro.clave }}</span> · {{ libro.editorial }}</span>
-    <span>{{ disponibilidad(libro) }}</span>
-  </span>
-  {{ icon("chevron-right", 20, "m-libro__flecha") }}
+{# Tarjeta de resultado: clave, titulo, autores, editorial y disponibles. #}
+{% macro dibujar_tarjeta_libro(libro, volver={}) -%}
+<a class="m-libro" href="{{ url_for('movil.mostrar_detalle', libro_id=libro.id, **volver) }}">
+    {{ ui.dibujar_portada(libro.titulo, "movil") }}
+    <span class="m-libro-datos">
+        <span class="m-libro-titulo">{{ libro.titulo }}</span>
+        <span class="m-libro-autores">{{ libro.autores }}</span>
+        <span class="m-libro-detalle"><span class="monoespaciado">{{ libro.clave }}</span> · {{
+            libro.editorial }}</span>
+        <span>{{ dibujar_disponibilidad(libro) }}</span>
+    </span>
+    {{ dibujar_icono("chevron-right", 20, "m-libro-flecha") }}
 </a>
 {%- endmacro %}

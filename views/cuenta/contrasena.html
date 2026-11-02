@@ -1,52 +1,72 @@
-{# ============================================================
-   Archivo: views/cuenta/contrasena.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/cuenta/contrasena.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Cambio de contrasena (Vista, HU-01-06). Las reglas estan en
+       auth_servicio.cambiar_contrasena().
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Cambio de contraseña (Vista, HU-01-06). Las reglas están en auth_servicio.cambiar_contrasena().
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Cambiar contraseña{% endblock %}
 
 {% block contenido %}
-{{ ui.page_header("Cambiar contraseña",
-      "Para proteger tu cuenta, confirma tu contraseña actual antes de establecer una nueva.",
-      hus=["HU-01-06 Cambio de contraseña"]) }}
+{{ ui.dibujar_encabezado_pagina("Cambiar contraseña",
+                                "Para proteger tu cuenta, confirma tu contraseña actual antes de "
+                                "establecer una nueva.",
+                                hus=["HU-01-06 Cambio de contraseña"]) }}
 
-<div class="layout-aside">
-  <form class="card" method="post" novalidate>
-    <div class="card__body stack-lg">
-      {# HU-01-06 · Contraseña actual incorrecta / Confirmación no coincidente #}
-      {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
-      <div class="stack">
-        {{ ui.password_field("actual", "Contraseña actual", errores.get("actual")) }}
-        {{ ui.password_field("nueva", "Nueva contraseña", errores.get("nueva"), autocomplete="new-password",
-                             help="Mínimo 6 caracteres y distinta a la actual.") }}
-        {{ ui.password_field("confirmacion", "Confirmar nueva contraseña", errores.get("confirmacion"), autocomplete="new-password") }}
-      </div>
-      <div class="form-actions" style="margin-top: 0">
-        {{ ui.btn("Cancelar", "secondary", href=url_for("inicio.panel")) }}
-        {{ ui.btn("Guardar", "primary", "check", type="submit") }}
-      </div>
-    </div>
-  </form>
+<div class="diseno-lateral">
+    <form class="tarjeta" method="post" novalidate>
+        <div class="tarjeta-cuerpo pila-amplia">
+            {# HU-01-06 · Contrasena actual incorrecta / Confirmacion no coincidente. #}
+            {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
+            <div class="pila">
+                {{ ui.dibujar_campo_contrasena("actual", "Contraseña actual",
+                                               errores.get("actual")) }}
+                {{ ui.dibujar_campo_contrasena("nueva", "Nueva contraseña", errores.get("nueva"),
+                                               autocompletar="new-password",
+                                               ayuda="Mínimo 6 caracteres y distinta a la "
+                                               "actual.") }}
+                {{ ui.dibujar_campo_contrasena("confirmacion", "Confirmar nueva contraseña",
+                                               errores.get("confirmacion"),
+                                               autocompletar="new-password") }}
+            </div>
+            <div class="acciones-formulario" style="margin-top: 0">
+                {{ ui.dibujar_boton("Cancelar", "secundario",
+                                    enlace=url_for("inicio.mostrar_panel")) }}
+                {{ ui.dibujar_boton("Guardar", "primario", "check", tipo="submit") }}
+            </div>
+        </div>
+    </form>
 
-  {# Datos de la cuenta en sesión #}
-  <aside class="card">
-    <div class="card__header"><h2 class="card__title">{{ icon("shield", 18) }}Tu cuenta</h2></div>
-    <div class="card__body stack small">
-      <dl class="kv" style="grid-template-columns: 80px 1fr">
-        <dt>Cuenta</dt><dd class="mono">{{ usuario_actual().cuenta }}</dd>
-        <dt>Perfil</dt><dd>{{ usuario_actual().perfil }}</dd>
-      </dl>
-      <p class="muted">Después del cambio, tu siguiente inicio de sesión aceptará solo la nueva contraseña y rechazará la anterior.</p>
-    </div>
-  </aside>
+    {# Datos de la cuenta en sesion. #}
+    <aside class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("shield", 18) }}Tu cuenta</h2>
+        </div>
+        <div class="tarjeta-cuerpo pila texto-chico">
+            <dl class="clave-valor" style="grid-template-columns: 80px 1fr">
+                <dt>Cuenta</dt><dd class="monoespaciado">{{ obtener_usuario_actual().cuenta }}</dd>
+                <dt>Perfil</dt><dd>{{ obtener_usuario_actual().perfil }}</dd>
+            </dl>
+            <p class="atenuado">Después del cambio, tu siguiente inicio de sesión aceptará solo la
+            nueva
+            contraseña y rechazará la anterior.</p>
+        </div>
+    </aside>
 </div>
 {% endblock %}

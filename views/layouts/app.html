@@ -1,39 +1,51 @@
-{# ============================================================
-   Archivo: views/layouts/app.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/layouts/app.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Layout de la app web (Vista): menu lateral, barra superior y
+       contenido.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Layout de la app web (Vista): menú lateral, barra superior y contenido.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "base.html" %}
 
-{% block body %}
-<div class="app">
-  {# Menú lateral según los permisos #}
-  {% include "components/sidebar.html" %}
-  <div class="overlay" aria-hidden="true"></div>
+{% block cuerpo %}
+<div class="aplicacion">
+    {# Menu lateral segun los permisos. #}
+    {% include "components/sidebar.html" %}
+    <div class="velo" aria-hidden="true"></div>
 
-  <div class="main">
-    {# Barra superior: menú en celular, ruta de navegación y menú del usuario #}
-    <header class="topbar">
-      <button type="button" class="btn btn--ghost btn--icon topbar__menu" data-sidebar-toggle aria-controls="sidebar" aria-label="Abrir menú">
-        {{ icon("menu", 20) }}
-      </button>
-      <nav class="breadcrumb" aria-label="Ruta">
-        <a href="{{ url_for('inicio.panel') }}">Inicio</a>
-        {% block migas %}{% endblock %}
-        {% if self.titulo() != "Inicio" %}{{ icon("chevron-right", 14) }}<strong>{{ self.titulo() }}</strong>{% endif %}
-      </nav>
-      {% include "components/topbar.html" %}
-    </header>
-    {# Contenido de cada pantalla #}
-    <main class="content" id="contenido" tabindex="-1">
-      {% block contenido %}{% endblock %}
-    </main>
-  </div>
+    <div class="principal">
+        {# Barra superior: menu en celular, ruta de navegacion y menu del usuario. #}
+        <header class="barra-superior">
+            <button type="button"
+                    class="boton boton-transparente boton-solo-icono barra-superior-menu"
+                    data-alternar-menu-lateral aria-controls="menu-lateral" aria-label="Abrir menú">
+                {{ dibujar_icono("menu", 20) }}
+            </button>
+            <nav class="migas" aria-label="Ruta">
+                <a href="{{ url_for('inicio.mostrar_panel') }}">Inicio</a>
+                {% block migas %}{% endblock %}
+                {% if self.titulo() != "Inicio" %}{{ dibujar_icono("chevron-right", 14) }}<strong>{{
+                    self.titulo() }}</strong>{% endif %}
+            </nav>
+            {% include "components/topbar.html" %}
+        </header>
+        {# Contenido de cada pantalla. #}
+        <main class="contenido" id="contenido" tabindex="-1">
+            {% block contenido %}{% endblock %}
+        </main>
+    </div>
 </div>
 {% endblock %}

@@ -1,44 +1,56 @@
-{# ============================================================
-   Archivo: views/movil/login.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/movil/login.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       M00 · Inicio de sesion del portal movil (Vista). El controlador
+       movil.login usa el mismo servicio de autenticacion que la web, por eso
+       los mensajes son los mismos; ademas rechaza a quien no tenga el
+       permiso movil.acceder.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: M00 · Inicio de sesión del portal móvil (Vista). El controlador movil.login usa el mismo
-                servicio de autenticación que la web, por eso los mensajes son los mismos; además rechaza a
-                quien no tenga el permiso movil.acceder.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Portal móvil{% endblock %}
 
 {% block contenido %}
-{# Marca del portal #}
+{# Marca del portal. #}
 <section class="m-marca">
-  {{ ui.logo(84) }}
-  <p class="m-marca__nombre">Biblioteca Ducky</p>
-  <p class="m-marca__sub">Portal móvil para alumnos</p>
+    {{ ui.dibujar_logo(84) }}
+    <p class="m-marca-nombre">Biblioteca Ducky</p>
+    <p class="m-marca-subtitulo">Portal móvil para alumnos</p>
 </section>
 
-<section class="m-acceso stack">
-  <div>
-    <h2 class="m-acceso__titulo">Iniciar sesión</h2>
-    <p class="muted">Usa la cuenta y contraseña que te asignó la biblioteca.</p>
-  </div>
+<section class="m-acceso pila">
+    <div>
+        <h2 class="m-acceso-titulo">Iniciar sesión</h2>
+        <p class="atenuado">Usa la cuenta y contraseña que te asignó la biblioteca.</p>
+    </div>
 
-  {# HU-01-01: mismos mensajes que la web, más el de solo alumnos #}
-  {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+    {# HU-01-01: mismos mensajes que la web, mas el de solo alumnos. #}
+    {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
 
-  <form class="stack" method="post" action="{{ url_for('movil.login') }}" novalidate>
-    {{ ui.field("cuenta", "Cuenta", valores.get("cuenta", ""), errores.get("cuenta"), required=True,
-                placeholder="Ej. alumno", autocomplete="username", icon_name="user", autocapitalize="none",
-                spellcheck="false") }}
-    {{ ui.password_field("contrasena", "Contraseña", errores.get("contrasena")) }}
-    {{ ui.btn("Iniciar sesión", "primary", type="submit", size="lg", block=True) }}
-  </form>
+    <form class="pila" method="post" action="{{ url_for('movil.ingresar') }}" novalidate>
+        {{ ui.dibujar_campo("cuenta", "Cuenta", valores.get("cuenta", ""), errores.get("cuenta"),
+                            obligatorio=True,
+                            sugerencia="Ej. alumno", autocompletar="username", icono="user",
+                            autocapitalize="none",
+                            spellcheck="false") }}
+        {{ ui.dibujar_campo_contrasena("contrasena", "Contraseña", errores.get("contrasena")) }}
+        {{ ui.dibujar_boton("Iniciar sesión", "primario", tipo="submit",
+                            tamano="grande", completo=True) }}
+    </form>
 </section>
 {% endblock %}

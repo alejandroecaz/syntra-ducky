@@ -1,33 +1,49 @@
-{# ============================================================
-   Archivo: views/compras/detalle.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/compras/detalle.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Detalle de una orden registrada (Vista, HU-01-18).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Detalle de una orden registrada (Vista, HU-01-18).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}{{ orden.folio }}{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('compras.lista') }}">Órdenes de compra</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('compras.listar') }}">Órdenes de compra</a>
+{%- endblock %}
 
 {% block contenido %}
-{# HU-01-18 · Orden de compra registrada: encabezado e impresión (no se imprime) #}
-<div class="no-print">
-  {% call ui.page_header("Orden " ~ orden.folio, "Registrada el " ~ (orden.fecha_registro | fecha("%d/%m/%Y %H:%M")) ~ ".",
-        hus=["HU-01-18 Orden de compra"], back=url_for("compras.lista"), back_label="Órdenes de compra") %}
-    {{ ui.badge(orden.estado, "info", dot=True) }}
-    {{ ui.btn("Imprimir", "secondary", "printer", data_print="1") }}
-  {% endcall %}
+{# HU-01-18 · Orden de compra registrada: encabezado e impresion (no se imprime). #}
+<div class="sin-imprimir">
+    {% call ui.dibujar_encabezado_pagina("Orden " ~ orden.folio,
+                                         "Registrada el "
+                                         ~ (orden.fecha_registro |formatear_fecha("%d/%m/%Y %H:%M"))
+                                         ~ ".",
+                                         hus=["HU-01-18 Orden de compra"],
+                                         regresar=url_for("compras.listar"),
+                                         texto_regresar="Órdenes de compra") %}
+        {{ ui.dibujar_etiqueta(orden.estado, "informacion", punto=True) }}
+        {{ ui.dibujar_boton("Imprimir", "secundario", "printer", data_imprimir="1") }}
+    {% endcall %}
 </div>
 
-{# Datos que usa el documento compartido #}
+{# Datos que usa el documento compartido. #}
 {% set folio = orden.folio %}
-{% set fecha_doc = orden.fecha_registro | fecha %}
+{% set fecha_doc = orden.fecha_registro |formatear_fecha %}
 {% set solicitante = orden.solicitante ~ " (" ~ orden.solicitante_id ~ ")" %}
 {% include "compras/_documento.html" %}
 {% endblock %}

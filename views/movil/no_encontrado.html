@@ -1,27 +1,39 @@
-{# ============================================================
-   Archivo: views/movil/no_encontrado.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/movil/no_encontrado.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Vista 404 del portal movil: el libro no existe o ya fue dado de baja.
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Vista 404 del portal móvil: el libro no existe o ya fue dado de baja.
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/movil.html" %}
 {% import "components/ui.html" as ui %}
 {% import "movil/componentes.html" as m %}
 
 {% block titulo %}No encontrado{% endblock %}
 
-{% block encabezado %}{{ m.encabezado_regreso("No encontrado", None, url_for("movil.buscar")) }}{% endblock %}
+{% block encabezado %}
+    {{- m.dibujar_encabezado_regreso("No encontrado", None, url_for("movil.buscar")) }}
+{%- endblock %}
 
 {% block contenido %}
-{# El libro no existe o ya fue dado de baja #}
-<div class="card">
-  {% call ui.empty_state("search", "No encontramos ese libro", "El libro no existe o ya no forma parte del catálogo.") %}
-    {{ ui.btn("Volver a buscar", "primary", "search", href=url_for("movil.buscar"), size="lg") }}
-  {% endcall %}
+{# El libro no existe o ya fue dado de baja. #}
+<div class="tarjeta">
+    {% call ui.dibujar_estado_vacio("search", "No encontramos ese libro",
+                                    "El libro no existe o ya no forma parte del catálogo.") %}
+        {{ ui.dibujar_boton("Volver a buscar", "primario", "search",
+                            enlace=url_for("movil.buscar"), tamano="grande") }}
+    {% endcall %}
 </div>
 {% endblock %}

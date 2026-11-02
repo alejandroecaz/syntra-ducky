@@ -1,61 +1,95 @@
-{# ============================================================
-   Archivo: views/usuarios/asignar_perfil.html
-   Proyecto: Sistema Ducky de Gestión Bibliotecaria
-   Syntra Technologies - Equipo 1 - Sprint 1
-   Materia: Ingeniería de Software
+{#
+   ============================================================
+   Archivo:      views/usuarios/asignar_perfil.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Asignar perfil a una cuenta (Vista, HU-01-08).
+
    Autores:
-     - Melissa Silva Vázquez                #624352
-     - Tomás Zapata Pérez                   #629048
-     - Alejandro Evaristo Cazares Escobedo  #626337
-   Descripción: Asignar perfil a una cuenta (Vista, HU-01-08).
-   ============================================================ -#}
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       21/09/2026
+   ============================================================
+-#}
 {% extends "layouts/app.html" %}
 {% import "components/ui.html" as ui %}
 
 {% block titulo %}Asignar perfil{% endblock %}
-{% block migas %}{{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.lista') }}">Usuarios</a>
-  {{ icon("chevron-right", 14) }}<a href="{{ url_for('usuarios.detalle', usuario_id=usuario.id) }}">{{ usuario.nombre_completo }}</a>{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a href="{{ url_for('usuarios.listar') }}">Usuarios</a>
+    {{ dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('usuarios.mostrar_detalle', usuario_id=usuario.id) }}">{{
+          usuario.nombre_completo }}</a>
+{%- endblock %}
 
 {% block contenido %}
-{{ ui.page_header("Asignar perfil a " ~ usuario.nombre_completo,
-      "Perfil actual: " ~ (usuario.perfil_nombre or "sin perfil") ~ ". El nuevo perfil sustituye al anterior y sus permisos se aplican en el siguiente inicio de sesión.",
-      hus=["HU-01-08 Asignación de perfiles"], back=url_for("usuarios.detalle", usuario_id=usuario.id), back_label="Detalle del usuario") }}
+{{ ui.dibujar_encabezado_pagina("Asignar perfil a " ~ usuario.nombre_completo,
+                                "Perfil actual: " ~ (usuario.perfil_nombre or "sin perfil") ~ ". "
+                                "El nuevo perfil sustituye al anterior y sus permisos se aplican "
+                                "en el siguiente inicio de sesión.",
+                                hus=["HU-01-08 Asignación de perfiles"],
+                                regresar=url_for("usuarios.mostrar_detalle", usuario_id=usuario.id),
+                                texto_regresar="Detalle del usuario") }}
 
-<form class="card" method="post" novalidate>
-  <div class="card__body stack-lg">
-    {# HU-01-08 · Perfil sin seleccionar / Perfil inexistente o no disponible #}
-    {% if error_general %}{{ ui.alert("error", text=error_general) }}{% endif %}
+<form class="tarjeta" method="post" novalidate>
+    <div class="tarjeta-cuerpo pila-amplia">
+        {# HU-01-08 · Perfil sin seleccionar / Perfil inexistente o no disponible. #}
+        {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
 
-    {# HU-01-08 · Asignar perfil / Modificar perfil de usuario #}
-    <fieldset class="check-group{{ ' is-invalid' if errores.get('perfil_id') }}">
-      <legend>Perfiles registrados</legend>
-      <div class="check-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
-        {% for p in perfiles %}
-          <label class="check">
-            <input type="radio" name="perfil_id" value="{{ p.id }}" {% if p.id | string == seleccionado | string %}checked{% endif %}>
-            <span style="flex:1; min-width:0">
-              <span class="row-between" style="gap:6px">
-                <span class="check__title">{{ p.nombre }}</span>
-                {% if p.id == usuario.perfil_id %}{{ ui.badge("Actual", "navy") }}
-                {% elif not p.disponible %}{{ ui.badge("No disponible", "error") }}{% endif %}
-              </span>
-              <span class="check__desc">{{ p.descripcion or "" }}</span><br>
-              <span class="check__desc">{% set n = permisos.get(p.id, []) | length %}{{ n }} permiso{{ 's' if n != 1 }}{% if "sistema.acceder" not in permisos.get(p.id, []) %} · sin acceso al sistema{% endif %}</span>
-            </span>
-          </label>
-        {% endfor %}
-      </div>
-      {% if errores.get("perfil_id") %}
-        <span class="error-text mt-2">{{ icon("alert-circle", 14) }}{{ errores.get("perfil_id") }}</span>
-      {% endif %}
-    </fieldset>
+        {# HU-01-08 · Asignar perfil / Modificar perfil de usuario. #}
+        <fieldset class="grupo-casillas{{ ' invalido' if errores.get('perfil_id') }}">
+            <legend>Perfiles registrados</legend>
+            <div class="rejilla-casillas"
+                 style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
+                {% for perfil in perfiles %}
+                    <label class="casilla">
+                        <input type="radio" name="perfil_id" value="{{ perfil.id }}"
+                               {% if perfil.id | string == seleccionado | string -%}
+                                   checked
+                               {%- endif %}>
+                        <span style="flex:1; min-width:0">
+                            <span class="fila-separada" style="gap:6px">
+                                <span class="casilla-titulo">{{ perfil.nombre }}</span>
+                                {% if perfil.id == usuario.perfil_id %}{{
+                                    ui.dibujar_etiqueta("Actual", "azul") }}
+                                {% elif not perfil.disponible %}{{
+                                    ui.dibujar_etiqueta("No disponible", "error") }}{% endif %}
+                            </span>
+                            <span class="casilla-descripcion">{{
+                                perfil.descripcion or "" }}</span><br>
+                            {% set permisos_perfil = permisos.get(perfil.id, []) %}
+                            <span class="casilla-descripcion">
+                                {{- permisos_perfil | length }} permiso{{
+                                    's' if permisos_perfil | length != 1 }}
+                                {%- if "sistema.acceder" not in permisos_perfil %} · sin acceso al
+                                sistema
+                                {%- endif %}</span>
+                        </span>
+                    </label>
+                {% endfor %}
+            </div>
+            {% if errores.get("perfil_id") %}
+                <span class="texto-error margen-arriba-2">{{ dibujar_icono("alert-circle", 14) }}{{
+                    errores.get("perfil_id") }}</span>
+            {% endif %}
+        </fieldset>
 
-    <p class="small muted">Elige el perfil que tendrá la cuenta. Si guardas sin elegir uno, o eliges un perfil no disponible como “Auditoría externa”, se conserva el perfil actual.</p>
+        <p class="texto-chico atenuado">Elige el perfil que tendrá la cuenta. Si guardas sin elegir
+        uno,
+        o eliges un perfil no disponible como “Auditoría externa”, se conserva el perfil actual.</p>
 
-    <div class="form-actions" style="margin-top: 0">
-      {{ ui.btn("Cancelar", "secondary", href=url_for("usuarios.detalle", usuario_id=usuario.id)) }}
-      {{ ui.btn("Guardar asignación", "primary", "check", type="submit") }}
+        <div class="acciones-formulario" style="margin-top: 0">
+            {{ ui.dibujar_boton("Cancelar", "secundario",
+                                enlace=url_for("usuarios.mostrar_detalle",
+                                               usuario_id=usuario.id)) }}
+            {{ ui.dibujar_boton("Guardar asignación", "primario", "check", tipo="submit") }}
+        </div>
     </div>
-  </div>
 </form>
 {% endblock %}
