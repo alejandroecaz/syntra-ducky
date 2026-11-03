@@ -101,8 +101,7 @@ ingsoftprot/
 ├── models/         # Acceso a datos con SQL
 ├── views/          # Vistas (plantillas); views/movil/ es el portal móvil
 ├── static/         # CSS, JS, imágenes y manifest.json
-├── tests/          # Pruebas con pytest
-└── docs/           # PRESENTACION.md, capturas y material de referencia
+└── tests/          # Pruebas con pytest
 ```
 
 La web y el móvil comparten servicios y modelos; solo cambian el controlador y las vistas.
@@ -116,8 +115,3 @@ venv/bin/ruff check .
 ```
 
 Las pruebas usan su propia base de datos temporal; no modifican `syntra.db`.
-
-## Para la presentación
-
-- [docs/PRESENTACION.md](docs/PRESENTACION.md): arquitectura MVC, estándar de código, decisiones, guion de la demo y lecciones aprendidas.
-- [docs/capturas/](docs/capturas/): pantallas web y móviles. Para regenerarlas: `venv/bin/playwright install chromium` (una vez) y `venv/bin/python scripts/tomar_capturas.py`.

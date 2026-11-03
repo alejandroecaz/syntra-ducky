@@ -9,9 +9,8 @@ Descripcion:
     Crea la base de datos SQLite con el esquema del Sprint 1 y los datos
     de demostracion.
 
-    El esquema sigue el diseno de base_de_datos/BD_Sistema_Ducky.drawio
-    (version SQLite de ducky_bd_sprint1.sql). Las correcciones al diseno
-    estan en docs/PRESENTACION.md.
+    El esquema es la version SQLite de
+    base_de_datos/ducky_bd_sprint1.sql.
 
     Uso:
         venv/bin/python init_db.py
