@@ -3,7 +3,7 @@
 [tool.ruff]
 line-length = 79
 target-version = "py39"
-extend-exclude = ["venv", "figma-plugin-estilos"]
+extend-exclude = ["venv"]
 
 [tool.ruff.lint]
 # E/W: PEP 8 · F: errores (imports sin usar, nombres indefinidos) · I: orden de imports

@@ -1,5 +1,4 @@
-# Herramientas para desarrollo: pruebas, estilo y capturas de pantalla
+# Herramientas para desarrollo: pruebas y estilo
 -r requirements.txt
 pytest>=8.0
 ruff>=0.6
-playwright>=1.45

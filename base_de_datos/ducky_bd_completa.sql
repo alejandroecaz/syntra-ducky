@@ -6,7 +6,7 @@
 --
 -- Descripcion:
 --     Script de referencia en MySQL 8 con la base de datos completa del
---     sistema (Sprints 1 a 4). Sigue el diseno de BD_Sistema_Ducky.drawio.
+--     sistema (Sprints 1 a 4), segun el diseno de la Evidencia 08.
 --
 --     El prototipo del Sprint 1 no usa este script: init_db.py crea en
 --     SQLite solo las tablas de la primera entrega.
