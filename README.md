@@ -76,7 +76,7 @@ En el **portal móvil solo entran alumnos**: el acceso se controla con el permis
 | HU-01-06 Cambio de contraseña | Menú del usuario → Cambiar contraseña | — |
 | HU-01-07 Creación de perfiles | Perfiles y permisos → Crear perfil | — |
 | HU-01-08 Asignación de perfiles | Usuario → Asignar perfil | — |
-| HU-01-09 Alta de libros | Catálogo → Registrar libro | — |
+| HU-01-09 Alta de libros | Catálogo → Registrar libro. Con **Buscar por ISBN** (o Enter / lector de código de barras) se llenan título, autores, editorial y año desde la API pública de Open Library; prueba con `9788441532106` | — |
 | HU-01-10 Baja de libro | Ficha del libro → Dar de baja | — |
 | HU-01-11 Actualización de libros | Ficha del libro → Editar libro | — |
 | HU-01-12 Consulta del catálogo | Catálogo → Ver ejemplares | `/movil` → Ver catálogo → ficha |

@@ -42,6 +42,8 @@
            actualizarResumenOrden()
        Seleccion de libros del listado (HU-01-16 y HU-01-17)
            actualizarSeleccion()
+       Datos del libro por ISBN (HU-01-09)
+           llenarFicha(), buscarIsbn()
        Resultado de la devolucion (HU-02-07)
            actualizarResultado()
    ============================================================
@@ -610,6 +612,79 @@
             casilla.addEventListener("change", actualizarSeleccion);
         });
         actualizarSeleccion();
+    }
+
+    // ============================================================
+    // DATOS DEL LIBRO POR ISBN (HU-01-09)
+    // Pide a la app los datos de Open Library y llena el formulario de
+    // alta. El Enter del campo ISBN (o del lector de codigo de barras)
+    // busca en lugar de guardar.
+    // ============================================================
+    var botonIsbn = buscarElemento("[data-buscar-isbn]");
+    if (botonIsbn) {
+        var campoIsbn = document.getElementById("isbn");
+
+        // Llena los campos que trajo Open Library sin borrar los demas.
+        var llenarFicha = function (datos) {
+            ["isbn", "titulo", "autores", "editorial", "anio"].forEach(function (nombre) {
+                var campo = document.getElementById(nombre);
+                if (campo && datos[nombre]) {
+                    campo.value = datos[nombre];
+                    campo.classList.remove("invalido");
+                }
+            });
+        };
+
+        var buscarIsbn = function () {
+            var isbn = campoIsbn.value.trim();
+            if (!isbn) {
+                mostrarAviso("advertencia", "Escribe el ISBN para buscar los datos del libro.");
+                campoIsbn.focus();
+                return;
+            }
+            botonIsbn.classList.add("cargando");
+            botonIsbn.disabled = true;
+            fetch(botonIsbn.dataset.buscarIsbn + "?isbn=" + encodeURIComponent(isbn), {
+                headers: { "X-Requested-With": "fetch" },
+                credentials: "same-origin"
+            })
+                .then(function (respuesta) {
+                    if (respuesta.status === 401 || respuesta.status === 403
+                        || respuesta.redirected) {
+                        throw { tono: "error", mensaje: "Tu perfil no puede dar de alta libros." };
+                    }
+                    return respuesta.json().then(function (datos) {
+                        if (!respuesta.ok) {
+                            throw {
+                                tono: respuesta.status >= 500 ? "error" : "advertencia",
+                                mensaje: datos.mensaje
+                            };
+                        }
+                        llenarFicha(datos.datos);
+                        mostrarAviso(datos.tono, datos.mensaje);
+                        var tema = document.getElementById("tema");
+                        if (tema && !tema.value) {
+                            tema.focus();
+                        }
+                    });
+                })
+                .catch(function (problema) {
+                    mostrarAviso(problema.tono || "error", problema.mensaje
+                        || "No se pudo consultar el ISBN. Captura los datos a mano.");
+                })
+                .finally(function () {
+                    botonIsbn.classList.remove("cargando");
+                    botonIsbn.disabled = false;
+                });
+        };
+
+        botonIsbn.addEventListener("click", buscarIsbn);
+        campoIsbn.addEventListener("keydown", function (evento) {
+            if (evento.key === "Enter") {
+                evento.preventDefault();
+                buscarIsbn();
+            }
+        });
     }
 
     // ============================================================

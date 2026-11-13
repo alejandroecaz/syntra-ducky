@@ -27,6 +27,7 @@ from flask import (
     Blueprint,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -263,6 +264,36 @@ def registrar():
     # HU-01-09 · Alta exitosa: vamos a la ficha del libro nuevo.
     flash(mensaje, "exito")
     return redirect(url_for("catalogo.mostrar_detalle", libro_id=libro_id))
+
+
+@catalogo_bp.route("/isbn")
+@permiso_requerido("libros.alta")
+def consultar_isbn():
+    """
+    Descripcion:
+        HU-01-09: Busca en Open Library los datos del libro por su ISBN
+        (?isbn=...) para llenar el formulario de alta. Lo pide el boton
+        "Buscar por ISBN" con JavaScript.
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        tuple[flask.Response, int]: JSON con datos, tono y mensaje, o solo
+        el mensaje del error con su codigo HTTP.
+
+    Excepciones:
+        Responde 403 (werkzeug.exceptions.Forbidden) si el perfil no tiene el
+        permiso; sin sesion redirige al login.
+    """
+    try:
+        resultado = catalogo_servicio.consultar_isbn(request.args.get("isbn"))
+    except ErrorValidacion as error:
+        return jsonify({"mensaje": error.mensaje}), error.codigo
+    tono, mensaje = resultado["aviso"]
+    return jsonify(
+        {"datos": resultado["datos"], "tono": tono, "mensaje": mensaje}
+    ), 200
 
 
 # ============================================================

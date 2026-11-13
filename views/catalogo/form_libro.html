@@ -60,6 +60,21 @@
                errores se
                marcan por campo. #}
             <div class="rejilla-formulario">
+                {# HU-01-09: con el ISBN se llenan los datos desde Open Library. #}
+                {% if es_nuevo %}
+                    {{ ui.dibujar_campo("isbn", "ISBN", valores.get("isbn"), errores.get("isbn"),
+                                        opcional=True, icono="search", doble_ancho=True,
+                                        sugerencia="10 o 13 dígitos, ej. 9788441532106",
+                                        inputmode="numeric",
+                                        ayuda="Si lo tienes, presiona Buscar por ISBN y se "
+                                              "llenan título, autores, editorial y año "
+                                              "desde Open Library.") }}
+                    <div class="doble-ancho">
+                        {{ ui.dibujar_boton("Buscar por ISBN", "secundario", "search",
+                                            tamano="chico",
+                                            data_buscar_isbn=url_for("catalogo.consultar_isbn")) }}
+                    </div>
+                {% endif %}
                 {{ ui.dibujar_campo("clave", "Clave", valores.get("clave"), errores.get("clave"),
                                     obligatorio=es_nuevo,
                                     sugerencia="Ej. LIB-015", solo_lectura=not es_nuevo,
@@ -98,9 +113,11 @@
                                     errores.get("edicion"),
                                     opcional=True,
                                     sugerencia="Ej. 3.ª ed.") }}
-                {{ ui.dibujar_campo("isbn", "ISBN", valores.get("isbn"), errores.get("isbn"),
-                                    opcional=True,
-                                    sugerencia="10 o 13 dígitos", inputmode="numeric") }}
+                {% if not es_nuevo %}
+                    {{ ui.dibujar_campo("isbn", "ISBN", valores.get("isbn"), errores.get("isbn"),
+                                        opcional=True,
+                                        sugerencia="10 o 13 dígitos", inputmode="numeric") }}
+                {% endif %}
                 {% set opciones_acceso = [] %}{% for tipo in tipos_acceso %}
                 {%- set _ = opciones_acceso.append((tipo, tipo)) %}{% endfor %}
                 {{ ui.dibujar_campo_seleccion("tipo_acceso", "Tipo de acceso", opciones_acceso,
@@ -141,6 +158,8 @@
             se
             reutiliza.</p>
             {% if es_nuevo %}
+                <p>• Con el <strong>ISBN</strong> se llenan título, autores, editorial y año
+                desde Open Library; revísalos y completa la clave y el tema.</p>
                 <p>• Si la clave ya existe, se muestra “La clave del libro ya existe” sin duplicar
                 ni
                 sobrescribir el registro.</p>

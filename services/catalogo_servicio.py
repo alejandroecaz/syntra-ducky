@@ -46,6 +46,7 @@ Contenido del listado:
         obtener_valores_edicion()
         separar_autores()
         _validar_isbn()
+        consultar_isbn()
         validar_libro()
         _preparar_datos()
         registrar_libro()
@@ -72,6 +73,7 @@ from models import libro as libro_modelo
 from models import tema as tema_modelo
 from models import ubicacion as ubicacion_modelo
 from services.errores import ErrorValidacion
+from utils import open_library
 
 # Campos por los que se puede buscar (HU-01-13).
 CAMPOS_VALIDOS = {campo for campo, _ in config.CAMPOS_BUSQUEDA}
@@ -413,6 +415,72 @@ def _validar_isbn(isbn):
     return bool(
         re.fullmatch(r"\d{9}[\dX]", limpio) or re.fullmatch(r"\d{13}", limpio)
     )
+
+
+def consultar_isbn(isbn):
+    """
+    Descripcion:
+        HU-01-09: Busca los datos del libro por su ISBN en Open Library para
+        llenar la ficha. El bibliotecario los revisa antes de guardar.
+
+    Parametros:
+        isbn (str): ISBN capturado (con o sin guiones).
+
+    Salida:
+        dict: datos para el formulario (isbn, titulo, autores, editorial,
+        anio) y aviso (tono y mensaje).
+
+    Excepciones:
+        ErrorValidacion si el ISBN no es valido (422), ya esta en el
+        catalogo (409), Open Library no lo tiene (404) o no responde (502).
+    """
+    limpio = (isbn or "").replace("-", "").replace(" ", "").upper()
+    if not _validar_isbn(limpio):
+        mensaje = "Escribe un ISBN de 10 o 13 dígitos."
+        raise ErrorValidacion(mensaje, {"isbn": mensaje}, codigo=422)
+    if libro_modelo.verificar_isbn_en_uso(limpio):
+        mensaje = "Ese ISBN ya pertenece a un libro del catálogo."
+        raise ErrorValidacion(mensaje, {"isbn": mensaje}, codigo=409)
+
+    try:
+        encontrado = open_library.buscar_por_isbn(limpio)
+    except open_library.ErrorConsulta as error:
+        raise ErrorValidacion(str(error), codigo=502) from error
+    if encontrado is None:
+        raise ErrorValidacion(
+            "Open Library no tiene datos de ese ISBN. Captura la ficha a "
+            "mano.",
+            codigo=404,
+        )
+
+    # Lo dejamos con el formato del formulario.
+    titulo = encontrado["titulo"]
+    if encontrado["subtitulo"]:
+        titulo = f"{titulo}: {encontrado['subtitulo']}"
+    anio = re.search(r"\b(1[4-9]\d\d|20\d\d)\b", encontrado["fecha"])
+    datos = {
+        "isbn": limpio,
+        "titulo": titulo[:255],
+        "autores": f"{config.SEPARADOR_AUTORES} ".join(encontrado["autores"]),
+        "editorial": encontrado["editorial"][:120],
+        "anio": anio.group(1)
+        if anio and int(anio.group(1)) <= date.today().year
+        else "",
+    }
+    if encontrado["completo"]:
+        aviso = (
+            "exito",
+            "Datos tomados de Open Library. Revísalos y completa el tema "
+            "antes de guardar.",
+        )
+    else:
+        aviso = (
+            "advertencia",
+            "Open Library solo tenía datos parciales de ese ISBN. Revisa el "
+            "título y los autores, y completa la editorial, el año y el "
+            "tema.",
+        )
+    return {"datos": datos, "aviso": aviso}
 
 
 def validar_libro(formulario, exigir_clave, libro_id=None):
