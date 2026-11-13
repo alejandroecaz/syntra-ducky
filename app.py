@@ -35,6 +35,7 @@ import config
 import init_db
 from controllers.auth_controller import auth_bp
 from controllers.catalogo_controller import catalogo_bp
+from controllers.chatbot_controller import chatbot_bp
 from controllers.compra_controller import compra_bp
 from controllers.cuenta_controller import cuenta_bp
 from controllers.devolucion_controller import devolucion_bp
@@ -66,10 +67,12 @@ BLUEPRINTS = (
     espera_bp,
     multa_bp,
     cuenta_bp,
+    chatbot_bp,
     movil_bp,
 )
 
-# Datos para enviar boletas; las pruebas los reemplazan para no enviar nada.
+# Datos para enviar boletas y la llave del chatbot; las pruebas los reemplazan
+# para no enviar nada ni usar la API.
 CLAVES_ENVIO = (
     "CORREO_SERVIDOR",
     "CORREO_PUERTO",
@@ -81,6 +84,7 @@ CLAVES_ENVIO = (
     "TWILIO_WHATSAPP_ORIGEN",
     "CARPETA_BOLETAS",
     "TESORERIA_CORREO",
+    "ANTHROPIC_API_KEY",
 )
 
 

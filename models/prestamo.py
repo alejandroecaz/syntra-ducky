@@ -101,6 +101,25 @@ def obtener(prestamo_id):
     )
 
 
+def listar_activos_de_usuario(usuario_id):
+    """
+    Descripcion:
+        HU-02-09: Lista los prestamos activos del usuario, el que vence
+        primero arriba (los consulta el chatbot).
+
+    Parametros:
+        usuario_id (int): id del usuario.
+
+    Salida:
+        list[sqlite3.Row]: prestamos con sus datos.
+    """
+    return consultar(
+        SELECT_PRESTAMO + " WHERE p.usuario_id = ? AND p.estado = ? "
+        "ORDER BY p.fecha_vencimiento",
+        (usuario_id, config.ESTADO_PRESTAMO_ACTIVO),
+    )
+
+
 def obtener_solicitante(texto):
     """
     Descripcion:

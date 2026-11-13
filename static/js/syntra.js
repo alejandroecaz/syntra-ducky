@@ -46,6 +46,10 @@
            llenarFicha(), buscarIsbn()
        Resultado de la devolucion (HU-02-07)
            actualizarResultado()
+       Chatbot (HU-02-09)
+           agregarMensajeChat(), saludarChat(), mostrarModoChat(),
+           enviarPreguntaChat(), pintarSugerenciasChat(), cargarChat(),
+           abrirChat()
    ============================================================
 */
 (function () {
@@ -707,6 +711,189 @@
             opcion.addEventListener("change", actualizarResultado);
         });
         actualizarResultado();
+    }
+
+    // ============================================================
+    // CHATBOT (HU-02-09)
+    // Ventana de chat: carga la conversacion abierta, manda las preguntas
+    // (sugeridas o escritas) y muestra las respuestas. El texto se pinta con
+    // textContent para no interpretar HTML.
+    // ============================================================
+    var chatbot = buscarElemento("[data-chatbot]");
+    if (chatbot) {
+        var panelChat = buscarElemento(".chatbot-panel", chatbot);
+        var botonChat = buscarElemento("[data-chatbot-abrir]", chatbot);
+        var listaChat = buscarElemento("[data-chatbot-mensajes]", chatbot);
+        var sugerenciasChat = buscarElemento("[data-chatbot-sugerencias]", chatbot);
+        var textoChat = buscarElemento("[data-chatbot-texto]", chatbot);
+        var modoChat = buscarElemento("[data-chatbot-modo]", chatbot);
+        var chatCargado = false;
+        var chatEnviando = false;
+
+        // Agrega una burbuja a la conversacion y baja hasta ella.
+        var agregarMensajeChat = function (emisor, texto, clase) {
+            var burbuja = document.createElement("div");
+            burbuja.className = "chatbot-mensaje chatbot-mensaje-"
+                + (emisor === "Usuario" ? "usuario" : "bot") + (clase ? " " + clase : "");
+            burbuja.textContent = texto;
+            listaChat.appendChild(burbuja);
+            listaChat.scrollTop = listaChat.scrollHeight;
+            return burbuja;
+        };
+
+        var saludarChat = function () {
+            listaChat.innerHTML = "";
+            agregarMensajeChat("Chatbot", "¡Hola! Soy Ducky, el asistente de la biblioteca. "
+                + "Elige una de las preguntas de abajo o escribe la tuya.");
+        };
+
+        var mostrarModoChat = function (modo) {
+            modoChat.textContent = modo === "ia"
+                ? "Asistente con IA"
+                : "Respuestas básicas (sin IA)";
+        };
+
+        // Manda la pregunta y muestra la respuesta.
+        var enviarPreguntaChat = function (texto) {
+            texto = (texto || "").trim();
+            if (!texto || chatEnviando) {
+                return;
+            }
+            chatEnviando = true;
+            agregarMensajeChat("Usuario", texto);
+            textoChat.value = "";
+            var pensando = agregarMensajeChat("Chatbot", "Ducky está pensando…",
+                "chatbot-pensando");
+            fetch(chatbot.dataset.urlMensajes, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-Requested-With": "fetch" },
+                credentials: "same-origin",
+                body: JSON.stringify({ mensaje: texto })
+            })
+                .then(function (respuesta) {
+                    if (respuesta.redirected || respuesta.status === 401
+                        || respuesta.status === 403) {
+                        throw { mensaje: "Tu sesión terminó. Vuelve a iniciar sesión." };
+                    }
+                    return respuesta.json().then(function (datos) {
+                        if (!respuesta.ok) {
+                            throw { mensaje: datos.mensaje };
+                        }
+                        pensando.remove();
+                        agregarMensajeChat("Chatbot", datos.respuesta);
+                        mostrarModoChat(datos.modo);
+                        if (datos.aviso) {
+                            mostrarAviso("advertencia", datos.aviso);
+                        }
+                    });
+                })
+                .catch(function (problema) {
+                    pensando.remove();
+                    agregarMensajeChat("Chatbot", (problema && problema.mensaje)
+                        || "No pude responder. Revisa tu conexión e intenta de nuevo.",
+                        "chatbot-mensaje-error");
+                })
+                .finally(function () {
+                    chatEnviando = false;
+                    textoChat.focus();
+                });
+        };
+
+        // Preguntas por defecto como botones.
+        var pintarSugerenciasChat = function (preguntas) {
+            sugerenciasChat.innerHTML = "";
+            preguntas.forEach(function (pregunta) {
+                var chip = document.createElement("button");
+                chip.type = "button";
+                chip.className = "chatbot-sugerencia";
+                chip.textContent = pregunta;
+                chip.addEventListener("click", function () {
+                    enviarPreguntaChat(pregunta);
+                });
+                sugerenciasChat.appendChild(chip);
+            });
+        };
+
+        // Carga la conversacion abierta (si la hay) la primera vez que se abre.
+        var cargarChat = function () {
+            chatCargado = true;
+            saludarChat();
+            fetch(chatbot.dataset.urlMensajes, {
+                headers: { "X-Requested-With": "fetch" },
+                credentials: "same-origin"
+            })
+                .then(function (respuesta) {
+                    return respuesta.json();
+                })
+                .then(function (datos) {
+                    datos.mensajes.forEach(function (mensaje) {
+                        agregarMensajeChat(mensaje.emisor, mensaje.mensaje);
+                    });
+                    mostrarModoChat(datos.modo);
+                    pintarSugerenciasChat(datos.sugerencias);
+                })
+                .catch(function () {
+                    chatCargado = false;
+                });
+        };
+
+        // Abre o cierra la ventana y recuerda si quedo abierta al cambiar de pagina.
+        var abrirChat = function (abrir) {
+            panelChat.hidden = !abrir;
+            chatbot.classList.toggle("abierto", abrir);
+            botonChat.setAttribute("aria-expanded", String(abrir));
+            try {
+                sessionStorage.setItem("chatbotAbierto", abrir ? "1" : "0");
+            } catch (error) {
+                // Sin almacenamiento solo no se recuerda.
+            }
+            if (abrir) {
+                if (!chatCargado) {
+                    cargarChat();
+                }
+                textoChat.focus();
+            } else {
+                botonChat.focus();
+            }
+        };
+
+        botonChat.addEventListener("click", function () {
+            abrirChat(true);
+        });
+        buscarElemento("[data-chatbot-cerrar]", chatbot).addEventListener("click", function () {
+            abrirChat(false);
+        });
+        buscarElemento("[data-chatbot-nueva]", chatbot).addEventListener("click", function () {
+            fetch(chatbot.dataset.urlNueva, {
+                method: "POST",
+                headers: { "X-Requested-With": "fetch" },
+                credentials: "same-origin"
+            }).finally(saludarChat);
+        });
+        buscarElemento("[data-chatbot-formulario]", chatbot).addEventListener("submit",
+            function (evento) {
+                evento.preventDefault();
+                enviarPreguntaChat(textoChat.value);
+            });
+        // Enter manda la pregunta; Shift+Enter hace un salto de linea.
+        textoChat.addEventListener("keydown", function (evento) {
+            if (evento.key === "Enter" && !evento.shiftKey) {
+                evento.preventDefault();
+                enviarPreguntaChat(textoChat.value);
+            }
+        });
+        panelChat.addEventListener("keydown", function (evento) {
+            if (evento.key === "Escape") {
+                abrirChat(false);
+            }
+        });
+        try {
+            if (sessionStorage.getItem("chatbotAbierto") === "1") {
+                abrirChat(true);
+            }
+        } catch (error) {
+            // Sin almacenamiento el chat empieza cerrado.
+        }
     }
 
     // Funciones disponibles para otras paginas.

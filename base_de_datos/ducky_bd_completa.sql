@@ -35,6 +35,8 @@
 --         prestamos, renovaciones, devoluciones, comprobantes_prestamo, lista_espera
 --     AVISOS Y MULTAS
 --         avisos, multas, envios_tesoreria, pagos_multa
+--     CHATBOT
+--         chatbot_conversaciones, chatbot_mensajes
 --     INDICES
 -- ============================================================
 
@@ -443,6 +445,40 @@ CREATE TABLE pagos_multa (
     CONSTRAINT fk_pagos_multa_multa FOREIGN KEY (multa_id) REFERENCES multas(id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_pagos_multa_bibliotecario FOREIGN KEY (bibliotecario_id) REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- CHATBOT
+-- Conversaciones con el chatbot y sus mensajes.
+-- ============================================================
+
+-- Conversaciones con el chatbot (usuario NULL si es visitante).
+CREATE TABLE chatbot_conversaciones (
+    id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    usuario_id             INT UNSIGNED,
+    canal                  ENUM('Web','WhatsApp') NOT NULL DEFAULT 'Web',
+    fecha_inicio           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_fin              DATETIME,
+    estado                 ENUM('Abierta','Cerrada') NOT NULL DEFAULT 'Abierta',
+    CONSTRAINT pk_chatbot_conversaciones PRIMARY KEY (id),
+    CONSTRAINT fk_chatbot_conversaciones_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- Mensajes de cada conversacion con lo que pidio el usuario.
+CREATE TABLE chatbot_mensajes (
+    id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    conversacion_id        INT UNSIGNED NOT NULL,
+    emisor                 ENUM('Usuario','Chatbot') NOT NULL,
+    mensaje                TEXT NOT NULL,
+    intencion              VARCHAR(60),
+    libro_id               INT UNSIGNED,
+    fecha_envio            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_chatbot_mensajes PRIMARY KEY (id),
+    CONSTRAINT fk_chatbot_mensajes_conversacion FOREIGN KEY (conversacion_id) REFERENCES chatbot_conversaciones(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_chatbot_mensajes_libro FOREIGN KEY (libro_id) REFERENCES libros(id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 

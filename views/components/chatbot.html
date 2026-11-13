@@ -1,0 +1,60 @@
+{#
+   ============================================================
+   Archivo:      views/components/chatbot.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Chatbot (Componente, HU-02-09): boton flotante y ventana de chat con
+       preguntas sugeridas y preguntas abiertas. syntra.js manda los
+       mensajes a /chatbot/mensajes.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% import "components/ui.html" as ui %}
+<div class="chatbot" data-chatbot
+     data-url-mensajes="{{ url_for('chatbot.listar_mensajes') }}"
+     data-url-nueva="{{ url_for('chatbot.empezar_conversacion') }}">
+    <button type="button" class="chatbot-boton" data-chatbot-abrir aria-expanded="false"
+            aria-controls="chatbot-panel">
+        {{ dibujar_icono("message-circle", 22) }}<span>Pregúntale a Ducky</span>
+    </button>
+
+    <section class="chatbot-panel" id="chatbot-panel" role="dialog" aria-label="Chat con Ducky"
+             hidden>
+        <header class="chatbot-encabezado">
+            {{ ui.dibujar_logo(34) }}
+            <div class="chatbot-titulo">
+                <strong>Ducky</strong>
+                <span data-chatbot-modo>Asistente de la biblioteca</span>
+            </div>
+            {{ ui.dibujar_boton("Nueva conversación", "transparente", "refresh",
+                                solo_icono=True, data_chatbot_nueva="1") }}
+            {{ ui.dibujar_boton("Cerrar chat", "transparente", "x", solo_icono=True,
+                                data_chatbot_cerrar="1") }}
+        </header>
+
+        {# Conversacion: preguntas del usuario y respuestas de Ducky. #}
+        <div class="chatbot-mensajes" data-chatbot-mensajes aria-live="polite"></div>
+
+        {# Preguntas por defecto. #}
+        <div class="chatbot-sugerencias" data-chatbot-sugerencias aria-label="Preguntas sugeridas">
+        </div>
+
+        {# Pregunta abierta. #}
+        <form class="chatbot-formulario" data-chatbot-formulario>
+            <label class="solo-lector" for="chatbot-texto">Escribe tu pregunta</label>
+            <textarea id="chatbot-texto" rows="1" maxlength="{{ cfg.CHATBOT_LONGITUD_MAXIMA }}"
+                      placeholder="Escribe tu pregunta…" data-chatbot-texto></textarea>
+            {{ ui.dibujar_boton("Enviar", "primario", "send", tipo="submit", solo_icono=True) }}
+        </form>
+    </section>
+</div>

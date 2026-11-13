@@ -124,6 +124,25 @@ def listar_pendientes_sin_enviar():
     )
 
 
+def listar_pendientes_de_usuario(usuario_id):
+    """
+    Descripcion:
+        HU-02-09: Lista las multas pendientes del usuario (las consulta el
+        chatbot).
+
+    Parametros:
+        usuario_id (int): id del usuario.
+
+    Salida:
+        list[sqlite3.Row]: multas en el orden en que se generaron.
+    """
+    return consultar(
+        SELECT_MULTA
+        + " WHERE p.usuario_id = ? AND m.estado = ? ORDER BY m.id",
+        (usuario_id, config.ESTADO_MULTA_PENDIENTE),
+    )
+
+
 def sumar_pendientes_de_usuario(usuario_id):
     """
     Descripcion:

@@ -2405,3 +2405,212 @@ tr[data-href] {
         flex: 1;
     }
 }
+
+/* ============================================================
+   CHATBOT (HU-02-09)
+   Boton flotante y ventana de chat con preguntas sugeridas.
+   ============================================================ */
+
+.chatbot {
+    bottom: 20px;
+    position: fixed;
+    right: 20px;
+    z-index: 110;
+}
+
+.chatbot-boton {
+    align-items: center;
+    background: var(--azul-marino-700);
+    border: 0;
+    border-radius: var(--radio-pastilla);
+    box-shadow: var(--sombra-lg);
+    color: var(--blanco);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: var(--texto-sm);
+    font-weight: 600;
+    gap: var(--espacio-2);
+    padding: 12px 18px;
+}
+
+.chatbot-boton:hover {
+    background: var(--azul-marino-600);
+}
+
+.chatbot-boton:focus-visible {
+    box-shadow: var(--anillo-foco);
+    outline: none;
+}
+
+.chatbot.abierto .chatbot-boton {
+    display: none;
+}
+
+.chatbot-panel {
+    animation: aparecer 0.2s ease-out;
+    background: var(--blanco);
+    border: 1px solid var(--gris-200);
+    border-radius: var(--radio-xl);
+    box-shadow: var(--sombra-lg);
+    display: flex;
+    flex-direction: column;
+    height: min(580px, calc(100vh - 40px));
+    overflow: hidden;
+    width: min(390px, calc(100vw - 32px));
+}
+
+.chatbot-panel[hidden] {
+    display: none;
+}
+
+.chatbot-encabezado {
+    align-items: center;
+    background: var(--azul-marino-700);
+    color: var(--blanco);
+    display: flex;
+    gap: var(--espacio-3);
+    padding: 10px 10px 10px 14px;
+}
+
+.chatbot-encabezado .boton {
+    color: var(--blanco);
+}
+
+.chatbot-encabezado .boton:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.chatbot-titulo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.chatbot-titulo span {
+    font-size: var(--texto-xs);
+    opacity: 0.8;
+}
+
+.chatbot-mensajes {
+    background: var(--gris-25);
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--espacio-2);
+    overflow-y: auto;
+    padding: var(--espacio-4);
+}
+
+.chatbot-mensaje {
+    border-radius: var(--radio-lg);
+    font-size: var(--texto-sm);
+    line-height: 1.45;
+    max-width: 85%;
+    overflow-wrap: anywhere;
+    padding: 10px 12px;
+    white-space: pre-line;
+}
+
+.chatbot-mensaje-bot {
+    align-self: flex-start;
+    background: var(--blanco);
+    border: 1px solid var(--gris-200);
+    color: var(--gris-800);
+}
+
+.chatbot-mensaje-usuario {
+    align-self: flex-end;
+    background: var(--azul-marino-700);
+    color: var(--blanco);
+}
+
+.chatbot-pensando {
+    color: var(--gris-500);
+    font-style: italic;
+}
+
+.chatbot-mensaje-error {
+    background: var(--error-50);
+    border-color: var(--error-200);
+    color: var(--error-700);
+}
+
+.chatbot-sugerencias {
+    border-top: 1px solid var(--gris-100);
+    display: flex;
+    gap: var(--espacio-2);
+    overflow-x: auto;
+    padding: 10px var(--espacio-4);
+}
+
+.chatbot-sugerencias:empty {
+    display: none;
+}
+
+.chatbot-sugerencia {
+    background: var(--azul-50);
+    border: 1px solid var(--azul-200);
+    border-radius: var(--radio-pastilla);
+    color: var(--azul-marino-700);
+    cursor: pointer;
+    flex: none;
+    font: inherit;
+    font-size: var(--texto-xs);
+    font-weight: 600;
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+.chatbot-sugerencia:hover {
+    background: var(--azul-100);
+}
+
+.chatbot-formulario {
+    align-items: flex-end;
+    border-top: 1px solid var(--gris-200);
+    display: flex;
+    gap: var(--espacio-2);
+    padding: var(--espacio-3);
+}
+
+.chatbot-formulario textarea {
+    border: 1px solid var(--gris-300);
+    border-radius: var(--radio-md);
+    flex: 1;
+    font: inherit;
+    font-size: var(--texto-sm);
+    max-height: 96px;
+    min-height: 40px;
+    padding: 9px 12px;
+    resize: none;
+}
+
+.chatbot-formulario textarea:focus {
+    border-color: var(--azul-marino-600);
+    box-shadow: var(--anillo-foco);
+    outline: none;
+}
+
+@media (max-width: 640px) {
+    .chatbot {
+        bottom: 12px;
+        right: 12px;
+    }
+
+    .chatbot-boton span {
+        display: none;
+    }
+
+    .chatbot-panel {
+        height: calc(100vh - 24px);
+        width: calc(100vw - 24px);
+    }
+}
+
+@media print {
+    .chatbot {
+        display: none;
+    }
+}

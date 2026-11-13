@@ -3,7 +3,7 @@
 **Sistema Ducky de Gestión Bibliotecaria**, Biblioteca Universidad Ducky
 Equipo Syntra: Melissa Silva Vázquez (624352), Tomás Zapata Pérez (629048), Alejandro Evaristo Cazares Escobedo (626337)
 
-El prototipo cubre el **Sprint 1** (Gestión de usuarios, Gestionar libros y Buscar libros), es decir, las historias **HU-01-01 a HU-01-18** con sus criterios de aceptación, y del **Sprint 2** el préstamo y la devolución de libros: registro, boleta, renovación, lista de espera, devolución y multas con envío a Tesorería (**HU-02-01 a HU-02-08**). Tiene dos caras sobre el mismo Flask y el mismo MVC:
+El prototipo cubre el **Sprint 1** (Gestión de usuarios, Gestionar libros y Buscar libros), es decir, las historias **HU-01-01 a HU-01-18** con sus criterios de aceptación, y del **Sprint 2** el préstamo y la devolución de libros: registro, boleta, renovación, lista de espera, devolución y multas con envío a Tesorería (**HU-02-01 a HU-02-08**), y el chatbot de orientación (**HU-02-09**). Tiene dos caras sobre el mismo Flask y el mismo MVC:
 
 - **App web administrativa** (`/`): todas las historias del sprint.
 - **Portal móvil de autoservicio para alumnos** (`/movil`): inicio de sesión, búsqueda y consulta de libros desde el navegador del celular.
@@ -99,6 +99,7 @@ En el **portal móvil solo entran alumnos**: el acceso se controla con el permis
 | HU-02-06 Registro de lista de espera | Circulación → Lista de espera, o el botón **Lista de espera** en la ficha de un libro sin disponibles (`LIB-011`). Se asigna turno; si el libro tiene ejemplares disponibles se pide prestarlo directo. Cuando se libera un ejemplar, el turno 1 aparece con **Ejemplar disponible** para avisarle por correo o WhatsApp y prestárselo (ver `LIB-003` con Daniela Fuentes); a nadie más se le puede prestar ese ejemplar mientras tanto |
 | HU-02-07 Registro de devolución | Circulación → Devoluciones (o el botón **Registrar devolución** en la boleta). Se captura el código del ejemplar y qué pasó con el libro: lo devuelve bien, dañado o reporta que lo perdió. El préstamo queda Devuelto o Perdido y el ejemplar Disponible, Dañado o Perdido. Si el libro tiene lista de espera se avisa que el ejemplar es para el turno 1 (prueba con `EJ-0021`) |
 | HU-02-08 Generación de multas y envío a Tesorería | Al registrar la devolución se generan las multas: **retraso** (días × multa diaria del perfil; `EJ-0019` llega 3 días tarde = $15.00), **daño** (monto que captura el bibliotecario) y **pérdida** (último precio del libro; `EJ-0002` cobra $429.00 y `EJ-0019` está en dólares: $95.00 × tipo de cambio; `EJ-0027` no tiene precio y pide capturar el costo). Las multas se mandan a Tesorería por correo con el aviso en PDF. En Circulación → **Multas** se ven las pendientes, se reenvían a Tesorería y se registra el pago cuando Tesorería confirma el cobro; con eso el usuario puede volver a pedir libros y renovar |
+| HU-02-09 Chatbot de orientación | Botón **Pregúntale a Ducky** abajo a la derecha en todas las pantallas. Tiene **preguntas por defecto** (botones) y **preguntas abiertas**. Explica el objetivo, el alcance y la plataforma del sistema y las políticas de la biblioteca, y consulta el catálogo (disponibilidad y ubicación) y los préstamos y multas **del usuario en sesión** (prueba con `pmartinez`: tiene una multa). Cada conversación se guarda en `chatbot_conversaciones` y `chatbot_mensajes` con su intención |
 
 Reglas de préstamo por perfil (tabla `perfiles`): Alumno 3 libros por 7 días, Profesor, Bibliotecario y Administrador 5 libros por 14 días, Colaborador 2 por 7 días, y Visitante sin préstamos. Todos con 2 renovaciones (1 el Colaborador) y $5.00 de multa por día de retraso. Cada renovación suma los días de préstamo del perfil a la fecha de devolución.
 
@@ -130,6 +131,27 @@ Para que **WhatsApp se envíe solo, sin abrir el chat** (opcional), se usa el *s
 Los datos de prueba no tienen teléfono y sus correos son ficticios: para la demo escribe tu propio correo o celular en la boleta (los campos se pueden editar).
 
 Datos de prueba útiles: `LIB-001` tiene ejemplares en dos salas; `LIB-002` (*Pedro Páramo*) tiene un ejemplar con **ubicación no registrada**; `LIB-008` (*El principito*) **no tiene ejemplares**; `LIB-006` tiene ejemplares perdido y fuera de servicio; `LIB-010`, `LIB-015` y `LIB-016` tienen **varios autores**; `LIB-014` está dado de baja.
+
+### Chatbot con IA (API de Claude)
+
+El chatbot usa el modelo **Claude Haiku 5.5** con nivel de esfuerzo `xhigh` (uno antes del máximo; se cambia en `config.py`). **Sin llave funciona igual en modo básico**: reconoce la pregunta por palabras clave y contesta con respuestas fijas y las consultas del sistema, y la ventana dice "Respuestas básicas (sin IA)".
+
+Para activar la IA:
+
+1. Crea una cuenta en <https://platform.claude.com> (la consola de Anthropic).
+2. En *Billing* carga crédito (con unos cuantos dólares alcanza para miles de preguntas con Haiku).
+3. En *API Keys* crea una llave (por ejemplo "Syntra") y cópiala; empieza con `sk-ant-` y solo se muestra una vez.
+4. Pégala en `.env`:
+
+   ```
+   ANTHROPIC_API_KEY=sk-ant-...
+   ```
+
+5. Reinicia la app. La ventana del chat dice "Asistente con IA".
+
+La llave **nunca** va en el código ni en GitHub (`.env` ya está en `.gitignore`): quien la tenga puede gastar tu crédito. Si la API falla o se acaba el crédito, el chat contesta en modo básico y avisa el motivo.
+
+Para mejorar ("entrenar") las respuestas se edita `CONOCIMIENTO` en `services/chatbot_servicio.py`: es lo que el chatbot sabe del sistema. Las preguntas por defecto están en `PREGUNTAS_SUGERIDAS` del mismo archivo.
 
 ## Estructura (MVC con Flask)
 

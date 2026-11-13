@@ -62,7 +62,8 @@ def app(bd_plantilla, tmp_path):
     """
     ruta = tmp_path / "prueba.db"
     shutil.copy(bd_plantilla, ruta)
-    # Sin cuenta de correo ni Twilio: las pruebas nunca envian nada real.
+    # Sin cuenta de correo, Twilio ni llave de Claude: las pruebas nunca
+    # envian nada real ni usan la API.
     return crear_aplicacion(
         {
             "RUTA_BASE_DATOS": str(ruta),
@@ -71,6 +72,7 @@ def app(bd_plantilla, tmp_path):
             "CORREO_CONTRASENA": "",
             "TWILIO_SID": "",
             "TWILIO_TOKEN": "",
+            "ANTHROPIC_API_KEY": "",
             "CARPETA_BOLETAS": str(tmp_path / "boletas"),
         }
     )

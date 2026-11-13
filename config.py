@@ -77,6 +77,34 @@ CARPETA_BOLETAS = os.path.join(DIRECTORIO_BASE, "boletas_enviadas")
 TESORERIA_CORREO = os.environ.get("TESORERIA_CORREO", "tesoreria@ducky.edu.mx")
 
 # ============================================================
+# CHATBOT (HU-02-09)
+# Usa la API de Claude (Anthropic) con la llave de .env. Sin llave, o si la
+# API no responde, contesta en modo de respaldo con respuestas fijas.
+# ============================================================
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+CHATBOT_MODELO = "claude-haiku-5-5"
+# Niveles: low, medium, high, xhigh, max. Se usa uno antes del maximo.
+CHATBOT_ESFUERZO = "xhigh"
+CHATBOT_MAX_TOKENS = 16000
+# Cuantas veces seguidas puede consultar el sistema en una sola respuesta.
+CHATBOT_MAX_CONSULTAS = 5
+# Mensajes anteriores que se le mandan para que recuerde la conversacion.
+CHATBOT_MENSAJES_HISTORIAL = 20
+CHATBOT_LONGITUD_MAXIMA = 500
+CHATBOT_TIEMPO_ESPERA = 60
+CANAL_WEB = "Web"
+CANALES_CHATBOT = [CANAL_WEB, "WhatsApp"]
+ESTADO_CONVERSACION_ABIERTA = "Abierta"
+ESTADO_CONVERSACION_CERRADA = "Cerrada"
+ESTADOS_CONVERSACION = [
+    ESTADO_CONVERSACION_ABIERTA,
+    ESTADO_CONVERSACION_CERRADA,
+]
+EMISOR_USUARIO = "Usuario"
+EMISOR_CHATBOT = "Chatbot"
+EMISORES_CHATBOT = [EMISOR_USUARIO, EMISOR_CHATBOT]
+
+# ============================================================
 # PERMISOS
 # Catalogo de permisos; el acceso siempre se revisa por permiso.
 # ============================================================

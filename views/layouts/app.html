@@ -48,4 +48,9 @@
         </main>
     </div>
 </div>
+
+{# HU-02-09: chatbot para todos los perfiles con acceso al sistema. #}
+{% if verificar_permiso(cfg.PERMISO_SISTEMA) %}
+    {% include "components/chatbot.html" %}
+{% endif %}
 {% endblock %}

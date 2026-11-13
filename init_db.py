@@ -448,6 +448,39 @@ CREATE TABLE pagos_multa (
     fecha_pago       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Conversaciones con el chatbot (HU-02-09); usuario_id es NULL si es un
+-- visitante.
+CREATE TABLE chatbot_conversaciones (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id      INTEGER
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    canal           VARCHAR(10) NOT NULL DEFAULT '{config.CANAL_WEB}'
+        CHECK (canal IN ({_formatear_lista_sql(config.CANALES_CHATBOT)})),
+    fecha_inicio    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_fin       DATETIME,
+    estado          VARCHAR(10) NOT NULL
+        DEFAULT '{config.ESTADO_CONVERSACION_ABIERTA}'
+        CHECK (estado IN ({_formatear_lista_sql(config.ESTADOS_CONVERSACION)}))
+);
+
+-- Mensajes de cada conversacion con lo que pidio el usuario (intencion) y,
+-- si aplica, el libro consultado.
+CREATE TABLE chatbot_mensajes (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversacion_id INTEGER     NOT NULL
+        REFERENCES chatbot_conversaciones(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    emisor          VARCHAR(10) NOT NULL
+        CHECK (emisor IN ({_formatear_lista_sql(config.EMISORES_CHATBOT)})),
+    mensaje         TEXT        NOT NULL,
+    intencion       VARCHAR(60),
+    libro_id        INTEGER
+        REFERENCES libros(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    fecha_envio     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indices para las busquedas del catalogo y los prestamos.
 CREATE INDEX idx_libros_titulo ON libros (titulo);
 CREATE INDEX idx_autores_nombre ON autores (apellidos, nombre);
@@ -460,6 +493,7 @@ CREATE INDEX idx_lista_espera_libro ON lista_espera (libro_id, estado);
 CREATE INDEX idx_precios_libro ON precios_libro (libro_id, fecha_registro);
 CREATE INDEX idx_multas_estado ON multas (estado);
 CREATE INDEX idx_multas_prestamo ON multas (prestamo_id);
+CREATE INDEX idx_chatbot_mensajes ON chatbot_mensajes (conversacion_id, id);
 """
 
 # Tablas que deben existir; sirve para detectar una syntra.db del esquema
@@ -491,6 +525,8 @@ TABLAS = (
     "multas",
     "envios_tesoreria",
     "pagos_multa",
+    "chatbot_conversaciones",
+    "chatbot_mensajes",
 )
 
 # ============================================================
