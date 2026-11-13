@@ -495,6 +495,19 @@
     });
 
     // ============================================================
+    // BOLETA POR WHATSAPP (HU-02-04)
+    // El formulario abre WhatsApp en otra pestana; esta pagina se recarga
+    // para mostrar la boleta en el historial.
+    // ============================================================
+    document.addEventListener("submit", function (evento) {
+        if (evento.target.matches("[data-recargar-al-enviar]")) {
+            setTimeout(function () {
+                window.location.reload();
+            }, 1500);
+        }
+    });
+
+    // ============================================================
     // ACTUALIZAR EJEMPLAR (HU-01-15 · DISPONIBILIDAD ACTUALIZADA)
     // Llena el modal con los datos del ejemplar elegido.
     // ============================================================

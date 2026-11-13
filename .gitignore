@@ -23,3 +23,6 @@ syntra.db
 # Cachés de pruebas y lint
 .pytest_cache/
 .ruff_cache/
+
+# Boletas de prestamo guardadas en modo demostracion
+boletas_enviadas/

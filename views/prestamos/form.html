@@ -1,0 +1,108 @@
+{#
+   ============================================================
+   Archivo:      views/prestamos/form.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Captura del prestamo (Vista, HU-02-01 a HU-02-03): usuario y
+       ejemplar. prestamo_servicio valida las condiciones y regresa los
+       errores por campo.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Registrar préstamo{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('prestamos.listar') }}">Préstamos</a>
+{%- endblock %}
+
+{% block contenido %}
+{{ ui.dibujar_encabezado_pagina("Registrar préstamo",
+                                "Captura la matrícula o cuenta del usuario y el código del "
+                                "ejemplar. Antes de registrarlo se revisa que el usuario y el "
+                                "libro cumplan las condiciones del préstamo.",
+                                hus=["HU-02-01 Validación del solicitante",
+                                     "HU-02-02 Validación del libro",
+                                     "HU-02-03 Registro del préstamo"],
+                                regresar=url_for("prestamos.listar"),
+                                texto_regresar="Préstamos") }}
+
+<form method="post" novalidate>
+    <div class="diseno-lateral">
+        <div class="pila-amplia">
+            {# HU-02-01 y HU-02-02: motivo por el que no se puede prestar. #}
+            {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
+
+            <section class="tarjeta">
+                <div class="tarjeta-encabezado">
+                    <h2 class="tarjeta-titulo">{{ dibujar_icono("user", 18) }}Solicitante y
+                        ejemplar</h2>
+                </div>
+                <div class="tarjeta-cuerpo rejilla-formulario">
+                    {{ ui.dibujar_campo("usuario", "Usuario", valores.get("usuario"),
+                                        errores.get("usuario"), obligatorio=True, icono="user",
+                                        sugerencia="Matrícula o cuenta, ej. 600101",
+                                        list="usuarios-prestamo",
+                                        ayuda="Escribe la matrícula o elige de la lista.") }}
+                    <datalist id="usuarios-prestamo">
+                        {% for usuario in solicitantes %}<option value="{{ usuario.identificador }}"
+                            label="{{ usuario.nombre_completo }} · {{ usuario.perfil }}">{{
+                                usuario.nombre_completo }} · {{ usuario.perfil }}</option>
+                        {% endfor %}
+                    </datalist>
+
+                    {{ ui.dibujar_campo("ejemplar", "Ejemplar", valores.get("ejemplar"),
+                                        errores.get("ejemplar"), obligatorio=True,
+                                        icono="book", sugerencia="Código, ej. EJ-0001",
+                                        list="ejemplares-prestamo",
+                                        ayuda="El código viene en la etiqueta del libro.") }}
+                    <datalist id="ejemplares-prestamo">
+                        {% for ejemplar in ejemplares %}<option value="{{ ejemplar.codigo }}"
+                            label="{{ ejemplar.titulo }}">{{ ejemplar.titulo }}</option>
+                        {% endfor %}
+                    </datalist>
+                </div>
+            </section>
+        </div>
+
+        {# Reglas que se revisan antes de prestar. #}
+        <aside class="tarjeta" style="position: sticky; top: 88px">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("shield", 18) }}Se revisa que…</h2>
+            </div>
+            <div class="tarjeta-cuerpo pila texto-chico" style="gap: 8px">
+                <span>{{ dibujar_icono("check", 15) }} La cuenta esté habilitada y su perfil
+                    tenga préstamos.</span>
+                <span>{{ dibujar_icono("check", 15) }} No tenga préstamos vencidos ni haya
+                    llegado a su máximo.</span>
+                <span>{{ dibujar_icono("check", 15) }} El ejemplar esté disponible y su libro
+                    no sea de acceso reservado.</span>
+                <span>{{ dibujar_icono("check", 15) }} No tenga ya otro ejemplar del mismo
+                    libro.</span>
+                <span>{{ dibujar_icono("check", 15) }} Se respete el turno de la lista de
+                    espera del libro.</span>
+                <p class="texto-muy-chico atenuado">La fecha de devolución se calcula con los
+                    días de préstamo del perfil del usuario.</p>
+            </div>
+            <div class="tarjeta-pie pila" style="gap: 8px">
+                {{ ui.dibujar_boton("Revisar préstamo", "primario", "check", tipo="submit",
+                                    completo=True) }}
+                {{ ui.dibujar_boton("Cancelar", "secundario",
+                                    enlace=url_for("prestamos.listar"), completo=True) }}
+            </div>
+        </aside>
+    </div>
+</form>
+{% endblock %}

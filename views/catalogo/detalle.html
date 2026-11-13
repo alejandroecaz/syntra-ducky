@@ -114,10 +114,19 @@
 <section class="tarjeta margen-arriba-6">
     <div class="tarjeta-encabezado">
         <h2 class="tarjeta-titulo">{{ dibujar_icono("layers", 18) }}Ejemplares y ubicación</h2>
-        {% if verificar_permiso("libros.editar") and libro.activo %}
-            {{ ui.dibujar_boton("Agregar ejemplar", "secundario", "plus", tamano="chico",
-                                data_abrir_modal="modal-agregar") }}
-        {% endif %}
+        <div class="fila">
+            {# HU-02-06: sin ejemplares disponibles se aparta turno en la lista de espera. #}
+            {% if verificar_permiso("espera.gestionar") and libro.activo
+                  and not libro.disponibles
+                  and libro.tipo_acceso not in cfg.TIPOS_ACCESO_SIN_PRESTAMO %}
+                {{ ui.dibujar_boton("Lista de espera", "secundario", "users", tamano="chico",
+                                    enlace=url_for("espera.listar", libro=libro.clave)) }}
+            {% endif %}
+            {% if verificar_permiso("libros.editar") and libro.activo %}
+                {{ ui.dibujar_boton("Agregar ejemplar", "secundario", "plus", tamano="chico",
+                                    data_abrir_modal="modal-agregar") }}
+            {% endif %}
+        </div>
     </div>
 
     {% if ejemplares %}
@@ -146,6 +155,15 @@
                             {{ ui.dibujar_boton(
                                 "Ver ubicación", "transparente", "map-pin", tamano="chico",
                                 data_abrir_modal="modal-ubicacion-" ~ ejemplar.id) }}
+                            {# HU-02-03: prestar un ejemplar disponible. #}
+                            {% if verificar_permiso("prestamos.registrar") and libro.activo
+                                  and ejemplar.estado == "Disponible"
+                                  and libro.tipo_acceso not in cfg.TIPOS_ACCESO_SIN_PRESTAMO %}
+                                {{ ui.dibujar_boton(
+                                    "Prestar", "secundario", "book", tamano="chico",
+                                    enlace=url_for("prestamos.registrar",
+                                                   ejemplar=ejemplar.codigo)) }}
+                            {% endif %}
                             {% if verificar_permiso("libros.editar") %}
                                 {% set datos_ejemplar = {
                                     "accion": url_for("catalogo.actualizar_ejemplar",

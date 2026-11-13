@@ -41,6 +41,12 @@ PANTALLAS_ADMIN = [
     "/reportes/libros/imprimir",
     "/compras",
     "/compras/nueva",
+    "/prestamos",
+    "/prestamos?ver=vencidos",
+    "/prestamos/nuevo",
+    "/prestamos/1",
+    "/espera",
+    "/espera?ver=todas",
     "/cuenta/contrasena",
 ]
 

@@ -37,9 +37,11 @@ from controllers.auth_controller import auth_bp
 from controllers.catalogo_controller import catalogo_bp
 from controllers.compra_controller import compra_bp
 from controllers.cuenta_controller import cuenta_bp
+from controllers.espera_controller import espera_bp
 from controllers.inicio_controller import inicio_bp
 from controllers.movil_controller import movil_bp
 from controllers.perfil_controller import perfil_bp
+from controllers.prestamo_controller import prestamo_bp
 from controllers.reporte_controller import reporte_bp
 from controllers.usuario_controller import usuario_bp
 from models.db import cerrar_conexion
@@ -56,8 +58,23 @@ BLUEPRINTS = (
     catalogo_bp,
     reporte_bp,
     compra_bp,
+    prestamo_bp,
+    espera_bp,
     cuenta_bp,
     movil_bp,
+)
+
+# Datos para enviar boletas; las pruebas los reemplazan para no enviar nada.
+CLAVES_ENVIO = (
+    "CORREO_SERVIDOR",
+    "CORREO_PUERTO",
+    "CORREO_USUARIO",
+    "CORREO_CONTRASENA",
+    "CORREO_REMITENTE",
+    "TWILIO_SID",
+    "TWILIO_TOKEN",
+    "TWILIO_WHATSAPP_ORIGEN",
+    "CARPETA_BOLETAS",
 )
 
 
@@ -138,6 +155,8 @@ def crear_aplicacion(configuracion=None):
     app = Flask(__name__, template_folder="views", static_folder="static")
     app.secret_key = config.CLAVE_SECRETA
     app.config["RUTA_BASE_DATOS"] = config.RUTA_BASE_DATOS
+    for clave in CLAVES_ENVIO:
+        app.config[clave] = getattr(config, clave)
     app.config.update(configuracion or {})
 
     # Revisamos que la base de datos exista y tenga el esquema vigente.

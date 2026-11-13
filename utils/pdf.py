@@ -6,7 +6,8 @@ Empresa desarrolladora: Syntra Technologies
 Cliente:      Universidad Ducky
 
 Descripcion:
-    Generacion del listado de libros en PDF con fpdf2 (HU-01-16).
+    Generacion de PDF con fpdf2: listado de libros (HU-01-16) y boleta de
+    prestamo (HU-02-04).
 
 Autores:
     Melissa Silva Vazquez (624352)
@@ -211,4 +212,67 @@ def generar_listado(libros, filtros_texto, generado_por):
             fila.cell(_convertir_texto(libro["editorial"]))
             fila.cell(_convertir_texto(obtener_estado_libro(libro)))
 
+    return bytes(pdf.output())
+
+
+def generar_boleta(folio, renglones, nota):
+    """
+    Descripcion:
+        HU-02-04: Genera la boleta de prestamo en media carta (A5) con el
+        folio, los datos del prestamo y la nota para el usuario.
+
+    Parametros:
+        folio (str): folio del prestamo.
+        renglones (list[tuple[str, str]]): (etiqueta, valor) de cada dato.
+        nota (str): texto al pie de la boleta.
+
+    Salida:
+        bytes: contenido del archivo PDF.
+
+    Excepciones:
+        fpdf.errors.FPDFException si falla la generacion del documento.
+    """
+    # Hoja A5 vertical con el encabezado y pie del sistema.
+    pdf = ListadoPDF(orientation="P", unit="mm", format="A5")
+    pdf.set_title(f"Boleta de préstamo {folio}")
+    pdf.alias_nb_pages()
+    pdf.set_auto_page_break(auto=True, margin=16)
+    pdf.add_page()
+
+    # Titulo y folio.
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_text_color(*TINTA)
+    pdf.cell(0, 7, "Boleta de préstamo", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(*AZUL)
+    pdf.cell(
+        0,
+        6,
+        _convertir_texto(f"Folio {folio}"),
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.ln(3)
+
+    # Datos del prestamo en dos columnas: etiqueta en gris y valor en negritas.
+    pdf.set_font("Helvetica", "", 9)
+    pdf.set_draw_color(226, 232, 240)
+    estilo_etiqueta = FontFace(color=GRIS)
+    estilo_valor = FontFace(emphasis="BOLD", color=TINTA)
+    with pdf.table(
+        col_widths=(42, 86),
+        line_height=6.5,
+        first_row_as_headings=False,
+        borders_layout="HORIZONTAL_LINES",
+    ) as tabla:
+        for etiqueta, valor in renglones:
+            fila = tabla.row()
+            fila.cell(_convertir_texto(etiqueta), style=estilo_etiqueta)
+            fila.cell(_convertir_texto(valor), style=estilo_valor)
+
+    # Nota para el usuario.
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "", 8.5)
+    pdf.set_text_color(*GRIS)
+    pdf.multi_cell(0, 4.5, _convertir_texto(nota))
     return bytes(pdf.output())

@@ -1,0 +1,179 @@
+{#
+   ============================================================
+   Archivo:      views/espera/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Lista de espera (Vista, HU-02-06): formulario para agregar a un
+       usuario y solicitudes por libro con su turno. Cuando ya hay un
+       ejemplar para el turno se puede avisar al usuario o prestarle el
+       libro.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Lista de espera{% endblock %}
+
+{% block contenido %}
+{{ ui.dibujar_encabezado_pagina("Lista de espera",
+                                "Registra a los usuarios que esperan un libro sin ejemplares "
+                                "disponibles. Cuando se libera un ejemplar es para el primer "
+                                "turno: avísale y préstaselo.",
+                                hus=["HU-02-06 Registro de lista de espera"]) }}
+
+{# HU-02-06: agregar a un usuario a la lista de un libro. #}
+<section class="tarjeta margen-abajo-4" style="margin-bottom: 20px">
+    <div class="tarjeta-encabezado">
+        <h2 class="tarjeta-titulo">{{ dibujar_icono("user-plus", 18) }}Agregar a la lista de
+            espera</h2>
+    </div>
+    <form class="tarjeta-cuerpo pila" method="post" novalidate>
+        {% if resultado %}{{ ui.dibujar_alerta(resultado[0], texto=resultado[1]) }}{% endif %}
+        <div class="rejilla-formulario">
+            {{ ui.dibujar_campo("usuario", "Usuario", valores.get("usuario"),
+                                errores.get("usuario"), obligatorio=True, icono="user",
+                                sugerencia="Matrícula o cuenta, ej. 600102",
+                                list="usuarios-espera") }}
+            <datalist id="usuarios-espera">
+                {% for usuario in solicitantes %}<option value="{{ usuario.identificador }}"
+                    label="{{ usuario.nombre_completo }} · {{ usuario.perfil }}">{{
+                        usuario.nombre_completo }} · {{ usuario.perfil }}</option>
+                {% endfor %}
+            </datalist>
+            {{ ui.dibujar_campo("libro", "Libro", valores.get("libro"), errores.get("libro"),
+                                obligatorio=True, icono="book", sugerencia="Clave, ej. LIB-011",
+                                list="libros-espera",
+                                ayuda="Solo libros sin ejemplares disponibles.") }}
+            <datalist id="libros-espera">
+                {% for libro in libros %}<option value="{{ libro.clave }}"
+                    label="{{ libro.titulo }}">{{ libro.titulo }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+        <div>
+            {{ ui.dibujar_boton("Agregar a la lista", "primario", "plus", tipo="submit") }}
+        </div>
+    </form>
+</section>
+
+<div class="tarjeta">
+    {# Vigentes (en espera o notificadas) o todas. #}
+    <div class="resumen-tabla">
+        <span>{{ solicitudes | length }} solicitud{{ 'es' if solicitudes | length != 1 }} {{
+            "esperando turno" if ver == "vigentes" else "registradas" }}</span>
+        <div class="segmentado" role="group" aria-label="Solicitudes a mostrar">
+            {% for valor, etiqueta in [("vigentes", "Vigentes"), ("todas", "Todas")] %}
+                <a href="{{ url_for('espera.listar', ver=valor) }}"
+                   class="boton boton-chico {{ 'boton-primario' if ver == valor
+                                               else 'boton-transparente' }}"
+                   style="border-radius:0"
+                   aria-current="{{ 'true' if ver == valor else 'false' }}">{{ etiqueta }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if solicitudes %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Libro</th><th scope="col" class="alinear-centro">Turno</th>
+                    <th scope="col">Usuario</th><th scope="col">Solicitado</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="alinear-derecha"><span
+                        class="solo-lector">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for solicitud in solicitudes %}
+                {% set le_toca = verificar_turno(solicitud) %}
+                <tr>
+                    <td class="resaltado">{{ solicitud.titulo }}<br><span
+                        class="celda-subtitulo">{{ solicitud.libro_clave }} · {{
+                            solicitud.disponibles }} disponible{{
+                                's' if solicitud.disponibles != 1 }}</span></td>
+                    <td class="alinear-centro resaltado">{{ solicitud.turno or "—" }}</td>
+                    <td>{{ solicitud.usuario_nombre }}<br><span class="celda-subtitulo">{{
+                        solicitud.usuario_identificador }}</span></td>
+                    <td class="sin-salto">{{ solicitud.fecha_solicitud |formatear_fecha }}</td>
+                    <td>
+                        {% if le_toca %}
+                            {{ ui.dibujar_etiqueta("Ejemplar disponible", "exito", punto=True) }}
+                            {% if solicitud.estado == "Notificado" %}<br><span
+                                class="celda-subtitulo">Ya se le avisó</span>{% endif %}
+                        {% else %}
+                            {% set tonos = {"En espera": "advertencia",
+                                            "Notificado": "informacion",
+                                            "Atendido": "exito", "Cancelado": "neutro"} %}
+                            {{ ui.dibujar_etiqueta(solicitud.estado,
+                                                   tonos.get(solicitud.estado, "neutro"),
+                                                   punto=True) }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="acciones-tabla">
+                            {% if le_toca %}
+                                {# HU-02-06: avisar al usuario y prestarle el libro. #}
+                                <form method="post" style="display:inline"
+                                      action="{{ url_for('espera.avisar',
+                                                         solicitud_id=solicitud.id) }}">
+                                    <input type="hidden" name="medio" value="correo">
+                                    {{ ui.dibujar_boton("Avisar por correo", "transparente",
+                                                        "mail", tipo="submit", tamano="chico",
+                                                        solo_icono=True) }}
+                                </form>
+                                <form method="post" style="display:inline"
+                                      action="{{ url_for('espera.avisar',
+                                                         solicitud_id=solicitud.id) }}"
+                                      {% if not whatsapp_api and solicitud.usuario_telefono %}
+                                          target="_blank" data-recargar-al-enviar{% endif %}>
+                                    <input type="hidden" name="medio" value="whatsapp">
+                                    {{ ui.dibujar_boton("Avisar por WhatsApp", "transparente",
+                                                        "message-circle", tipo="submit",
+                                                        tamano="chico", solo_icono=True) }}
+                                </form>
+                                {% if verificar_permiso("prestamos.registrar") %}
+                                    {{ ui.dibujar_boton(
+                                        "Prestar", "secundario", "book", tamano="chico",
+                                        enlace=url_for("prestamos.registrar",
+                                                       usuario=solicitud.usuario_identificador,
+                                                       ejemplar=solicitud.ejemplar_disponible)) }}
+                                {% endif %}
+                            {% endif %}
+                            {% if solicitud.estado in cfg.ESTADOS_ESPERA_VIGENTE %}
+                                {{ ui.dibujar_boton(
+                                    "Cancelar solicitud", "transparente", "x", tamano="chico",
+                                    solo_icono=True, data_confirmar="1",
+                                    data_confirmar_titulo="¿Cancelar la solicitud?",
+                                    data_confirmar_texto=solicitud.usuario_nombre
+                                        ~ " saldrá de la lista de espera de «"
+                                        ~ solicitud.titulo ~ "».",
+                                    data_confirmar_etiqueta="Cancelar solicitud",
+                                    data_confirmar_accion=url_for("espera.cancelar",
+                                                                  solicitud_id=solicitud.id)) }}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ ui.dibujar_estado_vacio("inbox", "Nadie está esperando un libro",
+                                   "Cuando un libro no tenga ejemplares disponibles, agrega aquí "
+                                   "a quien lo pida para respetar su turno.") }}
+    {% endif %}
+</div>
+{% endblock %}

@@ -3,14 +3,14 @@
 **Sistema Ducky de Gestión Bibliotecaria**, Biblioteca Universidad Ducky
 Equipo Syntra: Melissa Silva Vázquez (624352), Tomás Zapata Pérez (629048), Alejandro Evaristo Cazares Escobedo (626337)
 
-El prototipo cubre el **Sprint 1** (Gestión de usuarios, Gestionar libros y Buscar libros), es decir, las historias **HU-01-01 a HU-01-18** con sus criterios de aceptación. Tiene dos caras sobre el mismo Flask y el mismo MVC:
+El prototipo cubre el **Sprint 1** (Gestión de usuarios, Gestionar libros y Buscar libros), es decir, las historias **HU-01-01 a HU-01-18** con sus criterios de aceptación, y del **Sprint 2** el préstamo de libros: registro, boleta, renovación y lista de espera (**HU-02-01 a HU-02-06**). Tiene dos caras sobre el mismo Flask y el mismo MVC:
 
 - **App web administrativa** (`/`): todas las historias del sprint.
 - **Portal móvil de autoservicio para alumnos** (`/movil`): inicio de sesión, búsqueda y consulta de libros desde el navegador del celular.
 
 ## Cómo ejecutarlo
 
-> **Después de cada `git pull` corre `venv/bin/python init_db.py`.** El esquema de la base de datos cambió en el Sprint 1 (tablas de autores, temas, editoriales, estantes, permisos…). Si `syntra.db` es de la versión anterior, la app no arranca y te recuerda este paso.
+> **Después de cada `git pull` corre `venv/bin/python init_db.py`.** El esquema de la base de datos cambió en el Sprint 2 (tablas `prestamos` y `comprobantes_prestamo`, y reglas de préstamo en `perfiles`). Si `syntra.db` es de la versión anterior, la app no arranca y te recuerda este paso.
 
 **Opción rápida (macOS):** doble clic en `iniciar.command`. Instala dependencias si hace falta, vuelve a crear `syntra.db` con los datos de prueba si es de la versión anterior y abre http://127.0.0.1:5050
 
@@ -38,7 +38,7 @@ Al arrancar, la terminal muestra las dos direcciones:
 | Cuenta | Contraseña | Perfil | Web | Portal móvil |
 |---|---|---|---|---|
 | `admin` | `Admin123` | Administrador | Usuarios, perfiles y todo el catálogo | No (solo alumnos) |
-| `biblio` | `Biblio123` | Bibliotecario | Alta, edición y baja de libros, reportes, órdenes de compra | No (solo alumnos) |
+| `biblio` | `Biblio123` | Bibliotecario | Alta, edición y baja de libros, reportes, órdenes de compra, préstamos, renovaciones y lista de espera | No (solo alumnos) |
 | `profesor` | `Profe123` | Profesor | Consulta del catálogo, PDF e impresión | **Rechazado**: "Acceso no autorizado: el portal móvil es solo para alumnos" |
 | `alumno` | `Alumno123` | Alumno | Solo consulta | **Sí** |
 | `deshabilitado` | `Demo123` | Alumno | Criterio "Cuenta deshabilitada" | Mismo mensaje que la web |
@@ -86,6 +86,45 @@ En el **portal móvil solo entran alumnos**: el acceso se controla con el permis
 | HU-01-16 Listado en PDF | Listado de libros → marca los libros → Generar PDF | — |
 | HU-01-17 Impresión del listado | Listado de libros → marca los libros → Imprimir | — |
 | HU-01-18 Orden de compra | Órdenes de compra → Nueva | — |
+
+### Sprint 2: préstamos
+
+| HU | Dónde se demuestra |
+|---|---|
+| HU-02-01 Validación del solicitante | Préstamos → Registrar préstamo. `jlopez` tiene un préstamo **vencido**, `deshabilitado` tiene la cuenta deshabilitada, `visitante` no tiene préstamos en su perfil y un alumno no puede pasar de 3 préstamos |
+| HU-02-02 Validación del libro | Mismo formulario. `EJ-0006` ya está prestado, `EJ-0013` está perdido, `EJ-0022` es de acceso reservado, `EJ-0025` es de un libro dado de baja, `600101` ya tiene un ejemplar de `LIB-001` y `EJ-0008` está apartado para el turno 1 de la lista de espera |
+| HU-02-03 Registro del préstamo | Captura → confirmación → se asigna folio `PR-2026-0006`. También desde la ficha del libro con el botón **Prestar** de cada ejemplar disponible |
+| HU-02-04 Boleta de préstamo | Al registrar se abre la boleta: **correo** (con PDF adjunto), **WhatsApp**, **impresión** (la impresora de Sala de lectura está fuera de línea a propósito) y **Descargar PDF**. Abajo queda el historial de boletas emitidas |
+| HU-02-05 Renovación de préstamo | En la boleta, tarjeta **Renovar préstamo**: muestra la nueva fecha antes de renovar. `PR-2026-0001` se puede renovar; `PR-2026-0002` no (su libro tiene lista de espera), `PR-2026-0003` no (vencido) y `PR-2026-0004` no (ya usó 2 de 2 renovaciones). Después de renovar se reenvía la boleta con la fecha nueva |
+| HU-02-06 Registro de lista de espera | Circulación → Lista de espera, o el botón **Lista de espera** en la ficha de un libro sin disponibles (`LIB-011`). Se asigna turno; si el libro tiene ejemplares disponibles se pide prestarlo directo. Cuando se libera un ejemplar, el turno 1 aparece con **Ejemplar disponible** para avisarle por correo o WhatsApp y prestárselo (ver `LIB-003` con Daniela Fuentes); a nadie más se le puede prestar ese ejemplar mientras tanto |
+
+Reglas de préstamo por perfil (tabla `perfiles`): Alumno 3 libros por 7 días, Profesor, Bibliotecario y Administrador 5 libros por 14 días, Colaborador 2 por 7 días, y Visitante sin préstamos. Todos con 2 renovaciones (1 el Colaborador) y $5.00 de multa por día de retraso. Cada renovación suma los días de préstamo del perfil a la fecha de devolución.
+
+Permisos nuevos (se ven en *Perfiles y permisos*): `prestamos.registrar`, `prestamos.renovar` y `espera.gestionar`, que tienen el Bibliotecario y el Administrador.
+
+### Envío de boletas por correo y WhatsApp
+
+Se configura en el archivo `.env` (cópialo de `.env.example`). **Si no se configura nada, todo sigue funcionando**:
+
+- **Correo sin configurar (modo demostración):** la boleta no sale a internet, se guarda como archivo `.eml` en la carpeta `boletas_enviadas/` (se abre con doble clic en Mail u Outlook y trae el PDF adjunto).
+- **WhatsApp sin configurar:** el botón abre WhatsApp Web (o la app en el celular) con el chat del número capturado y la boleta ya escrita; solo hay que presionar enviar.
+
+Para que el **correo se envíe de verdad** con una cuenta de Gmail:
+
+1. En la cuenta de Google activa la **verificación en dos pasos**.
+2. Entra a <https://myaccount.google.com/apppasswords>, crea una contraseña de aplicación (por ejemplo "Syntra") y copia las 16 letras.
+3. En `.env` pon:
+
+   ```
+   CORREO_USUARIO=tu_cuenta@gmail.com
+   CORREO_CONTRASENA=las16letrasdelacontrasena
+   ```
+
+4. Reinicia la app. En la boleta ya no aparece "Modo demostración" y el correo llega con el PDF adjunto.
+
+Para que **WhatsApp se envíe solo, sin abrir el chat** (opcional), se usa el *sandbox* gratuito de Twilio: crea una cuenta en twilio.com, entra a *Messaging → Try it out → Send a WhatsApp message*, manda desde tu celular el código `join ...` al número del sandbox y pon en `.env` el `TWILIO_SID` y `TWILIO_TOKEN` de tu consola. En el sandbox solo reciben mensajes los celulares que mandaron el código `join`.
+
+Los datos de prueba no tienen teléfono y sus correos son ficticios: para la demo escribe tu propio correo o celular en la boleta (los campos se pueden editar).
 
 Datos de prueba útiles: `LIB-001` tiene ejemplares en dos salas; `LIB-002` (*Pedro Páramo*) tiene un ejemplar con **ubicación no registrada**; `LIB-008` (*El principito*) **no tiene ejemplares**; `LIB-006` tiene ejemplares perdido y fuera de servicio; `LIB-010`, `LIB-015` y `LIB-016` tienen **varios autores**; `LIB-014` está dado de baja.
 

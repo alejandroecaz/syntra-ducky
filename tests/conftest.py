@@ -62,7 +62,18 @@ def app(bd_plantilla, tmp_path):
     """
     ruta = tmp_path / "prueba.db"
     shutil.copy(bd_plantilla, ruta)
-    return crear_aplicacion({"RUTA_BASE_DATOS": str(ruta), "TESTING": True})
+    # Sin cuenta de correo ni Twilio: las pruebas nunca envian nada real.
+    return crear_aplicacion(
+        {
+            "RUTA_BASE_DATOS": str(ruta),
+            "TESTING": True,
+            "CORREO_USUARIO": "",
+            "CORREO_CONTRASENA": "",
+            "TWILIO_SID": "",
+            "TWILIO_TOKEN": "",
+            "CARPETA_BOLETAS": str(tmp_path / "boletas"),
+        }
+    )
 
 
 @pytest.fixture

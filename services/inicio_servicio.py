@@ -21,7 +21,9 @@ Fecha:
 
 import config
 from models import libro as libro_modelo
+from models import lista_espera as espera_modelo
 from models import orden_compra as orden_modelo
+from models import prestamo as prestamo_modelo
 from models import usuario as usuario_modelo
 
 # (permisos, icono, titulo, descripcion, endpoint).
@@ -46,6 +48,20 @@ ACCIONES = [
         "Listado de libros",
         "Genera el listado en PDF o envíalo a impresión.",
         "reportes.mostrar_listado",
+    ),
+    (
+        ("prestamos.registrar",),
+        "book",
+        "Registrar préstamo",
+        "Presta un ejemplar y envía la boleta por correo, WhatsApp o impresa.",
+        "prestamos.registrar",
+    ),
+    (
+        ("espera.gestionar",),
+        "users",
+        "Lista de espera",
+        "Aparta el turno de quien espera un libro sin ejemplares disponibles.",
+        "espera.listar",
     ),
     (
         ("compras.orden",),
@@ -163,6 +179,27 @@ def obtener_indicadores(permisos):
             )
         )
 
+    # Prestamos: activos y cuantos estan vencidos.
+    if _tener_alguno(permisos, "prestamos.registrar"):
+        totales = prestamo_modelo.contar()
+        indicadores.append(
+            (
+                "book",
+                f"Préstamos activos ({totales['vencidos']} vencidos)",
+                totales["activos"],
+                "prestamos.listar",
+            )
+        )
+    # Lista de espera: solicitudes que siguen esperando turno.
+    if _tener_alguno(permisos, "espera.gestionar"):
+        indicadores.append(
+            (
+                "users",
+                "En lista de espera",
+                espera_modelo.contar_vigentes(),
+                "espera.listar",
+            )
+        )
     # Compras: ordenes registradas.
     if _tener_alguno(permisos, "compras.orden"):
         indicadores.append(

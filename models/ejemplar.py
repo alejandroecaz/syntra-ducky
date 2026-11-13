@@ -162,3 +162,57 @@ def actualizar(ejemplar_id, estante_id, posicion, estado):
         "WHERE id = ?",
         (estante_id, posicion, estado, ejemplar_id),
     )
+
+
+# Ejemplar con los datos del libro que se revisan al prestarlo (HU-02-02).
+SELECT_EJEMPLAR_CON_LIBRO = """
+    SELECT e.id, e.codigo, e.estado, e.posicion,
+           es.clave AS estante, ea.nombre AS estancia,
+           l.id AS libro_id, l.clave AS libro_clave, l.titulo,
+           l.activo AS libro_activo, l.tipo_acceso
+    FROM ejemplares e
+    JOIN libros l ON l.id = e.libro_id
+    LEFT JOIN estantes es ON es.id = e.estante_id
+    LEFT JOIN estancias ea ON ea.id = es.estancia_id
+"""
+
+
+def obtener_por_codigo(codigo):
+    """
+    Descripcion:
+        HU-02-02: Busca un ejemplar por su codigo (EJ-0001) con los datos de
+        su libro: titulo, si esta activo y su tipo de acceso.
+
+    Parametros:
+        codigo (str): codigo del ejemplar; no distingue mayusculas.
+
+    Salida:
+        sqlite3.Row o None si no existe.
+    """
+    return consultar(
+        SELECT_EJEMPLAR_CON_LIBRO + " WHERE UPPER(e.codigo) = UPPER(?)",
+        (codigo,),
+        uno=True,
+    )
+
+
+def listar_disponibles_para_prestamo():
+    """
+    Descripcion:
+        HU-02-03: Lista los ejemplares que se pueden prestar (disponibles, de
+        libros activos y que no son de acceso reservado) para las sugerencias
+        del formulario.
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        list[sqlite3.Row]: ejemplares ordenados por titulo y codigo.
+    """
+    marcadores = ",".join("?" for _ in config.TIPOS_ACCESO_SIN_PRESTAMO)
+    return consultar(
+        SELECT_EJEMPLAR_CON_LIBRO + " WHERE e.estado = ? AND l.activo = 1 "
+        f"AND l.tipo_acceso NOT IN ({marcadores}) "
+        "ORDER BY l.titulo, e.codigo",
+        (config.ESTADO_DISPONIBLE, *config.TIPOS_ACCESO_SIN_PRESTAMO),
+    )

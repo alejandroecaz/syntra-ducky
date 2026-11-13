@@ -1,0 +1,105 @@
+{#
+   ============================================================
+   Archivo:      views/prestamos/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Prestamos registrados (Vista, HU-02-03): activos, vencidos o todos.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Préstamos{% endblock %}
+
+{% block contenido %}
+{% call ui.dibujar_encabezado_pagina("Préstamos",
+                                     "Registra el préstamo de un ejemplar, revisa las fechas de "
+                                     "devolución y vuelve a enviar la boleta cuando haga falta.",
+                                     hus=["HU-02-03 Registro del préstamo",
+                                          "HU-02-04 Boleta de préstamo"]) %}
+    {{ ui.dibujar_boton("Registrar préstamo", "primario", "plus",
+                        enlace=url_for("prestamos.registrar")) }}
+{% endcall %}
+
+<div class="tarjeta">
+    {# Selector de activos / vencidos / todos. #}
+    {% set descripciones = {"activos": "activos", "vencidos": "vencidos sin devolver",
+                            "todos": "registrados"} %}
+    <div class="resumen-tabla">
+        <span>{{ prestamos | length }} préstamo{{ 's' if prestamos | length != 1 }} {{
+            descripciones[vista] }}</span>
+        <div class="segmentado" role="group" aria-label="Préstamos a mostrar">
+            {% for valor, etiqueta in [("activos", "Activos"), ("vencidos", "Vencidos"),
+                                       ("todos", "Todos")] %}
+                <a href="{{ url_for('prestamos.listar', ver=valor) }}"
+                   class="boton boton-chico {{ 'boton-primario' if vista == valor
+                                               else 'boton-transparente' }}"
+                   style="border-radius:0"
+                   aria-current="{{ 'true' if vista == valor else 'false' }}">{{ etiqueta }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if prestamos %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Folio</th><th scope="col">Usuario</th>
+                    <th scope="col">Libro</th><th scope="col">Ejemplar</th>
+                    <th scope="col">Prestado</th><th scope="col">Devolver el</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="alinear-derecha"><span
+                        class="solo-lector">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prestamo in prestamos %}
+                {% set vencido = verificar_vencido(prestamo) %}
+                <tr data-enlace="{{ url_for('prestamos.mostrar_detalle', prestamo_id=prestamo.id) }}">
+                    <td class="monoespaciado resaltado sin-salto">{{ prestamo.folio }}</td>
+                    <td>{{ prestamo.usuario_nombre }}<br><span class="celda-subtitulo">{{
+                        prestamo.usuario_identificador }} · {{ prestamo.perfil }}</span></td>
+                    <td class="resaltado">{{ prestamo.titulo }}<br><span
+                        class="celda-subtitulo">{{ prestamo.libro_clave }}</span></td>
+                    <td class="monoespaciado">{{ prestamo.ejemplar_codigo }}</td>
+                    <td class="sin-salto">{{ prestamo.fecha_prestamo |formatear_fecha }}</td>
+                    <td class="sin-salto{{ ' resaltado' if vencido }}">{{
+                        prestamo.fecha_vencimiento |formatear_fecha }}</td>
+                    <td>
+                        {% if vencido %}{{ ui.dibujar_etiqueta("Vencido", "error", punto=True) }}
+                        {% elif prestamo.estado == "Activo" %}{{
+                            ui.dibujar_etiqueta("Activo", "informacion", punto=True) }}
+                        {% else %}{{ ui.dibujar_etiqueta(prestamo.estado, "neutro", punto=True) }}
+                        {% endif %}
+                    </td>
+                    <td class="alinear-derecha">{{ ui.dibujar_boton(
+                        "Ver boleta", "secundario", "file",
+                        enlace=url_for("prestamos.mostrar_detalle", prestamo_id=prestamo.id),
+                        tamano="chico") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {% call ui.dibujar_estado_vacio("book", "No hay préstamos que mostrar",
+                                        "Cuando registres un préstamo aparecerá aquí con su "
+                                        "folio y su fecha de devolución.") %}
+            {{ ui.dibujar_boton("Registrar préstamo", "primario", "plus",
+                                enlace=url_for("prestamos.registrar")) }}
+        {% endcall %}
+    {% endif %}
+</div>
+{% endblock %}

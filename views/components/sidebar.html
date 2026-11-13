@@ -54,6 +54,19 @@
             {% endif %}
         {% endif %}
 
+        {# Circulacion: prestamos y lista de espera (HU-02-01 a HU-02-06). #}
+        {% if verificar_permiso("prestamos.registrar", "espera.gestionar") %}
+            <div class="navegacion-seccion">Circulación</div>
+            {% if verificar_permiso("prestamos.registrar") %}
+                {{ dibujar_enlace("prestamos.listar", "book", "Préstamos",
+                                  seccion == "prestamos") }}
+            {% endif %}
+            {% if verificar_permiso("espera.gestionar") %}
+                {{ dibujar_enlace("espera.listar", "users", "Lista de espera",
+                                  seccion == "espera") }}
+            {% endif %}
+        {% endif %}
+
         {# Administracion: usuarios y perfiles. #}
         {% if verificar_permiso("usuarios.consultar", "perfiles.crear", "perfiles.asignar") %}
             <div class="navegacion-seccion">Administración</div>

@@ -1,0 +1,251 @@
+{#
+   ============================================================
+   Archivo:      views/prestamos/detalle.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Boleta de prestamo (Vista, HU-02-04) con las opciones para enviarla
+       por correo, por WhatsApp, imprimirla o descargarla en PDF, la
+       renovacion del prestamo (HU-02-05) y el historial de boletas y
+       renovaciones.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}{{ prestamo.folio }}{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('prestamos.listar') }}">Préstamos</a>
+{%- endblock %}
+
+{% block contenido %}
+<div class="sin-imprimir">
+    {% call ui.dibujar_encabezado_pagina("Préstamo " ~ prestamo.folio,
+                                         "Registrado el "
+                                         ~ (prestamo.fecha_prestamo
+                                            |formatear_fecha("%d/%m/%Y %H:%M"))
+                                         ~ " por " ~ prestamo.bibliotecario ~ ".",
+                                         hus=["HU-02-04 Boleta de préstamo",
+                                              "HU-02-05 Renovación de préstamo"],
+                                         regresar=url_for("prestamos.listar"),
+                                         texto_regresar="Préstamos") %}
+        {% if vencido %}{{ ui.dibujar_etiqueta("Vencido", "error", punto=True) }}
+        {% else %}{{ ui.dibujar_etiqueta(prestamo.estado, "informacion", punto=True) }}{% endif %}
+        {{ ui.dibujar_boton("Descargar PDF", "secundario", "download",
+                            enlace=url_for("prestamos.descargar_boleta",
+                                           prestamo_id=prestamo.id)) }}
+    {% endcall %}
+    {% if vencido %}
+        {{ ui.dibujar_alerta("advertencia", "Préstamo vencido",
+                             "La fecha de devolución ya pasó y el libro no se ha devuelto.") }}
+        <div style="height: 20px"></div>
+    {% endif %}
+</div>
+
+<div class="diseno-lateral">
+    <div class="pila-amplia">
+        {# HU-02-04: la boleta (es lo unico que se imprime). #}
+        <article class="documento" {% if imprimir_ahora %}data-imprimir-al-cargar{% endif %}>
+            <header class="documento-encabezado">
+                <div class="documento-marca">
+                    {{ ui.dibujar_logo(56) }}
+                    <span><span class="marca-nombre">Syntra</span><br><span
+                        class="marca-subtitulo">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+                </div>
+                <div class="documento-datos">
+                    <div class="documento-titulo">Boleta de préstamo</div>
+                    Folio: <strong class="resaltado monoespaciado">{{ prestamo.folio }}</strong>
+                </div>
+            </header>
+            <dl class="clave-valor margen-abajo-4">
+                {% for etiqueta, valor in datos_boleta %}
+                    <dt>{{ etiqueta }}</dt>
+                    <dd{% if etiqueta == "Fecha de devolución" %}
+                        class="resaltado" style="font-size: 1.05rem"{% endif %}>{{ valor }}</dd>
+                {% endfor %}
+            </dl>
+            <p class="texto-chico atenuado" style="margin-top: 16px">{{ nota_boleta }}</p>
+            <footer class="documento-pie">
+                <span>Sistema Ducky de Gestión Bibliotecaria</span>
+                <span class="firma">Firma del usuario</span>
+            </footer>
+        </article>
+
+        {# HU-02-04: boletas que ya se enviaron o imprimieron. #}
+        <section class="tarjeta sin-imprimir">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("clipboard", 18) }}Boletas
+                    emitidas</h2>
+            </div>
+            {% if comprobantes %}
+            <div class="contenedor-tabla">
+                <table class="tabla">
+                    <thead><tr><th scope="col">Medio</th><th scope="col">Destino</th><th
+                        scope="col">Fecha</th></tr></thead>
+                    <tbody>
+                        {% for comprobante in comprobantes %}
+                        <tr>
+                            <td>{{ ui.dibujar_etiqueta(comprobante.medio, "informacion") }}</td>
+                            <td>{{ comprobante.destino or "—" }}</td>
+                            <td class="sin-salto">{{
+                                comprobante.fecha_emision |formatear_fecha("%d/%m/%Y %H:%M") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="tarjeta-cuerpo">
+                    <p class="texto-chico atenuado">Todavía no se ha enviado ni impreso la
+                        boleta.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        {# HU-02-05: historial de renovaciones. #}
+        {% if renovaciones %}
+        <section class="tarjeta sin-imprimir">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("refresh", 18) }}Renovaciones</h2>
+            </div>
+            <div class="contenedor-tabla">
+                <table class="tabla">
+                    <thead><tr><th scope="col">#</th><th scope="col">Renovado el</th><th
+                        scope="col">Devolución anterior</th><th scope="col">Nueva
+                        devolución</th></tr></thead>
+                    <tbody>
+                        {% for renovacion in renovaciones %}
+                        <tr>
+                            <td>{{ renovacion.numero }}</td>
+                            <td class="sin-salto">{{
+                                renovacion.fecha_renovacion |formatear_fecha("%d/%m/%Y %H:%M") }}</td>
+                            <td>{{ renovacion.vencimiento_anterior |formatear_fecha }}</td>
+                            <td class="resaltado">{{
+                                renovacion.vencimiento_nuevo |formatear_fecha }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    <div class="pila-amplia sin-imprimir">
+    {# HU-02-05: renovacion del prestamo con la fecha que quedaria. #}
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("refresh", 18) }}Renovar préstamo</h2>
+            {{ ui.dibujar_etiqueta(prestamo.renovaciones ~ " de " ~ renovacion.maximo ~ " usadas",
+                                   "neutro") }}
+        </div>
+        <div class="tarjeta-cuerpo pila" style="gap: 12px">
+            {% if renovacion.permitida %}
+                <p class="texto-chico">La nueva fecha de devolución sería el <strong
+                    class="resaltado">{{ renovacion.vencimiento_nuevo.strftime("%d/%m/%Y") }}</strong>
+                    (renovación {{ renovacion.numero }} de {{ renovacion.maximo }}).</p>
+                <form method="post"
+                      action="{{ url_for('prestamos.renovar', prestamo_id=prestamo.id) }}">
+                    {{ ui.dibujar_boton("Renovar préstamo", "primario", "refresh", tipo="submit",
+                                        completo=True, deshabilitado=not puede_renovar) }}
+                </form>
+                {% if not puede_renovar %}
+                    <p class="texto-muy-chico atenuado">Tu perfil no tiene permiso para renovar
+                        préstamos.</p>
+                {% endif %}
+            {% else %}
+                {{ ui.dibujar_alerta("advertencia", "No se puede renovar",
+                                     renovacion.motivo) }}
+            {% endif %}
+        </div>
+    </section>
+
+    {# HU-02-04: envio de la boleta por correo, WhatsApp o impresion. #}
+    <aside class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("send", 18) }}Enviar boleta</h2>
+        </div>
+        <div class="tarjeta-cuerpo pila">
+            {% if resultado %}{{ ui.dibujar_alerta(resultado[0], texto=resultado[1]) }}{% endif %}
+
+            {# Correo con la boleta en PDF adjunta. #}
+            <form class="pila" style="gap: 8px" method="post" novalidate
+                  action="{{ url_for('prestamos.enviar_correo', prestamo_id=prestamo.id) }}">
+                {{ ui.dibujar_campo("correo", "Correo electrónico",
+                                    valores.get("correo", prestamo.usuario_email),
+                                    errores.get("correo"), tipo="email", icono="mail",
+                                    sugerencia="nombre@ducky.edu.mx",
+                                    ayuda=("Se envía con la boleta en PDF adjunta."
+                                           if correo_configurado else
+                                           "Modo demostración: el correo se guarda en la "
+                                           "carpeta boletas_enviadas.")) }}
+                {{ ui.dibujar_boton("Enviar por correo", "primario", "mail", tipo="submit",
+                                    completo=True) }}
+            </form>
+
+            <hr class="divisor">
+
+            {# WhatsApp: por API o abriendo el chat con el mensaje escrito. #}
+            <form class="pila" style="gap: 8px" method="post" novalidate
+                  action="{{ url_for('prestamos.enviar_whatsapp', prestamo_id=prestamo.id) }}"
+                  {% if not whatsapp_api %}target="_blank" data-recargar-al-enviar{% endif %}>
+                {{ ui.dibujar_campo("telefono", "Celular (WhatsApp)",
+                                    valores.get("telefono", prestamo.usuario_telefono),
+                                    errores.get("telefono"), tipo="tel",
+                                    icono="message-circle", sugerencia="81 1234 5678",
+                                    ayuda=("Se envía por la API de WhatsApp."
+                                           if whatsapp_api else
+                                           "Se abre WhatsApp con la boleta ya escrita; solo "
+                                           "presiona enviar.")) }}
+                {{ ui.dibujar_boton("Enviar por WhatsApp", "secundario", "message-circle",
+                                    tipo="submit", completo=True) }}
+            </form>
+
+            <hr class="divisor">
+
+            {# Impresion en una impresora de la biblioteca. #}
+            <form class="pila" style="gap: 8px" method="post" novalidate
+                  action="{{ url_for('prestamos.imprimir_boleta', prestamo_id=prestamo.id) }}">
+                <fieldset class="grupo-casillas">
+                    <legend>Impresora</legend>
+                    <div class="pila" style="gap: 8px">
+                        {% for impresora in impresoras %}
+                            <label class="casilla">
+                                <input type="radio" name="impresora" value="{{ impresora.id }}"
+                                       {% if impresora.id == impresora_elegida %}checked{% endif %}>
+                                <span style="flex:1">
+                                    <span class="casilla-titulo">{{ impresora.nombre }}</span><br>
+                                    {% if impresora.disponible %}
+                                        {{ ui.dibujar_etiqueta("En línea", "exito", punto=True) }}
+                                    {% else %}
+                                        {{ ui.dibujar_etiqueta("Fuera de línea", "error",
+                                                               punto=True) }}
+                                    {% endif %}
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {{ ui.dibujar_boton("Imprimir boleta", "secundario", "printer", tipo="submit",
+                                    completo=True) }}
+                {% if imprimir_ahora %}
+                    {{ ui.dibujar_boton("Abrir diálogo de impresión otra vez", "transparente",
+                                        "refresh", completo=True, data_imprimir="1") }}
+                {% endif %}
+            </form>
+        </div>
+    </aside>
+    </div>
+</div>
+{% endblock %}

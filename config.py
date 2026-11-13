@@ -51,6 +51,29 @@ NOMBRE_SISTEMA = "Syntra"
 NOMBRE_CLIENTE = "Biblioteca Universidad Ducky"
 
 # ============================================================
+# ENVIO DE BOLETAS (HU-02-04)
+# Se leen de .env. Sin cuenta de correo, la boleta se guarda como archivo
+# .eml en CARPETA_BOLETAS (modo demostracion). Sin Twilio, WhatsApp se
+# abre con un enlace wa.me y el mensaje ya escrito.
+# ============================================================
+# Correo por SMTP (por ejemplo Gmail con una contrasena de aplicacion).
+CORREO_SERVIDOR = os.environ.get("CORREO_SERVIDOR", "smtp.gmail.com")
+CORREO_PUERTO = int(os.environ.get("CORREO_PUERTO", "587"))
+CORREO_USUARIO = os.environ.get("CORREO_USUARIO", "")
+CORREO_CONTRASENA = os.environ.get("CORREO_CONTRASENA", "")
+CORREO_REMITENTE = os.environ.get("CORREO_REMITENTE") or CORREO_USUARIO
+
+# WhatsApp por la API de Twilio (opcional).
+TWILIO_SID = os.environ.get("TWILIO_SID", "")
+TWILIO_TOKEN = os.environ.get("TWILIO_TOKEN", "")
+TWILIO_WHATSAPP_ORIGEN = os.environ.get(
+    "TWILIO_WHATSAPP_ORIGEN", "+14155238886"
+)
+
+# Carpeta donde se guardan los correos en modo demostracion.
+CARPETA_BOLETAS = os.path.join(DIRECTORIO_BASE, "boletas_enviadas")
+
+# ============================================================
 # PERMISOS
 # Catalogo de permisos; el acceso siempre se revisa por permiso.
 # ============================================================
@@ -81,6 +104,13 @@ PERMISOS = [
     ("reportes.pdf", "Generar listado de libros en PDF", "Reportes"),
     ("reportes.imprimir", "Imprimir listado de libros", "Reportes"),
     ("compras.orden", "Generar órdenes de compra", "Compras"),
+    (
+        "prestamos.registrar",
+        "Registrar préstamos y emitir boletas",
+        "Préstamos",
+    ),
+    ("prestamos.renovar", "Renovar préstamos", "Préstamos"),
+    ("espera.gestionar", "Gestionar la lista de espera", "Préstamos"),
 ]
 
 # Quien tenga alguno de estos permisos es personal de biblioteca (puede ver
@@ -133,6 +163,43 @@ VISTAS_CATALOGO = ("activos", "baja", "todos")
 CANTIDAD_MAXIMA_POR_LIBRO = 500
 ESTADO_ORDEN_REGISTRADA = "Registrada"
 ESTADOS_ORDEN = [ESTADO_ORDEN_REGISTRADA, "Cancelada"]
+
+# Prestamos (HU-02-01 a HU-02-05).
+ESTADO_PRESTAMO_ACTIVO = "Activo"
+ESTADOS_PRESTAMO = [ESTADO_PRESTAMO_ACTIVO, "Devuelto", "Vencido", "Perdido"]
+# Libros con este tipo de acceso solo se consultan dentro de la biblioteca.
+TIPOS_ACCESO_SIN_PRESTAMO = ["Reservado"]
+PREFIJO_PRESTAMO = "PR"
+# Que prestamos se ven en la lista: activos, vencidos o todos.
+VISTAS_PRESTAMOS = ("activos", "vencidos", "todos")
+
+# Lista de espera (HU-02-06). Las solicitudes "vigentes" siguen esperando
+# turno; al prestarle el libro al usuario su solicitud queda "Atendido".
+ESTADO_ESPERA = "En espera"
+ESTADO_ESPERA_NOTIFICADO = "Notificado"
+ESTADO_ESPERA_ATENDIDO = "Atendido"
+ESTADO_ESPERA_CANCELADO = "Cancelado"
+ESTADOS_ESPERA = [
+    ESTADO_ESPERA,
+    ESTADO_ESPERA_NOTIFICADO,
+    ESTADO_ESPERA_ATENDIDO,
+    ESTADO_ESPERA_CANCELADO,
+]
+ESTADOS_ESPERA_VIGENTE = [ESTADO_ESPERA, ESTADO_ESPERA_NOTIFICADO]
+
+# Avisos a los usuarios (tabla avisos).
+TIPO_AVISO_ESPERA = "Lista de espera"
+TIPOS_AVISO = ["Vencimiento", "Adeudo", TIPO_AVISO_ESPERA]
+MEDIOS_AVISO = ["Email", "WhatsApp", "Sistema"]
+
+# Boleta de prestamo (HU-02-04): medios de envio (tabla
+# comprobantes_prestamo).
+MEDIO_CORREO = "Email"
+MEDIO_WHATSAPP = "WhatsApp"
+MEDIO_IMPRESION = "Impresión"
+MEDIOS_BOLETA = [MEDIO_CORREO, MEDIO_WHATSAPP, MEDIO_IMPRESION]
+# Lada que se agrega a los telefonos de 10 digitos para WhatsApp (Mexico).
+LADA_WHATSAPP = "52"
 
 # Portal movil: cuantos libros mostrar en "Disponibles ahora".
 MOVIL_LIBROS_DESTACADOS = 4

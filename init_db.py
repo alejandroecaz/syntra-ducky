@@ -6,11 +6,14 @@ Empresa desarrolladora: Syntra Technologies
 Cliente:      Universidad Ducky
 
 Descripcion:
-    Crea la base de datos SQLite con el esquema del Sprint 1 y los datos
-    de demostracion.
+    Crea la base de datos SQLite con el esquema del Sprint 1, los
+    prestamos, renovaciones y lista de espera del Sprint 2 y los datos de
+    demostracion.
 
     El esquema es la version SQLite de
-    base_de_datos/ducky_bd_sprint1.sql.
+    base_de_datos/ducky_bd_sprint1.sql mas las tablas prestamos,
+    comprobantes_prestamo, renovaciones, lista_espera y avisos de
+    base_de_datos/ducky_bd_completa.sql.
 
     Uso:
         venv/bin/python init_db.py
@@ -37,8 +40,9 @@ Contenido del listado:
         _formatear_lista_sql()
         ESQUEMA, TABLAS
     Datos de demostracion
-        TODOS, PERFILES, USUARIOS, EDITORIALES, TEMAS, AUTORES,
-        ESTANCIAS, PROVEEDORES, SINOPSIS, LIBROS, FECHA_BAJA_DEMO
+        TODOS, PERFILES, REGLAS_PRESTAMO, USUARIOS, EDITORIALES, TEMAS,
+        AUTORES, ESTANCIAS, PROVEEDORES, SINOPSIS, LIBROS,
+        FECHA_BAJA_DEMO, PRESTAMOS, LISTA_ESPERA
     Carga de datos
         formar_nombre_autor()
         crear_tablas()
@@ -48,6 +52,8 @@ Contenido del listado:
         insertar_catalogos()
         obtener_estante()
         insertar_libros()
+        insertar_prestamos()
+        insertar_lista_espera()
     Creacion y revision de la base de datos
         inicializar()
         verificar_esquema_vigente()
@@ -59,6 +65,7 @@ Contenido del listado:
 import os
 import sqlite3
 import sys
+from datetime import datetime, timedelta
 
 from werkzeug.security import generate_password_hash
 
@@ -88,13 +95,18 @@ def _formatear_lista_sql(valores):
 # Esquema SQLite del Sprint 1 (tablas, llaves foraneas, restricciones e
 # indices).
 ESQUEMA = f"""
--- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...).
+-- Perfiles de usuario (Administrador, Bibliotecario, Profesor, Alumno...)
+-- y sus reglas de prestamo. Sin max_prestamos el perfil no tiene prestamos.
 CREATE TABLE perfiles (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre          VARCHAR(60)  NOT NULL UNIQUE COLLATE NOCASE,
-    descripcion     VARCHAR(255),
-    disponible      INTEGER      NOT NULL DEFAULT 1,
-    fecha_registro  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre           VARCHAR(60)  NOT NULL UNIQUE COLLATE NOCASE,
+    descripcion      VARCHAR(255),
+    disponible       INTEGER      NOT NULL DEFAULT 1,
+    max_prestamos    INTEGER      CHECK (max_prestamos >= 0),
+    dias_prestamo    INTEGER      CHECK (dias_prestamo > 0),
+    max_renovaciones INTEGER      CHECK (max_renovaciones >= 0),
+    multa_diaria     DECIMAL(8,2) CHECK (multa_diaria >= 0),
+    fecha_registro   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Catalogo de permisos del sistema (ej. libros.alta).
@@ -273,12 +285,92 @@ CREATE TABLE orden_items (
     UNIQUE (orden_id, libro_id)
 );
 
--- Indices para las busquedas del catalogo.
+-- Prestamo de un ejemplar a un usuario (HU-02-03). El folio va en la
+-- boleta.
+CREATE TABLE prestamos (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    folio             VARCHAR(20) NOT NULL UNIQUE,
+    ejemplar_id       INTEGER     NOT NULL
+        REFERENCES ejemplares(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    usuario_id        INTEGER     NOT NULL
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    bibliotecario_id  INTEGER     NOT NULL
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    fecha_prestamo    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_vencimiento DATE        NOT NULL,
+    estado            VARCHAR(20) NOT NULL
+        DEFAULT '{config.ESTADO_PRESTAMO_ACTIVO}'
+        CHECK (estado IN ({_formatear_lista_sql(config.ESTADOS_PRESTAMO)}))
+);
+
+-- Boletas de prestamo enviadas o impresas (HU-02-04).
+CREATE TABLE comprobantes_prestamo (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    prestamo_id     INTEGER      NOT NULL
+        REFERENCES prestamos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    medio           VARCHAR(20)  NOT NULL
+        CHECK (medio IN ({_formatear_lista_sql(config.MEDIOS_BOLETA)})),
+    destino         VARCHAR(150),
+    fecha_emision   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Historial de renovaciones de cada prestamo (HU-02-05).
+CREATE TABLE renovaciones (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    prestamo_id          INTEGER  NOT NULL
+        REFERENCES prestamos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    numero               INTEGER  NOT NULL CHECK (numero > 0),
+    fecha_renovacion     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    vencimiento_anterior DATE     NOT NULL,
+    vencimiento_nuevo    DATE     NOT NULL,
+    UNIQUE (prestamo_id, numero)
+);
+
+-- Usuarios esperando un libro sin ejemplares disponibles (HU-02-06).
+CREATE TABLE lista_espera (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    libro_id        INTEGER     NOT NULL
+        REFERENCES libros(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    usuario_id      INTEGER     NOT NULL
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    fecha_solicitud DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado          VARCHAR(20) NOT NULL DEFAULT '{config.ESTADO_ESPERA}'
+        CHECK (estado IN ({_formatear_lista_sql(config.ESTADOS_ESPERA)}))
+);
+
+-- Avisos de vencimiento, adeudo y lista de espera.
+CREATE TABLE avisos (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id      INTEGER      NOT NULL
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    prestamo_id     INTEGER
+        REFERENCES prestamos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    tipo            VARCHAR(20)  NOT NULL
+        CHECK (tipo IN ({_formatear_lista_sql(config.TIPOS_AVISO)})),
+    medio           VARCHAR(20)  NOT NULL
+        CHECK (medio IN ({_formatear_lista_sql(config.MEDIOS_AVISO)})),
+    mensaje         VARCHAR(500) NOT NULL,
+    fecha_envio     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indices para las busquedas del catalogo y los prestamos.
 CREATE INDEX idx_libros_titulo ON libros (titulo);
 CREATE INDEX idx_autores_nombre ON autores (apellidos, nombre);
 CREATE INDEX idx_usuarios_nombre ON usuarios (apellido_paterno, nombre);
 CREATE INDEX idx_ejemplares_libro ON ejemplares (libro_id);
 CREATE INDEX idx_ejemplares_estado ON ejemplares (estado);
+CREATE INDEX idx_prestamos_estado ON prestamos (estado, fecha_vencimiento);
+CREATE INDEX idx_prestamos_usuario ON prestamos (usuario_id, estado);
+CREATE INDEX idx_lista_espera_libro ON lista_espera (libro_id, estado);
 """
 
 # Tablas que deben existir; sirve para detectar una syntra.db del esquema
@@ -299,6 +391,11 @@ TABLAS = (
     "proveedores",
     "ordenes_compra",
     "orden_items",
+    "prestamos",
+    "comprobantes_prestamo",
+    "renovaciones",
+    "lista_espera",
+    "avisos",
 )
 
 # ============================================================
@@ -336,6 +433,9 @@ PERFILES = [
             "reportes.pdf",
             "reportes.imprimir",
             "compras.orden",
+            "prestamos.registrar",
+            "prestamos.renovar",
+            "espera.gestionar",
         ],
     ),
     (
@@ -383,6 +483,17 @@ PERFILES = [
         ["sistema.acceder", "usuarios.consultar"],
     ),
 ]
+
+# Reglas de prestamo por perfil: (max_prestamos, dias_prestamo,
+# max_renovaciones, multa_diaria). Los perfiles que no aparecen no tienen
+# prestamos a domicilio.
+REGLAS_PRESTAMO = {
+    "Administrador": (5, 14, 2, 5.00),
+    "Bibliotecario": (5, 14, 2, 5.00),
+    "Profesor": (5, 14, 2, 5.00),
+    "Alumno": (3, 7, 2, 5.00),
+    "Colaborador": (2, 7, 1, 5.00),
+}
 
 # (identificador, nombre, apellido_paterno, apellido_materno, cuenta, email,
 # contrasena, perfil, estado).
@@ -751,7 +862,7 @@ LIBROS = [
         "Circulante",
         1,
         [
-            ("Sala General", "B-2", "5", "Disponible"),
+            ("Sala General", "B-2", "5", "Prestado"),
         ],
     ),
     (
@@ -832,6 +943,28 @@ LIBROS = [
 # Fecha de baja del libro de prueba que esta dado de baja (LIB-014).
 FECHA_BAJA_DEMO = "2026-09-15 10:00:00"
 
+# Prestamos de los ejemplares que ya estan como "Prestado":
+# (codigo del ejemplar, cuenta del usuario, hace cuantos dias se presto,
+# dias de prestamo, renovaciones usadas). Las fechas se calculan desde hoy
+# para que la demo siempre tenga un prestamo vencido (el de jlopez) y uno
+# sin renovaciones disponibles (el de pmartinez).
+PRESTAMOS = [
+    ("EJ-0002", "alumno", 3, 7, 0),
+    ("EJ-0006", "profesor", 5, 14, 0),
+    ("EJ-0019", "jlopez", 10, 7, 0),
+    ("EJ-0027", "pmartinez", 30, 14, 2),
+    ("EJ-0021", "profesor", 4, 14, 0),
+]
+
+# Lista de espera: (clave del libro, cuenta del usuario, hace cuantos dias
+# lo pidio). LIB-011 no tiene ejemplares disponibles; en LIB-003 el unico
+# disponible (EJ-0008) ya le toca a dfuentes.
+LISTA_ESPERA = [
+    ("LIB-011", "alumno", 2),
+    ("LIB-011", "pmartinez", 1),
+    ("LIB-003", "dfuentes", 3),
+]
+
 
 # ============================================================
 # CARGA DE DATOS
@@ -896,7 +1029,8 @@ def insertar_permisos(cursor):
 def insertar_perfiles(cursor, permisos_ids):
     """
     Descripcion:
-        Guarda los perfiles de demostracion con sus permisos.
+        Guarda los perfiles de demostracion con sus permisos y reglas de
+        prestamo.
 
     Parametros:
         cursor (sqlite3.Cursor): cursor de la conexion de init_db.
@@ -907,11 +1041,13 @@ def insertar_perfiles(cursor, permisos_ids):
     """
     ids = {}
     for nombre, descripcion, disponible, permisos in PERFILES:
-        # Insertamos el perfil.
+        # Insertamos el perfil con sus reglas de prestamo (si tiene).
+        reglas = REGLAS_PRESTAMO.get(nombre, (None, None, None, None))
         cursor.execute(
-            "INSERT INTO perfiles (nombre, descripcion, disponible) VALUES "
-            "(?, ?, ?)",
-            (nombre, descripcion, disponible),
+            "INSERT INTO perfiles (nombre, descripcion, disponible, "
+            "max_prestamos, dias_prestamo, max_renovaciones, multa_diaria) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (nombre, descripcion, disponible, *reglas),
         )
         ids[nombre] = cursor.lastrowid
         # Relacionamos sus permisos.
@@ -1122,6 +1258,101 @@ def insertar_libros(cursor, ids):
             consecutivo += 1
 
 
+def insertar_prestamos(cursor):
+    """
+    Descripcion:
+        Guarda los prestamos de demostracion de los ejemplares que ya estan
+        como "Prestado", con folio consecutivo y fechas calculadas desde hoy.
+
+    Parametros:
+        cursor (sqlite3.Cursor): cursor de la conexion de init_db.
+
+    Salida:
+        Ninguna.
+    """
+    # Todos los registra la cuenta del bibliotecario de demostracion.
+    bibliotecario_id = cursor.execute(
+        "SELECT id FROM usuarios WHERE cuenta = 'biblio'"
+    ).fetchone()[0]
+    ahora = datetime.now().replace(microsecond=0)
+
+    for numero, (codigo, cuenta, hace_dias, dias, renovadas) in enumerate(
+        PRESTAMOS, start=1
+    ):
+        ejemplar_id = cursor.execute(
+            "SELECT id FROM ejemplares WHERE codigo = ?", (codigo,)
+        ).fetchone()[0]
+        usuario_id = cursor.execute(
+            "SELECT id FROM usuarios WHERE cuenta = ?", (cuenta,)
+        ).fetchone()[0]
+        fecha_prestamo = ahora - timedelta(days=hace_dias)
+        vencimiento = (fecha_prestamo + timedelta(days=dias)).date()
+        cursor.execute(
+            "INSERT INTO prestamos (folio, ejemplar_id, usuario_id, "
+            "bibliotecario_id, fecha_prestamo, fecha_vencimiento) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                f"{config.PREFIJO_PRESTAMO}-{ahora.year}-{numero:04d}",
+                ejemplar_id,
+                usuario_id,
+                bibliotecario_id,
+                fecha_prestamo.strftime("%Y-%m-%d %H:%M:%S"),
+                vencimiento.isoformat(),
+            ),
+        )
+        prestamo_id = cursor.lastrowid
+
+        # Cada renovacion suma los dias de prestamo al vencimiento.
+        for renovacion in range(1, renovadas + 1):
+            anterior = vencimiento
+            vencimiento = anterior + timedelta(days=dias)
+            cursor.execute(
+                "INSERT INTO renovaciones (prestamo_id, numero, "
+                "fecha_renovacion, vencimiento_anterior, vencimiento_nuevo) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    prestamo_id,
+                    renovacion,
+                    f"{anterior.isoformat()} 10:00:00",
+                    anterior.isoformat(),
+                    vencimiento.isoformat(),
+                ),
+            )
+        cursor.execute(
+            "UPDATE prestamos SET fecha_vencimiento = ? WHERE id = ?",
+            (vencimiento.isoformat(), prestamo_id),
+        )
+
+
+def insertar_lista_espera(cursor):
+    """
+    Descripcion:
+        Guarda las solicitudes de lista de espera de demostracion, con la
+        fecha calculada desde hoy.
+
+    Parametros:
+        cursor (sqlite3.Cursor): cursor de la conexion de init_db.
+
+    Salida:
+        Ninguna.
+    """
+    ahora = datetime.now().replace(microsecond=0)
+    for clave, cuenta, hace_dias in LISTA_ESPERA:
+        cursor.execute(
+            "INSERT INTO lista_espera (libro_id, usuario_id, "
+            "fecha_solicitud) VALUES ("
+            "(SELECT id FROM libros WHERE clave = ?), "
+            "(SELECT id FROM usuarios WHERE cuenta = ?), ?)",
+            (
+                clave,
+                cuenta,
+                (ahora - timedelta(days=hace_dias)).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            ),
+        )
+
+
 # ============================================================
 # CREACION Y REVISION DE LA BASE DE DATOS
 # Crean syntra.db desde cero y revisan si su esquema esta al dia.
@@ -1161,6 +1392,8 @@ def inicializar(ruta=config.RUTA_BASE_DATOS, con_libros=True):
     ids = insertar_catalogos(cursor)
     if con_libros:
         insertar_libros(cursor, ids)
+        insertar_prestamos(cursor)
+        insertar_lista_espera(cursor)
 
     # Guardamos los cambios y cerramos.
     conexion.commit()

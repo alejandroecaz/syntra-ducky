@@ -310,6 +310,7 @@ CREATE TABLE bajas_ejemplar (
 -- Prestamo de un ejemplar a un usuario.
 CREATE TABLE prestamos (
     id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    folio                  VARCHAR(20) NOT NULL UNIQUE,
     ejemplar_id            INT UNSIGNED NOT NULL,
     usuario_id             INT UNSIGNED NOT NULL,
     bibliotecario_id       INT UNSIGNED NOT NULL,
