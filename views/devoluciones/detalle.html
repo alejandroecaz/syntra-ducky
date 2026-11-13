@@ -1,0 +1,167 @@
+{#
+   ============================================================
+   Archivo:      views/devoluciones/detalle.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Resultado de la devolucion (Vista, HU-02-07): como se cerro el
+       prestamo y las multas que genero con su envio a Tesoreria
+       (HU-02-08).
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Devolución {{ prestamo.folio }}{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('devoluciones.buscar') }}">Devoluciones</a>
+{%- endblock %}
+
+{% block contenido %}
+{% set perdido = prestamo.estado == "Perdido" %}
+{% call ui.dibujar_encabezado_pagina(("Pérdida" if perdido else "Devolución") ~ " del préstamo "
+                                     ~ prestamo.folio,
+                                     prestamo.titulo ~ " · " ~ prestamo.usuario_nombre,
+                                     hus=["HU-02-07 Registro de devolución",
+                                          "HU-02-08 Generación de multas"],
+                                     regresar=url_for("devoluciones.buscar"),
+                                     texto_regresar="Devoluciones") %}
+    {% if perdido %}{{ ui.dibujar_etiqueta("Perdido", "error", punto=True) }}
+    {% elif devolucion.condicion == "Dañado" %}{{
+        ui.dibujar_etiqueta("Devuelto dañado", "advertencia", punto=True) }}
+    {% else %}{{ ui.dibujar_etiqueta("Devuelto", "exito", punto=True) }}{% endif %}
+    {{ ui.dibujar_boton("Registrar otra devolución", "primario", "undo",
+                        enlace=url_for("devoluciones.buscar")) }}
+{% endcall %}
+
+{# HU-02-06: el ejemplar regreso y alguien lo espera. #}
+{% if en_espera %}
+    {% call ui.dibujar_alerta("informacion", "Este libro tiene lista de espera") %}
+        Hay {{ en_espera }} persona(s) esperando «{{ prestamo.titulo }}». El ejemplar
+        {{ prestamo.ejemplar_codigo }} queda apartado para el turno 1:
+        <a href="{{ url_for('espera.listar') }}">avísale desde la lista de espera</a>.
+    {% endcall %}
+    <div style="height: 20px"></div>
+{% endif %}
+
+<div class="diseno-lateral">
+    <div class="pila-amplia">
+        {# HU-02-07: datos de la devolucion o de la perdida. #}
+        <section class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("undo", 18) }}{{
+                    "Pérdida reportada" if perdido else "Devolución" }}</h2>
+            </div>
+            <div class="tarjeta-cuerpo">
+                <dl class="clave-valor">
+                    <dt>Usuario</dt><dd>{{ prestamo.usuario_nombre }} ({{
+                        prestamo.usuario_identificador }}) · {{ prestamo.perfil }}</dd>
+                    <dt>Libro</dt><dd>{{ prestamo.titulo }} ({{ prestamo.libro_clave }})</dd>
+                    <dt>Ejemplar</dt><dd class="monoespaciado">{{ prestamo.ejemplar_codigo }}</dd>
+                    <dt>Devolver el</dt><dd>{{ prestamo.fecha_vencimiento |formatear_fecha }}</dd>
+                    {% if devolucion %}
+                        <dt>Devuelto el</dt><dd class="resaltado">{{
+                            devolucion.fecha_devolucion |formatear_fecha("%d/%m/%Y %H:%M") }}</dd>
+                        <dt>Condición</dt><dd>{{ devolucion.condicion }}</dd>
+                        <dt>Recibió</dt><dd>{{ devolucion.bibliotecario }}</dd>
+                        {% if devolucion.observaciones %}
+                            <dt>Observaciones</dt><dd>{{ devolucion.observaciones }}</dd>
+                        {% endif %}
+                    {% else %}
+                        <dt>Resultado</dt><dd class="resaltado">El usuario reportó que perdió el
+                            libro. El ejemplar queda como Perdido.</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </section>
+
+        {# HU-02-08: multas que genero y su envio a Tesoreria. #}
+        <section class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("banknote", 18) }}Multas</h2>
+                {% if multas %}{{ ui.dibujar_etiqueta("Total " ~ (total |formatear_monto),
+                                                      "neutro") }}{% endif %}
+            </div>
+            {% if multas %}
+            <div class="contenedor-tabla">
+                <table class="tabla">
+                    <thead><tr><th scope="col">Motivo</th><th scope="col">Detalle</th><th
+                        scope="col" class="alinear-derecha">Monto</th><th
+                        scope="col">Estado</th><th scope="col">Tesorería</th></tr></thead>
+                    <tbody>
+                        {% for multa in multas %}
+                        <tr{% if puede_ver_multas %} data-enlace="{{
+                            url_for('multas.mostrar_detalle', multa_id=multa.id) }}"{% endif %}>
+                            <td class="resaltado">{{ multa.motivo }}</td>
+                            <td class="texto-chico">{{ multa.descripcion }}</td>
+                            <td class="alinear-derecha sin-salto resaltado">{{
+                                multa.monto |formatear_monto }}</td>
+                            <td>{{ ui.dibujar_etiqueta(multa.estado,
+                                                       "exito" if multa.estado == "Pagada"
+                                                       else "advertencia", punto=True) }}</td>
+                            <td class="sin-salto">
+                                {% if multa.fecha_envio_tesoreria %}
+                                    {{ ui.dibujar_etiqueta("Enviada", "informacion") }}<br><span
+                                        class="celda-subtitulo">{{ multa.fecha_envio_tesoreria
+                                            |formatear_fecha("%d/%m/%Y %H:%M") }}</span>
+                                {% else %}
+                                    {{ ui.dibujar_etiqueta("Sin enviar", "error") }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="tarjeta-cuerpo">
+                    <p class="texto-chico atenuado">Se devolvió a tiempo y en buen estado: no se
+                        generaron multas.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    {# Lo que sigue despues de la devolucion. #}
+    <aside class="tarjeta" style="position: sticky; top: 88px">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("info", 18) }}Siguiente paso</h2>
+        </div>
+        <div class="tarjeta-cuerpo pila texto-chico" style="gap: 10px">
+            {% if pendientes %}
+                <p>{{ prestamo.usuario_nombre }} tiene que pagar en Tesorería. Mientras la multa
+                    esté pendiente no puede llevarse otro libro ni renovar.</p>
+                <p class="texto-muy-chico atenuado">Cuando Tesorería confirme el cobro, registra
+                    el pago desde Multas para liberar su adeudo.</p>
+            {% elif multas %}
+                <p>Las multas de este préstamo ya están pagadas.</p>
+            {% else %}
+                <p>El préstamo quedó cerrado sin adeudos.</p>
+            {% endif %}
+        </div>
+        <div class="tarjeta-pie pila" style="gap: 8px">
+            {% if puede_ver_multas and pendientes %}
+                {{ ui.dibujar_boton("Ver multas pendientes", "primario", "banknote",
+                                    enlace=url_for("multas.listar"), completo=True) }}
+            {% endif %}
+            {% if puede_ver_prestamo %}
+                {{ ui.dibujar_boton("Ver boleta del préstamo", "secundario", "file",
+                                    enlace=url_for("prestamos.mostrar_detalle",
+                                                   prestamo_id=prestamo.id),
+                                    completo=True) }}
+            {% endif %}
+        </div>
+    </aside>
+</div>
+{% endblock %}

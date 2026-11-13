@@ -34,7 +34,7 @@
 --     PRESTAMOS Y DEVOLUCIONES
 --         prestamos, renovaciones, devoluciones, comprobantes_prestamo, lista_espera
 --     AVISOS Y MULTAS
---         avisos, multas, pagos_multa
+--         avisos, multas, envios_tesoreria, pagos_multa
 --     INDICES
 -- ============================================================
 
@@ -384,7 +384,7 @@ CREATE TABLE lista_espera (
 
 -- ============================================================
 -- AVISOS Y MULTAS
--- Avisos a los usuarios, multas y sus pagos.
+-- Avisos a los usuarios, multas, sus envios a Tesoreria y sus pagos.
 -- ============================================================
 
 -- Avisos de vencimiento, adeudo y lista de espera.
@@ -409,11 +409,23 @@ CREATE TABLE multas (
     prestamo_id            INT UNSIGNED NOT NULL,
     motivo                 ENUM('Retraso','Daño','Pérdida') NOT NULL,
     monto                  DECIMAL(10,2) NOT NULL,
+    descripcion            VARCHAR(255),
     fecha_generacion       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     estado                 ENUM('Pendiente','Pagada','Cancelada') NOT NULL DEFAULT 'Pendiente',
     CONSTRAINT pk_multas PRIMARY KEY (id),
     CONSTRAINT ck_multas_1 CHECK (monto > 0),
     CONSTRAINT fk_multas_prestamo FOREIGN KEY (prestamo_id) REFERENCES prestamos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- Envios de cada multa a Tesoreria para su cobro.
+CREATE TABLE envios_tesoreria (
+    id                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    multa_id               INT UNSIGNED NOT NULL,
+    destino                VARCHAR(150) NOT NULL,
+    fecha_envio            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_envios_tesoreria PRIMARY KEY (id),
+    CONSTRAINT fk_envios_tesoreria_multa FOREIGN KEY (multa_id) REFERENCES multas(id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 

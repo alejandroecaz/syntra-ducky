@@ -127,6 +127,7 @@ def _mostrar_detalle(prestamo_id, codigo=200, **extra):
         renovacion=prestamo_servicio.revisar_renovacion(prestamo),
         renovaciones=prestamo_servicio.listar_renovaciones(prestamo_id),
         puede_renovar=verificar_permiso("prestamos.renovar"),
+        puede_devolver=verificar_permiso("devoluciones.registrar"),
         nota_boleta=prestamo_servicio.NOTA_BOLETA,
         vencido=prestamo_servicio.verificar_vencido(prestamo),
         impresoras=config.IMPRESORAS,

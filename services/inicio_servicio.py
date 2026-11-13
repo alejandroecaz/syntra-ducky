@@ -22,6 +22,7 @@ Fecha:
 import config
 from models import libro as libro_modelo
 from models import lista_espera as espera_modelo
+from models import multa as multa_modelo
 from models import orden_compra as orden_modelo
 from models import prestamo as prestamo_modelo
 from models import usuario as usuario_modelo
@@ -55,6 +56,21 @@ ACCIONES = [
         "Registrar préstamo",
         "Presta un ejemplar y envía la boleta por correo, WhatsApp o impresa.",
         "prestamos.registrar",
+    ),
+    (
+        ("devoluciones.registrar",),
+        "undo",
+        "Registrar devolución",
+        "Recibe un libro; si llega tarde, dañado o se perdió se genera la "
+        "multa.",
+        "devoluciones.buscar",
+    ),
+    (
+        ("multas.gestionar",),
+        "banknote",
+        "Multas",
+        "Envía las multas a Tesorería y registra sus pagos.",
+        "multas.listar",
     ),
     (
         ("espera.gestionar",),
@@ -198,6 +214,17 @@ def obtener_indicadores(permisos):
                 "En lista de espera",
                 espera_modelo.contar_vigentes(),
                 "espera.listar",
+            )
+        )
+    # Multas: pendientes de pago y cuanto suman.
+    if _tener_alguno(permisos, "multas.gestionar"):
+        totales = multa_modelo.contar_pendientes()
+        indicadores.append(
+            (
+                "banknote",
+                f"Multas pendientes (${totales['total']:,.2f} MXN)",
+                totales["cantidad"],
+                "multas.listar",
             )
         )
     # Compras: ordenes registradas.

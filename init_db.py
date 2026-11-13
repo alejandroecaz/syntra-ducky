@@ -42,7 +42,8 @@ Contenido del listado:
     Datos de demostracion
         TODOS, PERFILES, REGLAS_PRESTAMO, USUARIOS, EDITORIALES, TEMAS,
         AUTORES, ESTANCIAS, PROVEEDORES, SINOPSIS, LIBROS,
-        FECHA_BAJA_DEMO, PRESTAMOS, LISTA_ESPERA
+        FECHA_BAJA_DEMO, PRESTAMOS, LISTA_ESPERA, PRECIOS, TIPOS_CAMBIO,
+        DEVOLUCIONES
     Carga de datos
         formar_nombre_autor()
         crear_tablas()
@@ -54,6 +55,10 @@ Contenido del listado:
         insertar_libros()
         insertar_prestamos()
         insertar_lista_espera()
+        insertar_precios()
+        insertar_tipos_cambio()
+        _insertar_multa()
+        insertar_devoluciones()
     Creacion y revision de la base de datos
         inicializar()
         verificar_esquema_vigente()
@@ -65,7 +70,7 @@ Contenido del listado:
 import os
 import sqlite3
 import sys
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from werkzeug.security import generate_password_hash
 
@@ -362,6 +367,87 @@ CREATE TABLE avisos (
     fecha_envio     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Historial de precios de cada libro; el ultimo sirve para cobrar la
+-- reposicion por perdida (HU-02-08).
+CREATE TABLE precios_libro (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    libro_id        INTEGER       NOT NULL
+        REFERENCES libros(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    precio          DECIMAL(10,2) NOT NULL CHECK (precio > 0),
+    moneda          VARCHAR(3)    NOT NULL DEFAULT '{config.MONEDA_LOCAL}'
+        CHECK (moneda IN ({_formatear_lista_sql(config.MONEDAS)})),
+    fecha_registro  DATE          NOT NULL
+);
+
+-- Tipo de cambio del dolar por fecha (HU-02-08).
+CREATE TABLE tipos_cambio (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    moneda          VARCHAR(3)    NOT NULL DEFAULT 'USD',
+    fecha           DATE          NOT NULL,
+    valor_mxn       DECIMAL(10,4) NOT NULL CHECK (valor_mxn > 0),
+    UNIQUE (moneda, fecha)
+);
+
+-- Registro de la devolucion, maximo una por prestamo (HU-02-07).
+CREATE TABLE devoluciones (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    prestamo_id      INTEGER      NOT NULL UNIQUE
+        REFERENCES prestamos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    bibliotecario_id INTEGER      NOT NULL
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    fecha_devolucion DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    condicion        VARCHAR(10)  NOT NULL DEFAULT '{config.CONDICION_BUENO}'
+        CHECK (condicion IN
+               ({_formatear_lista_sql(config.CONDICIONES_DEVOLUCION)})),
+    observaciones    VARCHAR(255)
+);
+
+-- Multas generadas por un prestamo (HU-02-08). La descripcion dice como se
+-- calculo el monto.
+CREATE TABLE multas (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    prestamo_id      INTEGER       NOT NULL
+        REFERENCES prestamos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    motivo           VARCHAR(10)   NOT NULL
+        CHECK (motivo IN ({_formatear_lista_sql(config.MOTIVOS_MULTA)})),
+    monto            DECIMAL(10,2) NOT NULL CHECK (monto > 0),
+    descripcion      VARCHAR(255),
+    fecha_generacion DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado           VARCHAR(10)   NOT NULL
+        DEFAULT '{config.ESTADO_MULTA_PENDIENTE}'
+        CHECK (estado IN ({_formatear_lista_sql(config.ESTADOS_MULTA)}))
+);
+
+-- Envios de cada multa a Tesoreria para su cobro (HU-02-08).
+CREATE TABLE envios_tesoreria (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    multa_id        INTEGER      NOT NULL
+        REFERENCES multas(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    destino         VARCHAR(150) NOT NULL,
+    fecha_envio     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pagos de cada multa que Tesoreria confirma.
+CREATE TABLE pagos_multa (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    multa_id         INTEGER       NOT NULL
+        REFERENCES multas(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    bibliotecario_id INTEGER       NOT NULL
+        REFERENCES usuarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    monto            DECIMAL(10,2) NOT NULL CHECK (monto > 0),
+    metodo           VARCHAR(20)   NOT NULL
+        CHECK (metodo IN ({_formatear_lista_sql(config.METODOS_PAGO)})),
+    referencia       VARCHAR(50),
+    fecha_pago       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indices para las busquedas del catalogo y los prestamos.
 CREATE INDEX idx_libros_titulo ON libros (titulo);
 CREATE INDEX idx_autores_nombre ON autores (apellidos, nombre);
@@ -371,6 +457,9 @@ CREATE INDEX idx_ejemplares_estado ON ejemplares (estado);
 CREATE INDEX idx_prestamos_estado ON prestamos (estado, fecha_vencimiento);
 CREATE INDEX idx_prestamos_usuario ON prestamos (usuario_id, estado);
 CREATE INDEX idx_lista_espera_libro ON lista_espera (libro_id, estado);
+CREATE INDEX idx_precios_libro ON precios_libro (libro_id, fecha_registro);
+CREATE INDEX idx_multas_estado ON multas (estado);
+CREATE INDEX idx_multas_prestamo ON multas (prestamo_id);
 """
 
 # Tablas que deben existir; sirve para detectar una syntra.db del esquema
@@ -396,6 +485,12 @@ TABLAS = (
     "renovaciones",
     "lista_espera",
     "avisos",
+    "precios_libro",
+    "tipos_cambio",
+    "devoluciones",
+    "multas",
+    "envios_tesoreria",
+    "pagos_multa",
 )
 
 # ============================================================
@@ -436,6 +531,8 @@ PERFILES = [
             "prestamos.registrar",
             "prestamos.renovar",
             "espera.gestionar",
+            "devoluciones.registrar",
+            "multas.gestionar",
         ],
     ),
     (
@@ -965,6 +1062,56 @@ LISTA_ESPERA = [
     ("LIB-003", "dfuentes", 3),
 ]
 
+# Precios de los libros: (clave, precio, moneda, fecha de registro). Por
+# perdida se cobra el ultimo: LIB-001 tiene dos para probarlo, y LIB-010 y
+# LIB-013 estan en dolares. LIB-014 y LIB-015 no tienen precio, asi que al
+# reportar su perdida el bibliotecario captura el costo de reposicion.
+PRECIOS = [
+    ("LIB-001", 389.00, "MXN", "2024-01-15"),
+    ("LIB-001", 429.00, "MXN", "2026-03-10"),
+    ("LIB-002", 199.00, "MXN", "2025-08-01"),
+    ("LIB-003", 1450.00, "MXN", "2025-08-01"),
+    ("LIB-004", 649.00, "MXN", "2025-08-01"),
+    ("LIB-005", 1180.00, "MXN", "2025-08-01"),
+    ("LIB-006", 299.00, "MXN", "2025-08-01"),
+    ("LIB-007", 459.00, "MXN", "2025-08-01"),
+    ("LIB-008", 149.00, "MXN", "2025-08-01"),
+    ("LIB-009", 1320.00, "MXN", "2025-08-01"),
+    ("LIB-010", 95.00, "USD", "2026-02-20"),
+    ("LIB-011", 349.00, "MXN", "2025-08-01"),
+    ("LIB-012", 980.00, "MXN", "2025-08-01"),
+    ("LIB-013", 72.50, "USD", "2026-02-20"),
+    ("LIB-016", 520.00, "MXN", "2025-08-01"),
+]
+
+# Tipo de cambio del dolar: (hace cuantos dias, pesos por dolar). Se usa el
+# mas reciente.
+TIPOS_CAMBIO = [
+    (12, 18.42),
+    (2, 18.27),
+]
+
+# Prestamos ya devueltos con sus multas (HU-02-07 y HU-02-08): (codigo del
+# ejemplar, cuenta del usuario, hace cuantos dias se presto, dias de
+# prestamo, hace cuantos dias se devolvio, condicion, observaciones, monto
+# por dano, pago). pago es None si la multa sigue pendiente o (metodo,
+# referencia) si ya se pago. pmartinez tiene una multa pendiente, asi que no
+# puede llevarse otro libro hasta pagarla.
+DEVOLUCIONES = [
+    ("EJ-0016", "pmartinez", 40, 14, 20, "Bueno", None, None, None),
+    (
+        "EJ-0010",
+        "profesor",
+        60,
+        14,
+        43,
+        "Dañado",
+        "Pasta desprendida y hojas manchadas.",
+        250.00,
+        ("Transferencia", "TRF-88213"),
+    ),
+]
+
 
 # ============================================================
 # CARGA DE DATOS
@@ -1353,6 +1500,199 @@ def insertar_lista_espera(cursor):
         )
 
 
+def insertar_precios(cursor):
+    """
+    Descripcion:
+        Guarda el historial de precios de los libros de demostracion.
+
+    Parametros:
+        cursor (sqlite3.Cursor): cursor de la conexion de init_db.
+
+    Salida:
+        Ninguna.
+    """
+    for clave, precio, moneda, fecha in PRECIOS:
+        cursor.execute(
+            "INSERT INTO precios_libro (libro_id, precio, moneda, "
+            "fecha_registro) VALUES ("
+            "(SELECT id FROM libros WHERE clave = ?), ?, ?, ?)",
+            (clave, precio, moneda, fecha),
+        )
+
+
+def insertar_tipos_cambio(cursor):
+    """
+    Descripcion:
+        Guarda el tipo de cambio del dolar con fechas calculadas desde hoy,
+        para que siempre haya uno vigente.
+
+    Parametros:
+        cursor (sqlite3.Cursor): cursor de la conexion de init_db.
+
+    Salida:
+        Ninguna.
+    """
+    hoy = date.today()
+    for hace_dias, valor in TIPOS_CAMBIO:
+        cursor.execute(
+            "INSERT INTO tipos_cambio (moneda, fecha, valor_mxn) "
+            "VALUES ('USD', ?, ?)",
+            ((hoy - timedelta(days=hace_dias)).isoformat(), valor),
+        )
+
+
+def _insertar_multa(cursor, prestamo_id, motivo, monto, descripcion, datos):
+    """
+    Descripcion:
+        Guarda una multa de demostracion ya enviada a Tesoreria y, si se
+        indica, su pago.
+
+    Parametros:
+        cursor (sqlite3.Cursor): cursor de la conexion de init_db.
+        prestamo_id (int): id del prestamo.
+        motivo (str): uno de config.MOTIVOS_MULTA.
+        monto (float): monto de la multa.
+        descripcion (str): como se calculo.
+        datos (dict): fecha (datetime de la devolucion), pago (tuple o None)
+            y bibliotecario_id.
+
+    Salida:
+        Ninguna.
+    """
+    fecha = datos["fecha"].strftime("%Y-%m-%d %H:%M:%S")
+    estado = (
+        config.ESTADO_MULTA_PAGADA
+        if datos["pago"]
+        else config.ESTADO_MULTA_PENDIENTE
+    )
+    cursor.execute(
+        "INSERT INTO multas (prestamo_id, motivo, monto, descripcion, "
+        "fecha_generacion, estado) VALUES (?, ?, ?, ?, ?, ?)",
+        (prestamo_id, motivo, monto, descripcion, fecha, estado),
+    )
+    multa_id = cursor.lastrowid
+
+    # Se envio a Tesoreria el mismo dia de la devolucion.
+    cursor.execute(
+        "INSERT INTO envios_tesoreria (multa_id, destino, fecha_envio) "
+        "VALUES (?, ?, ?)",
+        (multa_id, config.TESORERIA_CORREO, fecha),
+    )
+    if datos["pago"]:
+        metodo, referencia = datos["pago"]
+        cursor.execute(
+            "INSERT INTO pagos_multa (multa_id, bibliotecario_id, monto, "
+            "metodo, referencia, fecha_pago) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                multa_id,
+                datos["bibliotecario_id"],
+                monto,
+                metodo,
+                referencia,
+                (datos["fecha"] + timedelta(days=2)).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            ),
+        )
+
+
+def insertar_devoluciones(cursor):
+    """
+    Descripcion:
+        Guarda prestamos ya devueltos con su devolucion y sus multas (por
+        retraso y por dano), con folio consecutivo y fechas calculadas desde
+        hoy.
+
+    Parametros:
+        cursor (sqlite3.Cursor): cursor de la conexion de init_db.
+
+    Salida:
+        Ninguna.
+    """
+    bibliotecario_id = cursor.execute(
+        "SELECT id FROM usuarios WHERE cuenta = 'biblio'"
+    ).fetchone()[0]
+    ahora = datetime.now().replace(microsecond=0)
+
+    for (
+        codigo,
+        cuenta,
+        hace_prestamo,
+        dias,
+        hace_devolucion,
+        condicion,
+        observaciones,
+        monto_dano,
+        pago,
+    ) in DEVOLUCIONES:
+        # El prestamo, ya como devuelto, con el siguiente folio.
+        usuario = cursor.execute(
+            "SELECT u.id, pf.multa_diaria FROM usuarios u "
+            "JOIN perfiles pf ON pf.id = u.perfil_id WHERE u.cuenta = ?",
+            (cuenta,),
+        ).fetchone()
+        numero = cursor.execute("SELECT COUNT(*) FROM prestamos").fetchone()[0]
+        fecha_prestamo = ahora - timedelta(days=hace_prestamo)
+        vencimiento = (fecha_prestamo + timedelta(days=dias)).date()
+        cursor.execute(
+            "INSERT INTO prestamos (folio, ejemplar_id, usuario_id, "
+            "bibliotecario_id, fecha_prestamo, fecha_vencimiento, estado) "
+            "VALUES (?, (SELECT id FROM ejemplares WHERE codigo = ?), ?, ?, "
+            "?, ?, ?)",
+            (
+                f"{config.PREFIJO_PRESTAMO}-{ahora.year}-{numero + 1:04d}",
+                codigo,
+                usuario[0],
+                bibliotecario_id,
+                fecha_prestamo.strftime("%Y-%m-%d %H:%M:%S"),
+                vencimiento.isoformat(),
+                config.ESTADO_PRESTAMO_DEVUELTO,
+            ),
+        )
+        prestamo_id = cursor.lastrowid
+
+        # La devolucion.
+        fecha_devolucion = ahora - timedelta(days=hace_devolucion)
+        cursor.execute(
+            "INSERT INTO devoluciones (prestamo_id, bibliotecario_id, "
+            "fecha_devolucion, condicion, observaciones) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                prestamo_id,
+                bibliotecario_id,
+                fecha_devolucion.strftime("%Y-%m-%d %H:%M:%S"),
+                condicion,
+                observaciones,
+            ),
+        )
+
+        # Sus multas: por los dias de retraso y por el dano.
+        datos = {
+            "fecha": fecha_devolucion,
+            "pago": pago,
+            "bibliotecario_id": bibliotecario_id,
+        }
+        retraso = (fecha_devolucion.date() - vencimiento).days
+        if retraso > 0:
+            _insertar_multa(
+                cursor,
+                prestamo_id,
+                config.MOTIVO_RETRASO,
+                retraso * usuario[1],
+                f"{retraso} día(s) de retraso × ${usuario[1]:,.2f} por día",
+                datos,
+            )
+        if monto_dano:
+            _insertar_multa(
+                cursor,
+                prestamo_id,
+                config.MOTIVO_DANO,
+                monto_dano,
+                f"Daño: {observaciones}",
+                datos,
+            )
+
+
 # ============================================================
 # CREACION Y REVISION DE LA BASE DE DATOS
 # Crean syntra.db desde cero y revisan si su esquema esta al dia.
@@ -1390,10 +1730,13 @@ def inicializar(ruta=config.RUTA_BASE_DATOS, con_libros=True):
     perfiles_ids = insertar_perfiles(cursor, permisos_ids)
     insertar_usuarios(cursor, perfiles_ids)
     ids = insertar_catalogos(cursor)
+    insertar_tipos_cambio(cursor)
     if con_libros:
         insertar_libros(cursor, ids)
+        insertar_precios(cursor)
         insertar_prestamos(cursor)
         insertar_lista_espera(cursor)
+        insertar_devoluciones(cursor)
 
     # Guardamos los cambios y cerramos.
     conexion.commit()

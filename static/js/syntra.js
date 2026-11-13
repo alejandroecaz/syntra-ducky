@@ -42,6 +42,8 @@
            actualizarResumenOrden()
        Seleccion de libros del listado (HU-01-16 y HU-01-17)
            actualizarSeleccion()
+       Resultado de la devolucion (HU-02-07)
+           actualizarResultado()
    ============================================================
 */
 (function () {
@@ -608,6 +610,28 @@
             casilla.addEventListener("change", actualizarSeleccion);
         });
         actualizarSeleccion();
+    }
+
+    // ============================================================
+    // RESULTADO DE LA DEVOLUCION (HU-02-07)
+    // Solo se ven los campos del resultado elegido (monto por dano o costo
+    // de reposicion). Sin JavaScript se ven todos.
+    // ============================================================
+    var opcionesResultado = buscarElementos("[data-mostrar-segun]");
+    if (opcionesResultado.length) {
+        // Muestra los bloques del resultado marcado y oculta los demas.
+        var actualizarResultado = function () {
+            var marcada = opcionesResultado.filter(function (opcion) {
+                return opcion.checked;
+            })[0];
+            buscarElementos("[data-mostrar-con]").forEach(function (bloque) {
+                bloque.hidden = !marcada || bloque.dataset.mostrarCon !== marcada.value;
+            });
+        };
+        opcionesResultado.forEach(function (opcion) {
+            opcion.addEventListener("change", actualizarResultado);
+        });
+        actualizarResultado();
     }
 
     // Funciones disponibles para otras paginas.

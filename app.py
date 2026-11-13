@@ -37,15 +37,18 @@ from controllers.auth_controller import auth_bp
 from controllers.catalogo_controller import catalogo_bp
 from controllers.compra_controller import compra_bp
 from controllers.cuenta_controller import cuenta_bp
+from controllers.devolucion_controller import devolucion_bp
 from controllers.espera_controller import espera_bp
 from controllers.inicio_controller import inicio_bp
 from controllers.movil_controller import movil_bp
+from controllers.multa_controller import multa_bp
 from controllers.perfil_controller import perfil_bp
 from controllers.prestamo_controller import prestamo_bp
 from controllers.reporte_controller import reporte_bp
 from controllers.usuario_controller import usuario_bp
 from models.db import cerrar_conexion
 from services.catalogo_servicio import obtener_estado_libro
+from services.multa_servicio import formatear_monto
 from utils.iconos import dibujar_icono
 from utils.seguridad import obtener_usuario_actual, verificar_permiso
 
@@ -59,7 +62,9 @@ BLUEPRINTS = (
     reporte_bp,
     compra_bp,
     prestamo_bp,
+    devolucion_bp,
     espera_bp,
+    multa_bp,
     cuenta_bp,
     movil_bp,
 )
@@ -75,6 +80,7 @@ CLAVES_ENVIO = (
     "TWILIO_TOKEN",
     "TWILIO_WHATSAPP_ORIGEN",
     "CARPETA_BOLETAS",
+    "TESORERIA_CORREO",
 )
 
 
@@ -179,6 +185,7 @@ def crear_aplicacion(configuracion=None):
         cfg=config,
     )
     app.jinja_env.filters["formatear_fecha"] = formatear_fecha
+    app.jinja_env.filters["formatear_monto"] = formatear_monto
 
     @app.errorhandler(403)
     def mostrar_acceso_no_autorizado(_error):

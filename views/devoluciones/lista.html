@@ -1,0 +1,115 @@
+{#
+   ============================================================
+   Archivo:      views/devoluciones/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Devoluciones (Vista, HU-02-07): busqueda del ejemplar que se
+       devuelve y las ultimas devoluciones y perdidas registradas.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Devoluciones{% endblock %}
+
+{% block contenido %}
+{{ ui.dibujar_encabezado_pagina("Devoluciones",
+                                "Captura el código del ejemplar que regresa. Se revisa si llegó "
+                                "tarde, dañado o si se perdió, y las multas se mandan a "
+                                "Tesorería.",
+                                hus=["HU-02-07 Registro de devolución",
+                                     "HU-02-08 Generación de multas"]) }}
+
+{# HU-02-07: buscar el prestamo por el codigo del ejemplar. #}
+<section class="tarjeta" style="margin-bottom: 20px">
+    <div class="tarjeta-encabezado">
+        <h2 class="tarjeta-titulo">{{ dibujar_icono("undo", 18) }}Registrar devolución</h2>
+    </div>
+    <form class="tarjeta-cuerpo pila" method="get" novalidate>
+        {% if error_general %}{{ ui.dibujar_alerta("error", texto=error_general) }}{% endif %}
+        <div class="rejilla-formulario">
+            {{ ui.dibujar_campo("ejemplar", "Ejemplar", valores.get("ejemplar"),
+                                errores.get("ejemplar"), obligatorio=True, icono="book",
+                                sugerencia="Código, ej. EJ-0019", list="ejemplares-prestados",
+                                ayuda="El código viene en la etiqueta del libro.") }}
+            <datalist id="ejemplares-prestados">
+                {% for prestado in prestados %}<option value="{{ prestado.codigo }}"
+                    label="{{ prestado.titulo }} · {{ prestado.usuario_nombre }}">{{
+                        prestado.titulo }} · {{ prestado.usuario_nombre }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+        <div>
+            {{ ui.dibujar_boton("Buscar préstamo", "primario", "search", tipo="submit") }}
+        </div>
+    </form>
+</section>
+
+{# HU-02-07: ultimas devoluciones y perdidas. #}
+<div class="tarjeta">
+    <div class="resumen-tabla">
+        <span>Últimas devoluciones registradas</span>
+    </div>
+    {% if recientes %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Folio</th><th scope="col">Usuario</th>
+                    <th scope="col">Libro</th><th scope="col">Ejemplar</th>
+                    <th scope="col">Registrada</th><th scope="col">Resultado</th>
+                    <th scope="col" class="alinear-derecha">Multas</th>
+                    <th scope="col" class="alinear-derecha"><span
+                        class="solo-lector">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cerrado in recientes %}
+                <tr data-enlace="{{ url_for('devoluciones.mostrar_resultado',
+                                            prestamo_id=cerrado.id) }}">
+                    <td class="monoespaciado resaltado sin-salto">{{ cerrado.folio }}</td>
+                    <td>{{ cerrado.usuario_nombre }}<br><span class="celda-subtitulo">{{
+                        cerrado.usuario_identificador }}</span></td>
+                    <td class="resaltado">{{ cerrado.titulo }}<br><span
+                        class="celda-subtitulo">{{ cerrado.libro_clave }}</span></td>
+                    <td class="monoespaciado">{{ cerrado.ejemplar_codigo }}</td>
+                    <td class="sin-salto">{{ cerrado.fecha_cierre |formatear_fecha }}</td>
+                    <td>
+                        {% if cerrado.estado == "Perdido" %}
+                            {{ ui.dibujar_etiqueta("Perdido", "error", punto=True) }}
+                        {% elif cerrado.condicion == "Dañado" %}
+                            {{ ui.dibujar_etiqueta("Devuelto dañado", "advertencia", punto=True) }}
+                        {% else %}
+                            {{ ui.dibujar_etiqueta("Devuelto", "exito", punto=True) }}
+                        {% endif %}
+                    </td>
+                    <td class="alinear-derecha sin-salto{{ ' resaltado' if cerrado.total_multas }}">{{
+                        cerrado.total_multas |formatear_monto if cerrado.total_multas
+                        else "Sin multas" }}</td>
+                    <td class="alinear-derecha">{{ ui.dibujar_boton(
+                        "Ver", "secundario", "file",
+                        enlace=url_for("devoluciones.mostrar_resultado", prestamo_id=cerrado.id),
+                        tamano="chico") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ ui.dibujar_estado_vacio("undo", "Todavía no hay devoluciones",
+                                   "Cuando registres una devolución aparecerá aquí con sus "
+                                   "multas.") }}
+    {% endif %}
+</div>
+{% endblock %}

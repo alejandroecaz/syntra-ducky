@@ -1,0 +1,165 @@
+{#
+   ============================================================
+   Archivo:      views/devoluciones/form.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Captura de la devolucion (Vista, HU-02-07): que paso con el libro
+       (regresa bien, regresa danado o se perdio) y las multas que se
+       generan (HU-02-08).
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Devolución {{ prestamo.folio }}{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('devoluciones.buscar') }}">Devoluciones</a>
+{%- endblock %}
+
+{% block contenido %}
+{{ ui.dibujar_encabezado_pagina("Registrar devolución",
+                                "Préstamo " ~ prestamo.folio ~ " · " ~ prestamo.titulo,
+                                hus=["HU-02-07 Registro de devolución",
+                                     "HU-02-08 Generación de multas"],
+                                regresar=url_for("devoluciones.buscar"),
+                                texto_regresar="Devoluciones") }}
+
+<form method="post" action="{{ url_for('devoluciones.registrar') }}" novalidate>
+    <input type="hidden" name="ejemplar" value="{{ prestamo.ejemplar_codigo }}">
+    <div class="diseno-lateral">
+        <div class="pila-amplia">
+            {% if errores %}
+                {{ ui.dibujar_alerta("error", texto="No se puede registrar la devolución. "
+                                                    "Revisa los datos marcados.") }}
+            {% endif %}
+
+            {# Datos del prestamo que se cierra. #}
+            <section class="tarjeta">
+                <div class="tarjeta-encabezado">
+                    <h2 class="tarjeta-titulo">{{ dibujar_icono("book", 18) }}Préstamo</h2>
+                    {% if retraso %}{{ ui.dibujar_etiqueta("Vencido hace " ~ retraso.dias ~
+                                                           " día(s)", "error", punto=True) }}
+                    {% else %}{{ ui.dibujar_etiqueta("A tiempo", "exito", punto=True) }}{% endif %}
+                </div>
+                <div class="tarjeta-cuerpo">
+                    <dl class="clave-valor">
+                        <dt>Folio</dt><dd class="monoespaciado">{{ prestamo.folio }}</dd>
+                        <dt>Usuario</dt><dd>{{ prestamo.usuario_nombre }} ({{
+                            prestamo.usuario_identificador }}) · {{ prestamo.perfil }}</dd>
+                        <dt>Libro</dt><dd>{{ prestamo.titulo }} ({{ prestamo.libro_clave }})</dd>
+                        <dt>Ejemplar</dt><dd class="monoespaciado">{{
+                            prestamo.ejemplar_codigo }}</dd>
+                        <dt>Prestado el</dt><dd>{{ prestamo.fecha_prestamo |formatear_fecha }}</dd>
+                        <dt>Devolver el</dt><dd class="resaltado">{{
+                            prestamo.fecha_vencimiento |formatear_fecha }}</dd>
+                        <dt>Multa por día</dt><dd>{{ prestamo.multa_diaria |formatear_monto }}</dd>
+                    </dl>
+                </div>
+            </section>
+
+            {# HU-02-07: que paso con el libro. #}
+            <section class="tarjeta">
+                <div class="tarjeta-encabezado">
+                    <h2 class="tarjeta-titulo">{{ dibujar_icono("clipboard", 18) }}¿Qué pasó con
+                        el libro?</h2>
+                </div>
+                <div class="tarjeta-cuerpo pila">
+                    <fieldset class="grupo-casillas">
+                        <legend>Resultado</legend>
+                        <div class="pila" style="gap: 8px">
+                            {% for valor, etiqueta in resultados %}
+                                <label class="casilla">
+                                    <input type="radio" name="resultado" value="{{ valor }}"
+                                           data-mostrar-segun="resultado"
+                                           {% if valores.get("resultado") == valor %}checked{% endif %}>
+                                    <span class="casilla-titulo">{{ etiqueta }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if errores.get("resultado") %}
+                            <span class="texto-error">{{ dibujar_icono("alert-circle", 14) }}{{
+                                errores.resultado }}</span>
+                        {% endif %}
+                    </fieldset>
+
+                    {# HU-02-08 · Dano: el bibliotecario captura el monto. #}
+                    <div data-mostrar-con="danado">
+                        {{ ui.dibujar_campo("monto_dano", "Monto por el daño",
+                                            valores.get("monto_dano"), errores.get("monto_dano"),
+                                            obligatorio=True, icono="banknote",
+                                            sugerencia="Ej. 150.00", inputmode="decimal",
+                                            ayuda="Lo que cuesta reparar el libro, en pesos.") }}
+                    </div>
+
+                    {# HU-02-08 · Perdida: ultimo precio del libro o costo capturado. #}
+                    <div data-mostrar-con="perdido">
+                        {% if reposicion.monto is not none %}
+                            {{ ui.dibujar_alerta("informacion", "Se cobra la reposición: "
+                                                 ~ (reposicion.monto |formatear_monto),
+                                                 reposicion.descripcion ~ ".") }}
+                        {% else %}
+                            {{ ui.dibujar_campo("monto_reposicion", "Costo de reposición",
+                                                valores.get("monto_reposicion"),
+                                                errores.get("monto_reposicion"),
+                                                obligatorio=True, icono="banknote",
+                                                sugerencia="Ej. 450.00", inputmode="decimal",
+                                                ayuda=reposicion.motivo
+                                                      ~ " Captura lo que cuesta reponerlo.") }}
+                        {% endif %}
+                    </div>
+
+                    {{ ui.dibujar_campo_texto_largo("observaciones", "Observaciones",
+                                                    valores.get("observaciones"),
+                                                    errores.get("observaciones"),
+                                                    sugerencia="Ej. pasta desprendida",
+                                                    ayuda="Obligatorias si el libro viene "
+                                                          "dañado: describe el daño.") }}
+                </div>
+            </section>
+        </div>
+
+        {# HU-02-08: multas que se generan al registrar. #}
+        <aside class="tarjeta" style="position: sticky; top: 88px">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("banknote", 18) }}Multas que se
+                    generan</h2>
+            </div>
+            <div class="tarjeta-cuerpo pila texto-chico" style="gap: 10px">
+                {% if retraso %}
+                    <span>{{ dibujar_icono("alert-triangle", 15) }} <strong>Retraso:</strong> {{
+                        retraso.monto |formatear_monto }} ({{ retraso.descripcion }}).</span>
+                {% else %}
+                    <span>{{ dibujar_icono("check", 15) }} Sin retraso: se devuelve a
+                        tiempo.</span>
+                {% endif %}
+                <span data-mostrar-con="danado">{{ dibujar_icono("alert-triangle", 15) }}
+                    <strong>Daño:</strong> el monto que captures.</span>
+                <span data-mostrar-con="perdido">{{ dibujar_icono("alert-triangle", 15) }}
+                    <strong>Pérdida:</strong> {{ reposicion.monto |formatear_monto
+                        if reposicion.monto is not none else "el costo que captures" }}.</span>
+                <p class="texto-muy-chico atenuado">Al registrar, las multas se mandan a
+                    Tesorería ({{ correo_tesoreria }}). Mientras estén pendientes el usuario
+                    no puede llevarse otro libro ni renovar.</p>
+            </div>
+            <div class="tarjeta-pie pila" style="gap: 8px">
+                {{ ui.dibujar_boton("Registrar devolución", "primario", "check", tipo="submit",
+                                    completo=True) }}
+                {{ ui.dibujar_boton("Cancelar", "secundario",
+                                    enlace=url_for("devoluciones.buscar"), completo=True) }}
+            </div>
+        </aside>
+    </div>
+</form>
+{% endblock %}

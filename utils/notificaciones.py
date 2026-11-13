@@ -78,6 +78,22 @@ def verificar_correo_configurado():
     )
 
 
+def obtener_correo_tesoreria():
+    """
+    Descripcion:
+        HU-02-08: Correo de Tesoreria al que se mandan las multas.
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        str: correo de .env (TESORERIA_CORREO) o el de config.py.
+    """
+    return (
+        current_app.config.get("TESORERIA_CORREO") or config.TESORERIA_CORREO
+    )
+
+
 def armar_correo(destino, asunto, texto, adjunto_nombre=None, adjunto=None):
     """
     Descripcion:

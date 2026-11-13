@@ -1,0 +1,163 @@
+{#
+   ============================================================
+   Archivo:      views/multas/detalle.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Multa (Vista, HU-02-08): aviso para Tesoreria, su envio por correo
+       o en PDF, el historial de envios y el registro del pago.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Multa {{ multa.folio }}{% endblock %}
+{% block migas %}
+    {{- dibujar_icono("chevron-right", 14) }}<a
+      href="{{ url_for('multas.listar') }}">Multas</a>
+{%- endblock %}
+
+{% block contenido %}
+{% set pendiente = multa.estado == "Pendiente" %}
+{% call ui.dibujar_encabezado_pagina("Multa por " ~ multa.motivo|lower ~ " · " ~ multa.folio,
+                                     "Generada el "
+                                     ~ (multa.fecha_generacion |formatear_fecha("%d/%m/%Y %H:%M"))
+                                     ~ " para " ~ multa.usuario_nombre ~ ".",
+                                     hus=["HU-02-08 Generación de multas y envío a "
+                                          "Tesorería"],
+                                     regresar=url_for("multas.listar"),
+                                     texto_regresar="Multas") %}
+    {{ ui.dibujar_etiqueta(multa.estado, "advertencia" if pendiente else "exito", punto=True) }}
+    {{ ui.dibujar_boton("Descargar aviso PDF", "secundario", "download",
+                        enlace=url_for("multas.descargar_aviso", multa_id=multa.id)) }}
+{% endcall %}
+
+<div class="diseno-lateral">
+    <div class="pila-amplia">
+        {# HU-02-08: el aviso que recibe Tesoreria. #}
+        <article class="documento">
+            <header class="documento-encabezado">
+                <div class="documento-marca">
+                    {{ ui.dibujar_logo(56) }}
+                    <span><span class="marca-nombre">Syntra</span><br><span
+                        class="marca-subtitulo">{{ cfg.NOMBRE_CLIENTE }}</span></span>
+                </div>
+                <div class="documento-datos">
+                    <div class="documento-titulo">Aviso de multa</div>
+                    Folio: <strong class="resaltado monoespaciado">{{ multa.folio }}</strong>
+                </div>
+            </header>
+            <dl class="clave-valor margen-abajo-4">
+                {% for etiqueta, valor in datos_aviso %}
+                    <dt>{{ etiqueta }}</dt>
+                    <dd{% if etiqueta == "Total a cobrar" %}
+                        class="resaltado" style="font-size: 1.05rem"{% endif %}>{{ valor }}</dd>
+                {% endfor %}
+            </dl>
+            <p class="texto-chico atenuado" style="margin-top: 16px">{{ nota_aviso }}</p>
+        </article>
+
+        {# HU-02-08: envios a Tesoreria. #}
+        <section class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("send", 18) }}Envíos a
+                    Tesorería</h2>
+            </div>
+            {% if envios %}
+            <div class="contenedor-tabla">
+                <table class="tabla">
+                    <thead><tr><th scope="col">Destino</th><th
+                        scope="col">Fecha</th></tr></thead>
+                    <tbody>
+                        {% for envio in envios %}
+                        <tr>
+                            <td>{{ envio.destino }}</td>
+                            <td class="sin-salto">{{
+                                envio.fecha_envio |formatear_fecha("%d/%m/%Y %H:%M") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="tarjeta-cuerpo">
+                    <p class="texto-chico atenuado">Todavía no se manda a Tesorería.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <div class="pila-amplia">
+        {# HU-02-08: mandar el aviso a Tesoreria. #}
+        {% if pendiente %}
+        <section class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("send", 18) }}Enviar a
+                    Tesorería</h2>
+            </div>
+            <form class="tarjeta-cuerpo pila" style="gap: 10px" method="post"
+                  action="{{ url_for('multas.enviar_a_tesoreria', multa_id=multa.id) }}">
+                {% if resultado %}{{ ui.dibujar_alerta(resultado[0], texto=resultado[1]) }}{% endif %}
+                <p class="texto-chico">Se manda a <strong>{{ correo_tesoreria }}</strong> con el
+                    aviso en PDF adjunto.</p>
+                {% if not correo_configurado %}
+                    <p class="texto-muy-chico atenuado">Modo demostración: el correo se guarda en
+                        la carpeta boletas_enviadas.</p>
+                {% endif %}
+                {{ ui.dibujar_boton("Volver a enviar" if envios else "Enviar a Tesorería",
+                                    "secundario" if envios else "primario", "send",
+                                    tipo="submit", completo=True) }}
+            </form>
+        </section>
+        {% endif %}
+
+        {# Pago confirmado por Tesoreria: libera el adeudo. #}
+        <section class="tarjeta">
+            <div class="tarjeta-encabezado">
+                <h2 class="tarjeta-titulo">{{ dibujar_icono("banknote", 18) }}Pago</h2>
+                {{ ui.dibujar_etiqueta(multa.monto |formatear_monto, "neutro") }}
+            </div>
+            {% if pago %}
+                <div class="tarjeta-cuerpo">
+                    <dl class="clave-valor">
+                        <dt>Pagada el</dt><dd>{{ pago.fecha_pago |formatear_fecha("%d/%m/%Y %H:%M") }}</dd>
+                        <dt>Método</dt><dd>{{ pago.metodo }}</dd>
+                        <dt>Referencia</dt><dd>{{ pago.referencia or "—" }}</dd>
+                        <dt>Registró</dt><dd>{{ pago.bibliotecario }}</dd>
+                    </dl>
+                </div>
+            {% elif pendiente %}
+                <form class="tarjeta-cuerpo pila" style="gap: 10px" method="post" novalidate
+                      action="{{ url_for('multas.registrar_pago', multa_id=multa.id) }}">
+                    <p class="texto-chico">Regístralo cuando Tesorería confirme el cobro. Con eso
+                        {{ multa.usuario_nombre }} puede volver a pedir libros.</p>
+                    {{ ui.dibujar_campo_seleccion("metodo", "Método de pago", metodos,
+                                                  valores.get("metodo", ""),
+                                                  errores.get("metodo"), obligatorio=True,
+                                                  sugerencia="Elige el método") }}
+                    {{ ui.dibujar_campo("referencia", "Referencia", valores.get("referencia"),
+                                        errores.get("referencia"), opcional=True,
+                                        sugerencia="Folio del ticket o transferencia",
+                                        ayuda="Obligatoria si no se pagó en efectivo.") }}
+                    {{ ui.dibujar_boton("Registrar pago", "primario", "check", tipo="submit",
+                                        completo=True) }}
+                </form>
+            {% else %}
+                <div class="tarjeta-cuerpo">
+                    <p class="texto-chico atenuado">Esta multa está {{ multa.estado|lower }}.</p>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

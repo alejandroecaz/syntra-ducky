@@ -26,3 +26,6 @@ syntra.db
 
 # Boletas de prestamo guardadas en modo demostracion
 boletas_enviadas/
+
+# Documentos de referencia del curso (no se suben al repositorio)
+contexto/

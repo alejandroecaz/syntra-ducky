@@ -13,6 +13,9 @@ Descripcion:
         HU-02-04 Boleta de prestamo (correo, WhatsApp e impresion)
         HU-02-05 Renovacion de prestamo
 
+    Desde HU-02-08, el usuario con multas pendientes no puede pedir
+    prestado ni renovar.
+
 Autores:
     Melissa Silva Vazquez (624352)
     Tomas Zapata Perez (629048)
@@ -30,6 +33,7 @@ from datetime import date, datetime, timedelta
 import config
 from models import ejemplar as ejemplar_modelo
 from models import lista_espera as espera_modelo
+from models import multa as multa_modelo
 from models import prestamo as prestamo_modelo
 from services.errores import ErrorValidacion
 from utils import notificaciones, pdf
@@ -171,6 +175,14 @@ def _validar_solicitante(texto):
             f"{usuario['nombre_completo']} tiene {totales['vencidos']} "
             "préstamo(s) vencido(s). Debe devolverlos antes de llevarse otro "
             "libro."
+        )
+    # HU-02-01 · Multas pendientes (HU-02-08).
+    adeudo = multa_modelo.sumar_pendientes_de_usuario(usuario["id"])
+    if adeudo["cantidad"]:
+        return usuario, (
+            f"{usuario['nombre_completo']} tiene {adeudo['cantidad']} "
+            f"multa(s) pendiente(s) por ${adeudo['total']:,.2f} MXN. Debe "
+            "pagarlas en Tesorería antes de llevarse otro libro."
         )
     if totales["activos"] >= usuario["max_prestamos"]:
         return usuario, (
@@ -375,8 +387,8 @@ def revisar_renovacion(prestamo):
         HU-02-05: Revisa si el prestamo se puede renovar y calcula la nueva
         fecha de devolucion (la actual mas los dias de prestamo del perfil).
         No se renueva si el prestamo no esta activo, la cuenta esta
-        deshabilitada, ya vencio, se acabaron las renovaciones del perfil o
-        alguien espera el libro.
+        deshabilitada, ya vencio, se acabaron las renovaciones del perfil,
+        alguien espera el libro o el usuario tiene multas pendientes.
 
     Parametros:
         prestamo (sqlite3.Row): prestamo de prestamo_modelo.obtener().
@@ -410,15 +422,24 @@ def revisar_renovacion(prestamo):
             if maximo
             else f"El perfil {prestamo['perfil']} no permite renovaciones."
         )
-    # HU-02-05 · Libro con lista de espera.
+    # HU-02-05 · Libro con lista de espera o usuario con multas pendientes.
     else:
         en_espera = espera_modelo.obtener_libro(prestamo["libro_clave"])[
             "en_espera"
         ]
+        adeudo = multa_modelo.sumar_pendientes_de_usuario(
+            prestamo["usuario_id"]
+        )
         if en_espera:
             motivo = (
                 f"Hay {en_espera} persona(s) en la lista de espera de este "
                 "libro; se debe devolver en la fecha acordada."
+            )
+        elif adeudo["cantidad"]:
+            motivo = (
+                f"El usuario tiene {adeudo['cantidad']} multa(s) "
+                f"pendiente(s) por ${adeudo['total']:,.2f} MXN; debe "
+                "pagarlas en Tesorería antes de renovar."
             )
     return {
         "permitida": motivo is None,

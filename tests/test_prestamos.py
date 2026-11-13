@@ -270,10 +270,11 @@ def test_registro_del_prestamo(app, biblio):
 
     respuesta = biblio.post("/prestamos/confirmar")
     assert respuesta.status_code == 302
-    assert respuesta.location.endswith("/prestamos/6")
+    # Los datos de prueba traen 7 prestamos (5 activos y 2 ya devueltos).
+    assert respuesta.location.endswith("/prestamos/8")
     assert obtener_estado_ejemplar(app, "EJ-0011") == "Prestado"
     boleta = biblio.get(respuesta.location).get_data(as_text=True)
-    assert f"Préstamo PR-{date.today().year}-0006 registrado" in boleta
+    assert f"Préstamo PR-{date.today().year}-0008 registrado" in boleta
     assert vencimiento in boleta
 
 

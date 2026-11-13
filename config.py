@@ -73,6 +73,9 @@ TWILIO_WHATSAPP_ORIGEN = os.environ.get(
 # Carpeta donde se guardan los correos en modo demostracion.
 CARPETA_BOLETAS = os.path.join(DIRECTORIO_BASE, "boletas_enviadas")
 
+# Correo de Tesoreria al que se mandan las multas para su cobro (HU-02-08).
+TESORERIA_CORREO = os.environ.get("TESORERIA_CORREO", "tesoreria@ducky.edu.mx")
+
 # ============================================================
 # PERMISOS
 # Catalogo de permisos; el acceso siempre se revisa por permiso.
@@ -111,6 +114,12 @@ PERMISOS = [
     ),
     ("prestamos.renovar", "Renovar préstamos", "Préstamos"),
     ("espera.gestionar", "Gestionar la lista de espera", "Préstamos"),
+    ("devoluciones.registrar", "Registrar devoluciones", "Préstamos"),
+    (
+        "multas.gestionar",
+        "Enviar multas a Tesorería y registrar sus pagos",
+        "Multas",
+    ),
 ]
 
 # Quien tenga alguno de estos permisos es personal de biblioteca (puede ver
@@ -166,7 +175,14 @@ ESTADOS_ORDEN = [ESTADO_ORDEN_REGISTRADA, "Cancelada"]
 
 # Prestamos (HU-02-01 a HU-02-05).
 ESTADO_PRESTAMO_ACTIVO = "Activo"
-ESTADOS_PRESTAMO = [ESTADO_PRESTAMO_ACTIVO, "Devuelto", "Vencido", "Perdido"]
+ESTADO_PRESTAMO_DEVUELTO = "Devuelto"
+ESTADO_PRESTAMO_PERDIDO = "Perdido"
+ESTADOS_PRESTAMO = [
+    ESTADO_PRESTAMO_ACTIVO,
+    ESTADO_PRESTAMO_DEVUELTO,
+    "Vencido",
+    ESTADO_PRESTAMO_PERDIDO,
+]
 # Libros con este tipo de acceso solo se consultan dentro de la biblioteca.
 TIPOS_ACCESO_SIN_PRESTAMO = ["Reservado"]
 PREFIJO_PRESTAMO = "PR"
@@ -186,6 +202,43 @@ ESTADOS_ESPERA = [
     ESTADO_ESPERA_CANCELADO,
 ]
 ESTADOS_ESPERA_VIGENTE = [ESTADO_ESPERA, ESTADO_ESPERA_NOTIFICADO]
+
+# Devoluciones (HU-02-07). El bibliotecario elige el resultado: el libro
+# regresa bien, regresa danado o el usuario reporta que lo perdio. Cada
+# resultado deja la devolucion con su condicion, el prestamo con su estado y
+# el ejemplar con su nuevo estado.
+RESULTADO_BUENO = "bueno"
+RESULTADO_DANADO = "danado"
+RESULTADO_PERDIDO = "perdido"
+RESULTADOS_DEVOLUCION = [
+    (RESULTADO_BUENO, "Lo devuelve en buen estado"),
+    (RESULTADO_DANADO, "Lo devuelve dañado"),
+    (RESULTADO_PERDIDO, "Reporta que lo perdió"),
+]
+CONDICION_BUENO = "Bueno"
+CONDICION_DANADO = "Dañado"
+CONDICIONES_DEVOLUCION = [CONDICION_BUENO, CONDICION_DANADO]
+ESTADO_EJEMPLAR_DANADO = "Dañado"
+ESTADO_EJEMPLAR_PERDIDO = "Perdido"
+LONGITUD_MAXIMA_OBSERVACIONES = 255
+
+# Multas (HU-02-08): por retraso (dias x multa diaria del perfil), por dano
+# (monto que captura el bibliotecario) y por perdida (ultimo precio del
+# libro; si esta en dolares se aplica el tipo de cambio vigente).
+MOTIVO_RETRASO = "Retraso"
+MOTIVO_DANO = "Daño"
+MOTIVO_PERDIDA = "Pérdida"
+MOTIVOS_MULTA = [MOTIVO_RETRASO, MOTIVO_DANO, MOTIVO_PERDIDA]
+ESTADO_MULTA_PENDIENTE = "Pendiente"
+ESTADO_MULTA_PAGADA = "Pagada"
+ESTADOS_MULTA = [ESTADO_MULTA_PENDIENTE, ESTADO_MULTA_PAGADA, "Cancelada"]
+# Que multas se ven en la lista: pendientes, pagadas o todas.
+VISTAS_MULTAS = ("pendientes", "pagadas", "todas")
+MONTO_MAXIMO_MULTA = 100000
+METODO_EFECTIVO = "Efectivo"
+METODOS_PAGO = [METODO_EFECTIVO, "Tarjeta", "Transferencia"]
+MONEDA_LOCAL = "MXN"
+MONEDAS = [MONEDA_LOCAL, "USD"]
 
 # Avisos a los usuarios (tabla avisos).
 TIPO_AVISO_ESPERA = "Lista de espera"

@@ -1,0 +1,119 @@
+{#
+   ============================================================
+   Archivo:      views/multas/lista.html
+   Proyecto:     Sistema Ducky de Gestion Bibliotecaria
+   Empresa desarrolladora: Syntra Technologies
+   Cliente:      Universidad Ducky
+
+   Descripcion:
+       Multas (Vista, HU-02-08): pendientes, pagadas o todas, con su envio
+       a Tesoreria.
+
+   Autores:
+       Melissa Silva Vazquez (624352)
+       Tomas Zapata Perez (629048)
+       Alejandro Evaristo Cazares Escobedo (626337)
+
+   Fecha:
+       13/11/2026
+   ============================================================
+-#}
+{% extends "layouts/app.html" %}
+{% import "components/ui.html" as ui %}
+
+{% block titulo %}Multas{% endblock %}
+
+{% block contenido %}
+{% call ui.dibujar_encabezado_pagina("Multas",
+                                     "Multas por entrega tardía, daño o pérdida. Se mandan a "
+                                     "Tesorería para su cobro; cuando se pagan se libera el "
+                                     "adeudo del usuario.",
+                                     hus=["HU-02-08 Generación de multas y envío a "
+                                          "Tesorería"]) %}
+    {# HU-02-08: mandar de una vez las que no se han enviado. #}
+    {% if totales.sin_enviar %}
+        <form method="post" action="{{ url_for('multas.enviar_pendientes') }}">
+            {{ ui.dibujar_boton("Enviar " ~ totales.sin_enviar ~ " a Tesorería", "primario",
+                                "send", tipo="submit") }}
+        </form>
+    {% endif %}
+{% endcall %}
+
+<div class="rejilla rejilla-3" style="margin-bottom: 20px">
+    {{ ui.dibujar_indicador("banknote", "Multas pendientes", totales.cantidad) }}
+    {{ ui.dibujar_indicador("alert-triangle", "Por cobrar", totales.total |formatear_monto) }}
+    {{ ui.dibujar_indicador("send", "Sin enviar a Tesorería", totales.sin_enviar) }}
+</div>
+
+<div class="tarjeta">
+    {# Selector de pendientes / pagadas / todas. #}
+    {% set s = "s" if multas | length != 1 else "" %}
+    {% set descripciones = {"pendientes": "pendiente" ~ s ~ " de pago",
+                            "pagadas": "pagada" ~ s, "todas": "registrada" ~ s} %}
+    <div class="resumen-tabla">
+        <span>{{ multas | length }} multa{{ s }} {{ descripciones[vista] }}</span>
+        <div class="segmentado" role="group" aria-label="Multas a mostrar">
+            {% for valor, etiqueta in [("pendientes", "Pendientes"), ("pagadas", "Pagadas"),
+                                       ("todas", "Todas")] %}
+                <a href="{{ url_for('multas.listar', ver=valor) }}"
+                   class="boton boton-chico {{ 'boton-primario' if vista == valor
+                                               else 'boton-transparente' }}"
+                   style="border-radius:0"
+                   aria-current="{{ 'true' if vista == valor else 'false' }}">{{ etiqueta }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if multas %}
+    <div class="contenedor-tabla">
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th scope="col">Generada</th><th scope="col">Usuario</th>
+                    <th scope="col">Préstamo</th><th scope="col">Motivo</th>
+                    <th scope="col" class="alinear-derecha">Monto</th>
+                    <th scope="col">Estado</th><th scope="col">Tesorería</th>
+                    <th scope="col" class="alinear-derecha"><span
+                        class="solo-lector">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for multa in multas %}
+                <tr data-enlace="{{ url_for('multas.mostrar_detalle', multa_id=multa.id) }}">
+                    <td class="sin-salto">{{ multa.fecha_generacion |formatear_fecha }}</td>
+                    <td>{{ multa.usuario_nombre }}<br><span class="celda-subtitulo">{{
+                        multa.usuario_identificador }} · {{ multa.perfil }}</span></td>
+                    <td><span class="monoespaciado resaltado">{{ multa.folio }}</span><br><span
+                        class="celda-subtitulo">{{ multa.titulo }}</span></td>
+                    <td>{{ multa.motivo }}<br><span class="celda-subtitulo">{{
+                        multa.descripcion }}</span></td>
+                    <td class="alinear-derecha sin-salto resaltado">{{
+                        multa.monto |formatear_monto }}</td>
+                    <td>{{ ui.dibujar_etiqueta(multa.estado,
+                                               "exito" if multa.estado == "Pagada"
+                                               else "advertencia", punto=True) }}</td>
+                    <td class="sin-salto">
+                        {% if multa.fecha_envio_tesoreria %}
+                            {{ ui.dibujar_etiqueta("Enviada", "informacion") }}<br><span
+                                class="celda-subtitulo">{{
+                                    multa.fecha_envio_tesoreria |formatear_fecha }}</span>
+                        {% else %}
+                            {{ ui.dibujar_etiqueta("Sin enviar", "error") }}
+                        {% endif %}
+                    </td>
+                    <td class="alinear-derecha">{{ ui.dibujar_boton(
+                        "Ver", "secundario", "file",
+                        enlace=url_for("multas.mostrar_detalle", multa_id=multa.id),
+                        tamano="chico") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        {{ ui.dibujar_estado_vacio("banknote", "No hay multas que mostrar",
+                                   "Las multas se generan al registrar una devolución tardía, "
+                                   "con daños o la pérdida de un libro.") }}
+    {% endif %}
+</div>
+{% endblock %}

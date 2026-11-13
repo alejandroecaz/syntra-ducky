@@ -215,16 +215,18 @@ def generar_listado(libros, filtros_texto, generado_por):
     return bytes(pdf.output())
 
 
-def generar_boleta(folio, renglones, nota):
+def generar_boleta(folio, renglones, nota, titulo="Boleta de préstamo"):
     """
     Descripcion:
-        HU-02-04: Genera la boleta de prestamo en media carta (A5) con el
-        folio, los datos del prestamo y la nota para el usuario.
+        HU-02-04 y HU-02-08: Genera la boleta de prestamo (o el aviso de
+        multa para Tesoreria) en media carta (A5) con el folio, los datos y
+        la nota al pie.
 
     Parametros:
         folio (str): folio del prestamo.
         renglones (list[tuple[str, str]]): (etiqueta, valor) de cada dato.
         nota (str): texto al pie de la boleta.
+        titulo (str): titulo del documento.
 
     Salida:
         bytes: contenido del archivo PDF.
@@ -234,7 +236,7 @@ def generar_boleta(folio, renglones, nota):
     """
     # Hoja A5 vertical con el encabezado y pie del sistema.
     pdf = ListadoPDF(orientation="P", unit="mm", format="A5")
-    pdf.set_title(f"Boleta de préstamo {folio}")
+    pdf.set_title(f"{titulo} {folio}")
     pdf.alias_nb_pages()
     pdf.set_auto_page_break(auto=True, margin=16)
     pdf.add_page()
@@ -242,7 +244,9 @@ def generar_boleta(folio, renglones, nota):
     # Titulo y folio.
     pdf.set_font("Helvetica", "B", 13)
     pdf.set_text_color(*TINTA)
-    pdf.cell(0, 7, "Boleta de préstamo", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0, 7, _convertir_texto(titulo), new_x=XPos.LMARGIN, new_y=YPos.NEXT
+    )
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(*AZUL)
     pdf.cell(

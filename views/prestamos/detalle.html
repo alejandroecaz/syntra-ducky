@@ -8,8 +8,8 @@
    Descripcion:
        Boleta de prestamo (Vista, HU-02-04) con las opciones para enviarla
        por correo, por WhatsApp, imprimirla o descargarla en PDF, la
-       renovacion del prestamo (HU-02-05) y el historial de boletas y
-       renovaciones.
+       renovacion del prestamo (HU-02-05), el acceso a su devolucion
+       (HU-02-07) y el historial de boletas y renovaciones.
 
    Autores:
        Melissa Silva Vazquez (624352)
@@ -143,6 +143,33 @@
     </div>
 
     <div class="pila-amplia sin-imprimir">
+    {# HU-02-07: devolucion del prestamo o como se cerro. #}
+    {% if puede_devolver %}
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <h2 class="tarjeta-titulo">{{ dibujar_icono("undo", 18) }}Devolución</h2>
+        </div>
+        <div class="tarjeta-cuerpo pila" style="gap: 12px">
+            {% if prestamo.estado == "Activo" %}
+                <p class="texto-chico">Cuando el usuario regrese el libro, registra la
+                    devolución. Si llega tarde, dañado o se perdió, se genera la multa y se
+                    manda a Tesorería.</p>
+                {{ ui.dibujar_boton("Registrar devolución", "primario", "undo",
+                                    enlace=url_for("devoluciones.buscar",
+                                                   ejemplar=prestamo.ejemplar_codigo),
+                                    completo=True) }}
+            {% else %}
+                <p class="texto-chico">Este préstamo ya se cerró: <strong>{{
+                    prestamo.estado|lower }}</strong>.</p>
+                {{ ui.dibujar_boton("Ver devolución y multas", "secundario", "undo",
+                                    enlace=url_for("devoluciones.mostrar_resultado",
+                                                   prestamo_id=prestamo.id),
+                                    completo=True) }}
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
     {# HU-02-05: renovacion del prestamo con la fecha que quedaria. #}
     <section class="tarjeta">
         <div class="tarjeta-encabezado">
