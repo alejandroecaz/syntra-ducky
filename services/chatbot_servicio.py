@@ -75,9 +75,14 @@ tablas.
 herramientas. Si algo no está aquí (por ejemplo horarios), dilo y sugiere \
 preguntar en el mostrador de la biblioteca. No inventes datos.
 - Para saber si hay un libro, si está disponible o dónde está, usa \
-buscar_libros. Para los préstamos o las multas del usuario, usa \
-consultar_mis_prestamos o consultar_mis_multas. Solo puedes ver los datos \
-del usuario que platica contigo.
+buscar_libros. Para los préstamos o las multas del propio usuario, usa \
+consultar_mis_prestamos o consultar_mis_multas.
+- Si el usuario es personal de biblioteca, también tienes \
+consultar_prestamos_biblioteca y consultar_multas_biblioteca para ver los de \
+todos los usuarios; úsalas cuando pregunte en general (por ejemplo qué \
+libros están prestados, cuáles están vencidos o quién debe multas). Si no \
+tienes esas herramientas, explica que su perfil solo puede consultar sus \
+propios datos.
 - No haces trámites (prestar, renovar, devolver ni pagar): explica cómo se \
 hacen y quién los hace.
 - Si te preguntan algo que no tiene que ver con la biblioteca o el sistema, \
@@ -191,11 +196,65 @@ HERRAMIENTAS = [
     },
 ]
 
+# Herramientas solo para el personal de biblioteca, con el permiso que pide
+# cada una (el mismo que la pantalla correspondiente de la app).
+HERRAMIENTAS_PERSONAL = [
+    (
+        "prestamos.registrar",
+        {
+            "name": "consultar_prestamos_biblioteca",
+            "description": (
+                "Lista los préstamos de todos los usuarios de la biblioteca "
+                "(activos o solo los vencidos), con quién tiene cada libro y "
+                "cuándo lo debe devolver."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "vista": {
+                        "type": "string",
+                        "enum": ["activos", "vencidos"],
+                        "description": (
+                            "activos para todos los que no se han devuelto, "
+                            "vencidos para los que ya pasaron su fecha."
+                        ),
+                    }
+                },
+                "required": ["vista"],
+                "additionalProperties": False,
+            },
+            "strict": True,
+        },
+    ),
+    (
+        "multas.gestionar",
+        {
+            "name": "consultar_multas_biblioteca",
+            "description": (
+                "Lista las multas pendientes de pago de todos los usuarios, "
+                "con quién debe, cuánto y por qué, y el total."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False,
+            },
+            "strict": True,
+        },
+    ),
+]
+
+# Cuantos prestamos o multas de la biblioteca se regresan como maximo.
+LIMITE_CONSULTA_PERSONAL = 50
+
 # Nombre de la intencion que se guarda por cada herramienta (diseno EV8).
 INTENCIONES = {
     "buscar_libros": "buscar_libro",
     "consultar_mis_prestamos": "consultar_prestamo",
     "consultar_mis_multas": "consultar_multa",
+    "consultar_prestamos_biblioteca": "consultar_prestamo",
+    "consultar_multas_biblioteca": "consultar_multa",
 }
 INTENCION_ORIENTACION = "orientacion"
 
@@ -342,11 +401,108 @@ def consultar_multas(usuario_id):
     }
 
 
+def consultar_prestamos_biblioteca(vista):
+    """
+    Descripcion:
+        HU-02-09 · Consulta del personal: prestamos de todos los usuarios,
+        activos o solo vencidos (lo mismo que la pantalla Prestamos).
+
+    Parametros:
+        vista (str): "activos" o "vencidos".
+
+    Salida:
+        dict: total, prestamos (hasta LIMITE_CONSULTA_PERSONAL) y vista.
+    """
+    vista = vista if vista in ("activos", "vencidos") else "activos"
+    hoy = date.today()
+    prestamos = prestamo_modelo.listar(vista)
+    return {
+        "vista": vista,
+        "total": len(prestamos),
+        "prestamos": [
+            {
+                "folio": prestamo["folio"],
+                "usuario": (
+                    f"{prestamo['usuario_nombre']} "
+                    f"({prestamo['usuario_identificador']})"
+                ),
+                "libro": prestamo["titulo"],
+                "ejemplar": prestamo["ejemplar_codigo"],
+                "fecha_devolucion": _formatear_fecha(
+                    prestamo["fecha_vencimiento"]
+                ),
+                "dias_de_retraso": max(
+                    (
+                        hoy - date.fromisoformat(prestamo["fecha_vencimiento"])
+                    ).days,
+                    0,
+                ),
+            }
+            for prestamo in prestamos[:LIMITE_CONSULTA_PERSONAL]
+        ],
+    }
+
+
+def consultar_multas_biblioteca():
+    """
+    Descripcion:
+        HU-02-09 · Consulta del personal: multas pendientes de todos los
+        usuarios (lo mismo que la pantalla Multas).
+
+    Parametros:
+        Ninguno.
+
+    Salida:
+        dict: total en pesos, cantidad y multas (hasta
+        LIMITE_CONSULTA_PERSONAL).
+    """
+    multas = multa_modelo.listar("pendientes")
+    return {
+        "cantidad": len(multas),
+        "total": f"${sum(float(m['monto']) for m in multas):,.2f} MXN",
+        "multas": [
+            {
+                "usuario": (
+                    f"{multa['usuario_nombre']} "
+                    f"({multa['usuario_identificador']})"
+                ),
+                "motivo": multa["motivo"],
+                "monto": f"${float(multa['monto']):,.2f} MXN",
+                "detalle": multa["descripcion"],
+                "prestamo": multa["folio"],
+                "libro": multa["titulo"],
+                "enviada_a_tesoreria": bool(multa["fecha_envio_tesoreria"]),
+            }
+            for multa in multas[:LIMITE_CONSULTA_PERSONAL]
+        ],
+    }
+
+
+def obtener_herramientas(usuario):
+    """
+    Descripcion:
+        Herramientas que puede usar el modelo con este usuario: las de todos
+        y, si su perfil tiene el permiso, las del personal de biblioteca.
+
+    Parametros:
+        usuario (dict): usuario en sesion (con sus permisos).
+
+    Salida:
+        list[dict]: definicion de las herramientas.
+    """
+    return HERRAMIENTAS + [
+        herramienta
+        for permiso, herramienta in HERRAMIENTAS_PERSONAL
+        if permiso in usuario["permisos"]
+    ]
+
+
 def _ejecutar_herramienta(nombre, entrada, usuario):
     """
     Descripcion:
         Ejecuta la herramienta que pidio el modelo. Los datos del usuario
-        siempre salen de la sesion, nunca de lo que pida el modelo.
+        siempre salen de la sesion, nunca de lo que pida el modelo, y las
+        consultas del personal vuelven a revisar el permiso.
 
     Parametros:
         nombre (str): nombre de la herramienta.
@@ -365,6 +521,16 @@ def _ejecutar_herramienta(nombre, entrada, usuario):
         return consultar_prestamos(usuario["id"]), None
     if nombre == "consultar_mis_multas":
         return consultar_multas(usuario["id"]), None
+
+    # Consultas del personal: solo con el permiso de la pantalla.
+    permisos = {h["name"]: permiso for permiso, h in HERRAMIENTAS_PERSONAL}
+    if nombre in permisos and permisos[nombre] not in usuario["permisos"]:
+        return {"error": "El perfil del usuario no tiene ese permiso."}, None
+    if nombre == "consultar_prestamos_biblioteca":
+        vista = (entrada or {}).get("vista", "activos")
+        return consultar_prestamos_biblioteca(vista), None
+    if nombre == "consultar_multas_biblioteca":
+        return consultar_multas_biblioteca(), None
     return {"error": f"No existe la herramienta {nombre}."}, None
 
 
@@ -502,7 +668,9 @@ def _responder_con_claude(usuario, historial):
     intencion, libro_id = INTENCION_ORIENTACION, None
 
     for _ in range(config.CHATBOT_MAX_CONSULTAS + 1):
-        respuesta = claude.pedir_respuesta(system, mensajes, HERRAMIENTAS)
+        respuesta = claude.pedir_respuesta(
+            system, mensajes, obtener_herramientas(usuario)
+        )
         if respuesta.stop_reason != "tool_use":
             break
         # Se regresa el contenido completo (incluye el razonamiento).
@@ -573,6 +741,84 @@ def _contiene(texto, palabras):
         bool: True si encuentra alguna.
     """
     return any(palabra in texto for palabra in palabras)
+
+
+def _responder_al_personal(usuario, t):
+    """
+    Descripcion:
+        HU-02-09 · Modo de respaldo para el personal: prestamos y multas de
+        toda la biblioteca, si su perfil tiene el permiso.
+
+    Parametros:
+        usuario (dict): usuario en sesion.
+        t (str): mensaje sin acentos y en minusculas.
+
+    Salida:
+        tuple[str, str, None] o None si la pregunta no es de este tipo.
+    """
+    general = _contiene(
+        t,
+        (
+            "en general",
+            "todos los",
+            "todas las",
+            "de la biblioteca",
+            "quien tiene",
+            "quienes tienen",
+            "quien debe",
+            "quienes deben",
+            "deudores",
+            "estan prestados",
+            "estan en prestamo",
+            "libros prestados",
+            "vencidos",
+        ),
+    )
+    # "Mis prestamos" o "tengo" son preguntas sobre sus propios datos.
+    propio = _contiene(t, ("mis ", "mi prestamo", "tengo", "debo"))
+    if not general or propio:
+        return None
+    if "multas.gestionar" in usuario["permisos"] and _contiene(
+        t, ("multa", "debe", "deudor", "adeudo")
+    ):
+        datos = consultar_multas_biblioteca()
+        if not datos["multas"]:
+            return "No hay multas pendientes.", "consultar_multa", None
+        renglones = [
+            f"- {m['usuario']}: {m['motivo'].lower()} de {m['monto']} "
+            f"({m['libro']})"
+            for m in datos["multas"]
+        ]
+        return (
+            f"Hay {datos['cantidad']} multa(s) pendiente(s) por "
+            f"{datos['total']}:\n" + "\n".join(renglones),
+            "consultar_multa",
+            None,
+        )
+    if "prestamos.registrar" in usuario["permisos"] and _contiene(
+        t, ("prestamo", "prestado", "vencido", "quien tiene", "quienes tienen")
+    ):
+        vista = "vencidos" if "vencido" in t else "activos"
+        datos = consultar_prestamos_biblioteca(vista)
+        if not datos["prestamos"]:
+            return f"No hay préstamos {vista}.", "consultar_prestamo", None
+        renglones = [
+            f"- {p['libro']} ({p['folio']}): {p['usuario']}, devolver el "
+            f"{p['fecha_devolucion']}"
+            + (
+                f" ({p['dias_de_retraso']} día(s) de retraso)"
+                if p["dias_de_retraso"]
+                else ""
+            )
+            for p in datos["prestamos"]
+        ]
+        return (
+            f"Hay {datos['total']} préstamo(s) {vista}:\n"
+            + "\n".join(renglones),
+            "consultar_prestamo",
+            None,
+        )
+    return None
 
 
 def _describir_reglas_del_perfil(nombre_perfil):
@@ -678,6 +924,11 @@ def _responder_con_reglas(usuario, texto):
     """
     t = normalizar(texto)
 
+    # Consultas generales del personal de biblioteca.
+    respuesta = _responder_al_personal(usuario, t)
+    if respuesta:
+        return respuesta
+
     # Multas del usuario.
     if _contiene(t, ("multa", "adeudo", "cuanto debo", "pagar", "tesoreria")):
         datos = consultar_multas(usuario["id"])
@@ -709,6 +960,8 @@ def _responder_con_reglas(usuario, texto):
             "mis prestamos",
             "mi prestamo",
             "que prestamos tengo",
+            "tengo prestamo",
+            "tengo libros",
             "tengo prestado",
             "que libros tengo",
             "mis libros",

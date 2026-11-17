@@ -608,6 +608,235 @@ def test_si_la_ia_falla_contesta_en_respaldo(cliente, monkeypatch):
 
 
 # ============================================================
+# CONSULTAS DEL PERSONAL DE BIBLIOTECA
+# ============================================================
+
+
+@pytest.mark.parametrize(
+    "cuenta, contrasena, esperadas",
+    [
+        (
+            "biblio",
+            "Biblio123",
+            {"consultar_prestamos_biblioteca", "consultar_multas_biblioteca"},
+        ),
+        ("alumno", "Alumno123", set()),
+        ("profesor", "Profe123", set()),
+    ],
+)
+def test_herramientas_del_personal_segun_permiso(
+    cliente, monkeypatch, cuenta, contrasena, esperadas
+):
+    """
+    Descripcion:
+        Prueba: HU-02-09 · Solo el personal con permiso recibe las consultas
+        de toda la biblioteca.
+
+    Parametros:
+        cliente (flask.testing.FlaskClient): cliente de prueba.
+        monkeypatch (pytest.MonkeyPatch): simula Claude.
+        cuenta (str): cuenta.
+        contrasena (str): contrasena.
+        esperadas (set[str]): herramientas del personal que debe tener.
+
+    Salida:
+        Ninguna.
+
+    Excepciones:
+        AssertionError si el comportamiento no cumple el criterio de
+        aceptacion.
+    """
+    llamadas = simular_claude(
+        monkeypatch,
+        [
+            SimpleNamespace(
+                stop_reason="end_turn", content=[bloque_texto("Ok")]
+            )
+        ],
+    )
+    entrar(cliente, cuenta, contrasena)
+    preguntar(cliente, "Hola")
+    nombres = {h["name"] for h in llamadas[0]["herramientas"]}
+    assert (
+        nombres
+        & {
+            "consultar_prestamos_biblioteca",
+            "consultar_multas_biblioteca",
+        }
+        == esperadas
+    )
+    assert {"buscar_libros", "consultar_mis_prestamos"} <= nombres
+
+
+def test_ia_del_personal_ve_los_prestamos_vencidos(cliente, monkeypatch):
+    """
+    Descripcion:
+        Prueba: HU-02-09 · El bibliotecario pregunta en general y el modelo
+        recibe los prestamos vencidos de todos los usuarios.
+
+    Parametros:
+        cliente (flask.testing.FlaskClient): cliente de prueba.
+        monkeypatch (pytest.MonkeyPatch): simula Claude.
+
+    Salida:
+        Ninguna.
+
+    Excepciones:
+        AssertionError si el comportamiento no cumple el criterio de
+        aceptacion.
+    """
+    llamadas = simular_claude(
+        monkeypatch,
+        [
+            SimpleNamespace(
+                stop_reason="tool_use",
+                content=[
+                    bloque_herramienta(
+                        "consultar_prestamos_biblioteca", {"vista": "vencidos"}
+                    )
+                ],
+            ),
+            SimpleNamespace(
+                stop_reason="end_turn",
+                content=[bloque_texto("José López tiene uno vencido.")],
+            ),
+        ],
+    )
+    entrar(cliente, "biblio", "Biblio123")
+    preguntar(cliente, "¿Qué préstamos están vencidos?")
+    resultado = json.loads(
+        llamadas[1]["mensajes"][-1]["content"][0]["content"]
+    )
+    assert resultado["total"] == 1
+    assert resultado["prestamos"][0]["usuario"] == (
+        "José López Martínez (600102)"
+    )
+    assert resultado["prestamos"][0]["dias_de_retraso"] == 3
+
+
+def test_alumno_no_puede_usar_consultas_del_personal(cliente, monkeypatch):
+    """
+    Descripcion:
+        Prueba: HU-02-09 · Aunque el modelo intentara usar una consulta del
+        personal con un alumno, se rechaza por permiso.
+
+    Parametros:
+        cliente (flask.testing.FlaskClient): cliente de prueba.
+        monkeypatch (pytest.MonkeyPatch): simula Claude.
+
+    Salida:
+        Ninguna.
+
+    Excepciones:
+        AssertionError si el comportamiento no cumple el criterio de
+        aceptacion.
+    """
+    llamadas = simular_claude(
+        monkeypatch,
+        [
+            SimpleNamespace(
+                stop_reason="tool_use",
+                content=[
+                    bloque_herramienta("consultar_multas_biblioteca", {})
+                ],
+            ),
+            SimpleNamespace(
+                stop_reason="end_turn",
+                content=[bloque_texto("Solo puedo ver tus datos.")],
+            ),
+        ],
+    )
+    entrar(cliente, "alumno", "Alumno123")
+    preguntar(cliente, "¿Quién debe multas?")
+    resultado = json.loads(
+        llamadas[1]["mensajes"][-1]["content"][0]["content"]
+    )
+    assert resultado == {
+        "error": "El perfil del usuario no tiene ese permiso."
+    }
+
+
+@pytest.mark.parametrize(
+    "cuenta, contrasena, pregunta, esperado",
+    [
+        (
+            "biblio",
+            "Biblio123",
+            "¿Qué libros están prestados en general?",
+            "Hay 5 préstamo(s) activos",
+        ),
+        (
+            "biblio",
+            "Biblio123",
+            "¿Quiénes tienen préstamos vencidos?",
+            "José López Martínez (600102), devolver el",
+        ),
+        (
+            "admin",
+            "Admin123",
+            "¿Quién debe multas?",
+            "Pedro Martínez Soto (N20500): retraso de $30.00 MXN",
+        ),
+        (
+            "biblio",
+            "Biblio123",
+            "¿Tengo préstamos vencidos?",
+            "No tienes préstamos activos",
+        ),
+    ],
+)
+def test_respaldo_del_personal(
+    cliente, cuenta, contrasena, pregunta, esperado
+):
+    """
+    Descripcion:
+        Prueba: HU-02-09 · Modo de respaldo: el personal ve los prestamos y
+        multas de toda la biblioteca cuando pregunta en general, y los suyos
+        cuando pregunta por los propios.
+
+    Parametros:
+        cliente (flask.testing.FlaskClient): cliente de prueba.
+        cuenta (str): cuenta.
+        contrasena (str): contrasena.
+        pregunta (str): pregunta.
+        esperado (str): texto que debe traer la respuesta.
+
+    Salida:
+        Ninguna.
+
+    Excepciones:
+        AssertionError si el comportamiento no cumple el criterio de
+        aceptacion.
+    """
+    entrar(cliente, cuenta, contrasena)
+    assert esperado in preguntar(cliente, pregunta).json["respuesta"]
+
+
+def test_respaldo_alumno_no_ve_los_de_todos(cliente):
+    """
+    Descripcion:
+        Prueba: HU-02-09 · Un alumno que pregunta en general no recibe los
+        prestamos de los demas.
+
+    Parametros:
+        cliente (flask.testing.FlaskClient): cliente de prueba.
+
+    Salida:
+        Ninguna.
+
+    Excepciones:
+        AssertionError si el comportamiento no cumple el criterio de
+        aceptacion.
+    """
+    entrar(cliente, "alumno", "Alumno123")
+    respuesta = preguntar(
+        cliente, "¿Qué libros están prestados en general?"
+    ).json["respuesta"]
+    assert "José López" not in respuesta
+    assert "préstamo(s) activos" not in respuesta
+
+
+# ============================================================
 # ERRORES DE LA API DE CLAUDE
 # ============================================================
 
