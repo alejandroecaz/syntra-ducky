@@ -19,38 +19,6 @@
        21/09/2026
    ============================================================
 
-   ============================================================
-   Contenido del listado:
-       Utilidades
-           buscarElemento(), buscarElementos(), dibujarIcono(), escaparTexto()
-       Avisos flotantes
-           cerrarAviso(), programarCierre(), mostrarAviso()
-       Modales
-           abrirModal(), cerrarModal()
-       Confirmacion (HU-01-03 y HU-01-10)
-       Boton en modo carga
-       Cambios sin guardar (HU-01-11)
-       Mostrar u ocultar contrasena
-       Filas clicables
-       Menu lateral y menu del usuario
-           alternarMenuLateral()
-       Generar PDF (HU-01-16)
-           mostrarPdfGenerado(), mostrarErrorPdf()
-       Impresion (HU-01-17 y HU-01-18)
-       Actualizar ejemplar (HU-01-15)
-       Renglones de la orden de compra (HU-01-18)
-           actualizarResumenOrden()
-       Seleccion de libros del listado (HU-01-16 y HU-01-17)
-           actualizarSeleccion()
-       Datos del libro por ISBN (HU-01-09)
-           llenarFicha(), buscarIsbn()
-       Resultado de la devolucion (HU-02-07)
-           actualizarResultado()
-       Chatbot (HU-02-09)
-           agregarMensajeChat(), saludarChat(), mostrarModoChat(),
-           enviarPreguntaChat(), pintarSugerenciasChat(), cargarChat(),
-           abrirChat()
-   ============================================================
 */
 (function () {
     "use strict";
