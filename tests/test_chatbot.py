@@ -245,10 +245,25 @@ def test_chat_sin_sesion(cliente):
         ),
         (
             "¿Tienen Cien años de soledad?",
-            "Cien años de soledad (LIB-001): 2 disponible(s) en Sala General",
+            "Cien años de soledad (LIB-001): 2 de 3 ejemplar(es) "
+            "disponible(s) en Sala General",
             "buscar_libro",
         ),
-        ("¿Qué onda?", "Puedo contarte para qué sirve el sistema", None),
+        (
+            "cuantos ejemplares de cien años de soledad hay",
+            "Cien años de soledad (LIB-001): 2 de 3 ejemplar(es)",
+            "buscar_libro",
+        ),
+        (
+            "¿Hay algo de García Márquez?",
+            "Cien años de soledad (LIB-001)",
+            "buscar_libro",
+        ),
+        (
+            "¿Qué onda?",
+            "No encontré respuesta para eso en modo básico. Puedo contarte",
+            None,
+        ),
     ],
 )
 def test_respuestas_de_respaldo(app, cliente, pregunta, esperado, intencion):

@@ -724,7 +724,9 @@ PALABRAS_VACIAS = set(
     "a al algun alguno biblioteca busca buscar busco con de del donde el en "
     "encuentro esta este hay la las libro libros los me necesito para por "
     "puedes que quiero sobre su tiene tienen tienes un una y ubicacion "
-    "disponible disponibles favor hola".split()
+    "disponible disponibles favor hola cuantos cuantas cuanto cuanta "
+    "ejemplar ejemplares copia copias existe existen queda quedan todavia "
+    "aun titulo dime sabes saber quisiera podrias ver hay".split()
 )
 
 
@@ -867,8 +869,9 @@ def _describir_libros(libros):
     for libro in libros:
         if libro["disponibles"]:
             estado = (
-                f"{libro['disponibles']} disponible(s) en "
-                f"{libro['ubicaciones_disponibles'][0]}"
+                f"{libro['disponibles']} de {libro['ejemplares']} "
+                "ejemplar(es) disponible(s) en "
+                + "; ".join(libro["ubicaciones_disponibles"][:3])
             )
         elif libro["ejemplares"]:
             estado = "sin ejemplares disponibles por ahora"
@@ -886,7 +889,8 @@ def _buscar_por_palabras(texto_normalizado):
     """
     Descripcion:
         Busca libros con las palabras importantes del mensaje: primero todas
-        juntas y luego la mas larga.
+        juntas y luego cada una, de la mas larga a la mas corta (de 4 letras
+        o mas), hasta encontrar algo.
 
     Parametros:
         texto_normalizado (str): mensaje sin acentos y en minusculas.
@@ -902,10 +906,10 @@ def _buscar_por_palabras(texto_normalizado):
     if not palabras:
         return []
     libros = buscar_libros(" ".join(palabras))
-    if not libros:
-        larga = max(palabras, key=len)
-        if len(larga) >= 4:
-            libros = buscar_libros(larga)
+    for palabra in sorted(set(palabras), key=len, reverse=True):
+        if libros or len(palabra) < 4:
+            break
+        libros = buscar_libros(palabra)
     return libros
 
 
@@ -1051,12 +1055,17 @@ def _responder_con_reglas(usuario, texto):
 
     if _contiene(t, ("gracias",)):
         return "¡Con gusto! Aquí estoy si tienes otra duda.", None, None
+    # Saludo, o no se reconocio la pregunta.
+    inicio = (
+        f"Hola, {usuario['nombre'].split()[0]}."
+        if _contiene(t, ("hola", "buenos dias", "buenas"))
+        else "No encontré respuesta para eso en modo básico."
+    )
     return (
-        f"Hola, {usuario['nombre'].split()[0]}. Puedo contarte para qué "
-        "sirve el sistema, qué incluye y en qué plataformas funciona, "
-        "explicarte cómo pedir, renovar o devolver libros, revisar tus "
-        "préstamos y multas, y buscar libros del catálogo. Por ejemplo: "
-        "«¿Tienen Cien años de soledad?»",
+        f"{inicio} Puedo contarte para qué sirve el sistema, qué incluye y "
+        "en qué plataformas funciona, explicarte cómo pedir, renovar o "
+        "devolver libros, revisar tus préstamos y multas, y buscar libros "
+        "del catálogo. Por ejemplo: «¿Tienen Cien años de soledad?»",
         INTENCION_ORIENTACION,
         None,
     )
